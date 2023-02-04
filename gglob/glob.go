@@ -15,9 +15,11 @@ const (
 	NodeList   // {a,bc}
 	NodeRange  // [a-c]
 	NodeOne    // ?
-	NodeMany   // *
+	NodeStar   // *
 	NodeInners // composite type, contains prefix, suffix, subitems in []inners
 )
+
+// TODO: nodeListSkip scan
 
 type InnerItem struct {
 	// can be nodeString, nodeList, nodeRange, nodeOne, nodeMany
@@ -32,36 +34,72 @@ type InnerItem struct {
 	ValsMax int      // max len in vals or max rune in range
 }
 
-func (item *InnerItem) Match(s string, nextItems []*InnerItem) (found bool, matched string, next string) {
-	switch item.Typ {
-	case NodeString:
-		if s == item.P {
-			// full match
-			found, matched = true, s
-		} else if strings.HasPrefix(s, item.P) {
-			// strip prefix
-			found, matched, next = true, item.P, s[len(item.P):]
-		} else {
-			next = s
-		}
-		// TODO: other types
-	case NodeMany:
-		if len(nextItems) > 1 {
-			// TODO: * in multipart
-		} else {
-			// all of string matched to *
-			found, matched = true, s
-		}
-	case NodeOne:
-		if len(nextItems) > 1 {
-			if c, n := utf8.DecodeRuneInString(s); c != utf8.RuneError {
-				if len(s) > n {
-					found, matched, next = true, s[:n], s[n:]
+func (item *InnerItem) matchStar(part string, nextParts []string, nextItems []*InnerItem) (found bool) {
+	if part == "" && len(nextItems) == 0 {
+		return true
+	}
+
+	for ; part != ""; part = part[1:] {
+		part := part           // avoid overwrite outer loop
+		nextItems := nextItems // avoid overwrite outer loop
+		if len(nextItems) > 0 {
+			nextItem := nextItems[0]
+			switch nextItem.Typ {
+			// speedup NodeString find
+			case NodeString:
+				if idx := strings.Index(part, nextItem.P); idx != -1 {
+					idx += len(nextItem.P)
+					part = part[idx:]
+					nextItems = nextItems[1:]
+					found = true
 				}
 			}
-		} else if len(s) == 1 {
-			// string matched to ? must have one element
-			found, matched = true, s
+		} else {
+			// all of string matched to *
+			part = ""
+			found = true
+		}
+		if found {
+			if part != "" && len(nextItems) > 0 {
+				found = nextItems[0].matchItem(part, nextParts, nextItems[1:])
+			} else if part != "" || len(nextItems) > 0 {
+				found = false
+			}
+			if found {
+				break
+			}
+		}
+	}
+	return
+}
+
+func (item *InnerItem) matchItem(part string, nextParts []string, nextItems []*InnerItem) (found bool) {
+	switch item.Typ {
+	case NodeStar:
+		return item.matchStar(part, nextParts, nextItems)
+	case NodeString:
+		if part == item.P {
+			// full match
+			found = true
+			part = ""
+		} else if strings.HasPrefix(part, item.P) {
+			// strip prefix
+			found = true
+			part = part[len(item.P):]
+		}
+	case NodeOne:
+		if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
+			if len(part) >= n {
+				found = true
+				part = part[n:]
+			}
+		}
+	}
+	if found {
+		if part != "" && len(nextItems) > 0 {
+			found = nextItems[0].matchItem(part, nextParts, nextItems[1:])
+		} else if part != "" || len(nextItems) > 0 {
+			found = false
 		}
 	}
 	return
@@ -76,11 +114,12 @@ func nextInnerItem(s string) (*InnerItem, string, error) {
 		// TODO: implement nodeRange
 		return nil, s, ErrNodeUnclosed{s}
 	case '{':
+		// TODO: implement nodeList
 		return nil, s, ErrNodeUnclosed{s}
 	case '*':
 		next := nextString(s, 1)
 		return &InnerItem{
-			Typ: NodeMany,
+			Typ: NodeStar,
 		}, next, nil
 	case '?':
 		next := nextString(s, 1)
@@ -114,13 +153,10 @@ type NodeItem struct {
 	Childs []*NodeItem  // next possible parts tree
 }
 
-func (node *NodeItem) AddMatched(parts []string, items *[]string) {
-	if node.Typ == NodeInners {
-		if len(node.Inners) == 0 {
-			// some broken, skip node
-			return
-		}
-		part := parts[0]
+func (node *NodeItem) Match(part string, nextParts []string, items *[]string) {
+	var found bool
+
+	if node.Typ != NodeString {
 		if node.P != "" {
 			if !strings.HasPrefix(part, node.P) {
 				// prefix not match
@@ -135,37 +171,25 @@ func (node *NodeItem) AddMatched(parts []string, items *[]string) {
 			}
 			part = part[:len(part)-len(node.Suffix)]
 		}
-		var found bool
-		for i, inner := range node.Inners {
-			if found, _, part = inner.Match(part, node.Inners[i:]); found {
-
-			} else {
-				// item not found
-				return
-			}
-		}
-		if part != "" {
-			// partial match
-			return
-		}
-	} else if node.Typ == NodeString {
-		if node.P != parts[0] {
-			return
-		}
-	} else if found, _, part := node.Match(parts[0], nil); !found || part != "" {
-		// not matched or partial match
-		return
 	}
 
-	if node.Terminated {
-		*items = append(*items, node.Node)
-	} else {
-		if len(parts) == 1 {
+	if node.Typ == NodeInners {
+		if len(node.Inners) == 0 {
+			// some broken, skip node
 			return
 		}
-		parts = parts[1:]
-		for _, child := range node.Childs {
-			child.AddMatched(parts, items)
+		found = node.Inners[0].matchItem(part, nextParts, node.Inners[1:])
+	} else {
+		found = node.matchItem(part, nextParts, nil)
+	}
+
+	if found {
+		if node.Terminated {
+			*items = append(*items, node.Node)
+		} else if len(nextParts) > 0 {
+			for _, child := range node.Childs {
+				child.Match(nextParts[0], nextParts[1:], items)
+			}
 		}
 	}
 }
@@ -234,36 +258,50 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 				newNode.Typ = NodeString
 				newNode.P = part
 			} else {
+				if pos > 0 {
+					newNode.P = part[:pos] // prefix
+					part = part[pos:]
+				}
+				end := IndexLastWildcard(part)
+				if end == 0 && part[0] != '?' && part[0] != '*' {
+					return ErrNodeUnclosed{part}
+				}
+				if end < len(part)-1 {
+					end++
+					newNode.Suffix = part[end:]
+					part = part[:end] //
+				}
+
 				switch part {
 				case "*":
-					newNode.Typ = NodeMany
+					newNode.Typ = NodeStar
 				case "?":
 					newNode.Typ = NodeOne
 				default:
-					end := IndexLastWildcard(part)
-					if end == pos && part[pos] != '?' {
-						return ErrNodeUnclosed{part}
-					}
-					if end < len(part)-1 {
-						end++
-						newNode.P = part[:pos]
-						newNode.Suffix = part[end:]
-						part = part[pos:end]
-					}
 					var inner *InnerItem
 					innerCount := WildcardCount(part)
-					newNode.Inners = make([]*InnerItem, 0, innerCount)
+					inners := make([]*InnerItem, 0, innerCount)
+
 					for part != "" {
 						inner, part, err = nextInnerItem(part)
 						if err != nil {
 							return
 						}
-						newNode.Inners = append(newNode.Inners, inner)
+						inners = append(inners, inner)
 					}
-					newNode.Typ = NodeInners
-					if len(newNode.Inners) == 0 {
+					if len(inners) == 0 {
 						// no inners for inner node
 						return ErrGlobNotExpanded{newNode.Node}
+					} else if len(inners) == 1 {
+						if inners[0].Typ == NodeString || inners[0].P != "" {
+							// bug
+							panic(inners[0])
+						}
+						// merge
+						newNode.InnerItem = *inners[0]
+					} else {
+						newNode.Typ = NodeInners
+						newNode.Inners = inners
 					}
 				}
 			}
@@ -296,7 +334,7 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 		items = make([]string, 0, min(4, len(node.Childs)))
 		for _, node := range node.Childs {
 			// match first node
-			node.AddMatched(parts, &items)
+			node.Match(parts[0], parts[1:], &items)
 		}
 	}
 
