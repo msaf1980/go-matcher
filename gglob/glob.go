@@ -26,14 +26,10 @@ type InnerItem struct {
 	// string (nodeString)
 	S string
 
-	// nodeList
-	Vals    []string
-	ValsMin int // min len in vals
-	ValsMax int // max len in vals
-
-	// nodeRange
-	RMin rune // min rune in range
-	RMax rune // max rune in range
+	// nodeList or 	nodeRange
+	Vals    []string // strings for nodeList
+	ValsMin int      // min len in vals or min rune in range
+	ValsMax int      // max len in vals or max rune in range
 }
 
 func (item *InnerItem) Match(s string, nextItems []*InnerItem) (found bool, matched string, next string) {
