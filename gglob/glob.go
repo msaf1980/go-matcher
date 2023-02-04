@@ -24,7 +24,7 @@ type InnerItem struct {
 	Typ NodeType
 
 	// string (nodeString)
-	S string
+	P string
 
 	// nodeList or 	nodeRange
 	Vals    []string // strings for nodeList
@@ -35,12 +35,12 @@ type InnerItem struct {
 func (item *InnerItem) Match(s string, nextItems []*InnerItem) (found bool, matched string, next string) {
 	switch item.Typ {
 	case NodeString:
-		if s == item.S {
+		if s == item.P {
 			// full match
 			found, matched = true, s
-		} else if strings.HasPrefix(s, item.S) {
+		} else if strings.HasPrefix(s, item.P) {
 			// strip prefix
-			found, matched, next = true, item.S, s[len(item.S):]
+			found, matched, next = true, item.P, s[len(item.P):]
 		} else {
 			next = s
 		}
@@ -94,7 +94,7 @@ func nextInnerItem(s string) (*InnerItem, string, error) {
 		end := IndexWildcard(s)
 		v, next := splitString(s, end)
 		return &InnerItem{
-			Typ: NodeString, S: v,
+			Typ: NodeString, P: v,
 		}, next, nil
 	}
 }
@@ -107,6 +107,9 @@ type NodeItem struct {
 
 	InnerItem // if one item, no need to use []inners
 
+	// suffix for NodeInners
+	Suffix string
+
 	Inners []*InnerItem // inner segments
 	Childs []*NodeItem  // next possible parts tree
 }
@@ -118,6 +121,20 @@ func (node *NodeItem) AddMatched(parts []string, items *[]string) {
 			return
 		}
 		part := parts[0]
+		if node.P != "" {
+			if !strings.HasPrefix(part, node.P) {
+				// prefix not match
+				return
+			}
+			part = part[len(node.P):]
+		}
+		if node.Suffix != "" {
+			if !strings.HasSuffix(part, node.Suffix) {
+				// suffix not match
+				return
+			}
+			part = part[:len(part)-len(node.Suffix)]
+		}
 		var found bool
 		for i, inner := range node.Inners {
 			if found, _, part = inner.Match(part, node.Inners[i:]); found {
@@ -132,7 +149,7 @@ func (node *NodeItem) AddMatched(parts []string, items *[]string) {
 			return
 		}
 	} else if node.Typ == NodeString {
-		if node.S != parts[0] {
+		if node.P != parts[0] {
 			return
 		}
 	} else if found, _, part := node.Match(parts[0], nil); !found || part != "" {
@@ -215,7 +232,7 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 			pos := IndexWildcard(part)
 			if pos == -1 {
 				newNode.Typ = NodeString
-				newNode.S = part
+				newNode.P = part
 			} else {
 				switch part {
 				case "*":
@@ -223,8 +240,18 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 				case "?":
 					newNode.Typ = NodeOne
 				default:
+					end := IndexLastWildcard(part)
+					if end == pos && part[pos] != '?' {
+						return ErrNodeUnclosed{part}
+					}
+					if end < len(part)-1 {
+						end++
+						newNode.P = part[:pos]
+						newNode.Suffix = part[end:]
+						part = part[pos:end]
+					}
 					var inner *InnerItem
-					innerCount := WildcardCount(part) + 1
+					innerCount := WildcardCount(part)
 					newNode.Inners = make([]*InnerItem, 0, innerCount)
 					for part != "" {
 						inner, part, err = nextInnerItem(part)

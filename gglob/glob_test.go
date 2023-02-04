@@ -39,7 +39,7 @@ func TestGlobMatcher(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
-						Childs:    []*NodeItem{{Node: "a", Terminated: true, InnerItem: InnerItem{Typ: NodeString, S: "a"}}},
+						Childs:    []*NodeItem{{Node: "a", Terminated: true, InnerItem: InnerItem{Typ: NodeString, P: "a"}}},
 					},
 				},
 				Globs: map[string]bool{"a": true},
@@ -55,9 +55,9 @@ func TestGlobMatcher(t *testing.T) {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a", InnerItem: InnerItem{Typ: NodeString, S: "a"},
+								Node: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"},
 								Childs: []*NodeItem{
-									{Node: "a.bc", Terminated: true, InnerItem: InnerItem{Typ: NodeString, S: "bc"}},
+									{Node: "a.bc", Terminated: true, InnerItem: InnerItem{Typ: NodeString, P: "bc"}},
 								},
 							},
 						},
@@ -74,21 +74,21 @@ func TestGlobMatcher(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
-						Childs:    []*NodeItem{{Node: "a", Terminated: true, InnerItem: InnerItem{Typ: NodeString, S: "a"}}},
+						Childs:    []*NodeItem{{Node: "a", Terminated: true, InnerItem: InnerItem{Typ: NodeString, P: "a"}}},
 					},
 					2: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a", InnerItem: InnerItem{Typ: NodeString, S: "a"},
+								Node: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"},
 								Childs: []*NodeItem{
-									{Node: "a.bc", Terminated: true, InnerItem: InnerItem{Typ: NodeString, S: "bc"}},
+									{Node: "a.bc", Terminated: true, InnerItem: InnerItem{Typ: NodeString, P: "bc"}},
 								},
 							},
 							{
-								Node: "b", InnerItem: InnerItem{Typ: NodeString, S: "b"},
+								Node: "b", InnerItem: InnerItem{Typ: NodeString, P: "b"},
 								Childs: []*NodeItem{
-									{Node: "b.bc", Terminated: true, InnerItem: InnerItem{Typ: NodeString, S: "bc"}},
+									{Node: "b.bc", Terminated: true, InnerItem: InnerItem{Typ: NodeString, P: "bc"}},
 								},
 							},
 						},
@@ -146,8 +146,8 @@ func TestGlobMatcher(t *testing.T) {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a?c", Terminated: true, InnerItem: InnerItem{Typ: NodeInners},
-								Inners: []*InnerItem{{Typ: NodeString, S: "a"}, {Typ: NodeOne}, {Typ: NodeString, S: "c"}},
+								Node: "a?c", Terminated: true, InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
+								Inners: []*InnerItem{{Typ: NodeOne}},
 							},
 						},
 					},
@@ -185,5 +185,40 @@ func TestGlobMatcher(t *testing.T) {
 				assert.Equal(t, 0, len(tt.miss), "can't check on error")
 			}
 		})
+	}
+}
+
+// becnmark for suffix optimization
+func BenchmarkSuffixMiss(b *testing.B) {
+	target := "sy?abcdertg?babcdertg?cabcdertg?sy?abcdertg?babcdertg?cabcdertg?tem"
+	path := "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltems"
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(target)
+		if err != nil {
+			b.Fatal(err)
+		}
+		globs := w.Match(path)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+// becnmark for suffix optimization
+func BenchmarkSuffixMiss_Precompiled(b *testing.B) {
+	target := "sy?abcdertg?babcdertg?cabcdertg?sy?abcdertg?babcdertg?cabcdertg?tem"
+	path := "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltems"
+	w := NewGlobMatcher()
+	err := w.Add(target)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(path)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
 	}
 }
