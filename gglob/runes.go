@@ -5,11 +5,14 @@ import (
 )
 
 // runesExpand expand runes like [a-z0]
-func runesExpand(runes []rune) (m map[rune]struct{}) {
+func runesExpand(runes []rune) (m map[rune]struct{}, failed bool) {
 	var r rune
-	m = make(map[rune]struct{})
-	if len(runes) >= 3 && runes[0] == '[' && runes[len(runes)-1] == ']' {
+	if len(runes) > 1 && runes[0] == '[' && runes[len(runes)-1] == ']' {
+		m = make(map[rune]struct{})
 		runes = runes[1 : len(runes)-1]
+		if len(runes) == 0 {
+			return
+		}
 		start := utf8.RuneError
 		for i := 0; i < len(runes); i++ {
 			if runes[i] == '-' {
@@ -29,6 +32,8 @@ func runesExpand(runes []rune) (m map[rune]struct{}) {
 			m[r] = struct{}{}
 			start = r
 		}
+	} else {
+		failed = true
 	}
 
 	return

@@ -22,7 +22,7 @@ type ErrGlobNotExpanded struct {
 }
 
 func (e ErrGlobNotExpanded) Error() string {
-	return "inner node contains 0 inners: " + e.node
+	return "empty node: " + e.node
 }
 
 type ErrNodeEmpty struct {

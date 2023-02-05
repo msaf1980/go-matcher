@@ -3,7 +3,7 @@ package gglob
 import (
 	"fmt"
 	"io"
-	"sort"
+	"math"
 	"strings"
 	"unicode/utf8"
 )
@@ -73,6 +73,7 @@ LOOP:
 					nextItems = nextItems[1:]
 					found = true
 				}
+				// TODO: may be other optimization: may be for list
 			}
 		} else {
 			// all of string matched to *
@@ -93,10 +94,50 @@ LOOP:
 	return
 }
 
+func (item *InnerItem) matchList(part string, nextParts string, nextItems []*InnerItem) (found bool) {
+	l := len(part)
+	if l < item.ValsMin {
+		return
+	}
+	if len(nextItems) == 0 && l > item.ValsMax {
+		return
+	}
+	// TODO: may be optimize scan of duplicate with prefix tree ?
+LOOP:
+	for _, s := range item.Vals {
+		part := part
+		if part == s {
+			// full match
+			found = true
+			part = ""
+		} else if strings.HasPrefix(part, s) {
+			// strip prefix
+			found = true
+			part = part[len(s):]
+		} else {
+			// try to next
+			continue
+		}
+		if found {
+			if part != "" && len(nextItems) > 0 {
+				found = nextItems[0].matchItem(part, nextParts, nextItems[1:])
+			} else if part != "" || len(nextItems) > 0 {
+				found = false
+			}
+			if found {
+				break LOOP
+			}
+		}
+	}
+	return
+}
+
 func (item *InnerItem) matchItem(part string, nextParts string, nextItems []*InnerItem) (found bool) {
 	switch item.Typ {
 	case NodeStar:
 		return item.matchStar(part, nextParts, nextItems)
+	case NodeList:
+		return item.matchList(part, nextParts, nextItems)
 	case NodeString:
 		if part == item.P {
 			// full match
@@ -142,9 +183,12 @@ func nextInnerItem(s string) (item *InnerItem, next string, minLen int, maxLen i
 			next = s[idx:]
 			s = s[:idx]
 		}
-		runes := runesExpand([]rune(s))
-		if len(runes) == 0 {
+		runes, failed := runesExpand([]rune(s))
+		if failed {
 			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+		}
+		if len(runes) == 0 {
+			return nil, next, 0, 0, nil
 		}
 		if len(runes) == 1 {
 			var v string
@@ -167,22 +211,35 @@ func nextInnerItem(s string) (item *InnerItem, next string, minLen int, maxLen i
 			next = s[idx:]
 			s = s[:idx]
 		}
-		v := listExpand(s)
-		if len(v) == 0 {
+		vals, failed := listExpand(s)
+		if failed {
 			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
 		}
-		if len(v) == 1 {
+		if len(vals) == 0 {
+			return nil, next, 0, 0, nil
+		}
+		if len(vals) == 1 {
 			// one item optimization
 			return &InnerItem{
 				Typ: NodeString,
-				P:   v[0],
-			}, next, len(v[0]), len(v[0]), nil
+				P:   vals[0],
+			}, next, len(vals[0]), len(vals[0]), nil
 		}
-		sort.Strings(v)
+		minLen := math.MaxInt
+		maxLen := 0
+		for _, v := range vals {
+			l := len(v)
+			if maxLen < l {
+				maxLen = l
+			}
+			if minLen > l {
+				minLen = l
+			}
+		}
 		return &InnerItem{
 			Typ:  NodeList,
-			Vals: v,
-		}, next, 1, 1, nil
+			Vals: vals, ValsMin: minLen, ValsMax: maxLen,
+		}, next, minLen, maxLen, nil
 	case '*':
 		var next string
 		for i, c := range s {
@@ -282,7 +339,19 @@ func (node *NodeItem) Match(part string, nextParts string, items *[]string) {
 
 // Merge is trying to merge inners
 func (node *NodeItem) Merge(inners []*InnerItem) {
-	if len(inners) == 1 {
+	if len(inners) == 0 {
+		if node.Typ != NodeString {
+			// no inners for inner node, may be for like []
+			node.Typ = NodeString
+			if node.P != "" && node.Suffix != "" {
+				node.P += node.Suffix
+				node.Suffix = ""
+			} else if node.Suffix != "" {
+				node.P = node.Suffix
+				node.Suffix = ""
+			}
+		}
+	} else if len(inners) == 1 {
 		if node.Typ != NodeEmpty {
 			// bug
 			panic(fmt.Sprintf("%#v on %#v", inners[0], node))
@@ -407,6 +476,7 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 	for i, part := range parts {
 		found := false
 		for _, child := range node.Childs {
+			// TODO: may be normalize parts for equals like {a,z} and {z,a} ?
 			if part == child.Node {
 				node = child
 				found = true
@@ -454,17 +524,20 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 						newNode.MaxSize++
 					}
 				default:
-					var inner *InnerItem
+					var (
+						inner    *InnerItem
+						min, max int
+					)
 					innerCount := WildcardCount(part)
 					inners := make([]*InnerItem, 0, innerCount)
 
-					var (
-						min, max int
-					)
 					for part != "" {
 						inner, part, min, max, err = nextInnerItem(part)
 						if err != nil {
 							return
+						}
+						if inner == nil {
+							continue
 						}
 						newNode.MinSize += min
 						if newNode.MaxSize != -1 {
@@ -475,10 +548,6 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 							}
 						}
 						inners = append(inners, inner)
-					}
-					if len(inners) == 0 {
-						// no inners for inner node
-						return ErrGlobNotExpanded{newNode.Node}
 					}
 					newNode.Merge(inners)
 				}
