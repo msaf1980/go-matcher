@@ -34,7 +34,7 @@ type InnerItem struct {
 	ValsMax int      // max len in vals or max rune in range
 }
 
-func (item *InnerItem) matchStar(part string, nextParts []string, nextItems []*InnerItem) (found bool) {
+func (item *InnerItem) matchStar(part string, nextParts string, nextItems []*InnerItem) (found bool) {
 	if part == "" && len(nextItems) == 0 {
 		return true
 	}
@@ -47,7 +47,10 @@ func (item *InnerItem) matchStar(part string, nextParts []string, nextItems []*I
 			switch nextItem.Typ {
 			// speedup NodeString find
 			case NodeString:
-				if idx := strings.Index(part, nextItem.P); idx != -1 {
+				if idx := strings.Index(part, nextItem.P); idx == -1 {
+					// string not found, no need star scan
+					break
+				} else {
 					idx += len(nextItem.P)
 					part = part[idx:]
 					nextItems = nextItems[1:]
@@ -73,7 +76,7 @@ func (item *InnerItem) matchStar(part string, nextParts []string, nextItems []*I
 	return
 }
 
-func (item *InnerItem) matchItem(part string, nextParts []string, nextItems []*InnerItem) (found bool) {
+func (item *InnerItem) matchItem(part string, nextParts string, nextItems []*InnerItem) (found bool) {
 	switch item.Typ {
 	case NodeStar:
 		return item.matchStar(part, nextParts, nextItems)
@@ -157,7 +160,7 @@ type NodeItem struct {
 	Childs []*NodeItem  // next possible parts tree
 }
 
-func (node *NodeItem) Match(part string, nextParts []string, items *[]string) {
+func (node *NodeItem) Match(part string, nextParts string, items *[]string) {
 	var found bool
 
 	if node.Typ != NodeString {
@@ -200,7 +203,8 @@ func (node *NodeItem) Match(part string, nextParts []string, items *[]string) {
 			*items = append(*items, node.Node)
 		} else if len(nextParts) > 0 {
 			for _, child := range node.Childs {
-				child.Match(nextParts[0], nextParts[1:], items)
+				part, nextParts, _ = strings.Cut(nextParts, ".")
+				child.Match(part, nextParts, items)
 			}
 		}
 	}
@@ -357,16 +361,14 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 	if path == "" {
 		return nil
 	}
-	parts := pathSplit(path)
-	if hasEmptyParts(parts) {
-		return nil
-	}
+	partsCount := pathLevel(path)
 	var items []string
-	if node, ok := w.Root[len(parts)]; ok {
+	if node, ok := w.Root[partsCount]; ok {
 		items = make([]string, 0, min(4, len(node.Childs)))
 		for _, node := range node.Childs {
+			part, nextParts, _ := strings.Cut(path, ".")
 			// match first node
-			node.Match(parts[0], parts[1:], &items)
+			node.Match(part, nextParts, &items)
 		}
 	}
 
