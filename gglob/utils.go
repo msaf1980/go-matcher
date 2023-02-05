@@ -3,39 +3,14 @@ package gglob
 import (
 	"strings"
 	"unicode/utf8"
-	"unsafe"
 )
 
 func splitString(s string, start int) (string, string) {
-	last := len(s) - 1
-	if start == last {
-		return s[:last], s[last:]
-	}
-	if start == -1 {
-		return s, ""
-	}
 	return s[:start], s[start:]
 }
 
 func nextString(s string, last int) string {
-	if last >= len(s)-1 {
-		return s[last:]
-	}
-	return ""
-}
-
-func clone(s string) string {
-	if len(s) == 0 {
-		return ""
-	}
-	b := make([]byte, len(s))
-	copy(b, s)
-	return unsafeString(b)
-}
-
-// unsafeString returns the string under byte buffer
-func unsafeString(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
+	return s[last:]
 }
 
 func min(a, b int) int {
@@ -63,7 +38,7 @@ func pathSplit(path string) []string {
 	}
 
 	if path[len(path)-1] == '.' {
-		return strings.Split(path[:len(path)], ".")
+		return strings.Split(path[:len(path)-1], ".")
 	}
 
 	return strings.Split(path, ".")
@@ -78,8 +53,14 @@ func hasEmptyParts(parts []string) bool {
 	return false
 }
 
-func WildcardCount(target string) int {
-	return strings.Count(target, "[]{}*?")
+func WildcardCount(target string) (n int) {
+	for _, c := range target {
+		switch c {
+		case '[', '{', '*', '?':
+			n++
+		}
+	}
+	return
 }
 
 func HasWildcard(target string) bool {
