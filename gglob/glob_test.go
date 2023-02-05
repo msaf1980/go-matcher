@@ -586,6 +586,76 @@ func BenchmarkStarMiss_Precompiled_Regex(b *testing.B) {
 }
 
 var (
+	targetRuneStarMiss = "sy*abcdertg*[A-Z]*cabcdertg*[I-Q]*abcdertg*[A-Z]*babcdertg*cabcdertMISSg*tem"
+	pathRuneStarMiss   = "sysabcdertgebaZbcdecabcdertglsIysabcdertgZebabcdertgicabcdertgltem"
+)
+
+// becnmark for suffix optimization
+func BenchmarkRuneStarMiss(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(targetRuneStarMiss)
+		if err != nil {
+			b.Fatal(err)
+		}
+		globs := w.Match(pathRuneStarMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Regex(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := buildGlobRegexp(targetRuneStarMiss)
+		if w.MatchString(pathRuneStarMiss) {
+			b.Fatal(pathRuneStarMiss)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Precompiled(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetRuneStarMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(pathRuneStarMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetRuneStarMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w.MatchP(pathRuneStarMiss, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Precompiled_Regex(b *testing.B) {
+	w := buildGlobRegexp(targetRuneStarMiss)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathRuneStarMiss) {
+			b.Fatal(pathRuneStarMiss)
+		}
+	}
+}
+
+var (
 	targetSizeCheck = "sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertg*tem.sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertg*tem.sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertg*tem"
 	pathSizeCheck   = "sysabcdertgebabcdertgicadtglsysabcdertgebabcdertgicagltem.sysabcdertgebabcdertgicadtglsysabcdertgebabcdertgicagltem.sysabcdertgebabcdertgicadtglsysabcdertgebabcdertgicagltem"
 )
