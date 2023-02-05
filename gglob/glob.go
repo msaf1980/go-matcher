@@ -1,7 +1,9 @@
 package gglob
 
 import (
+	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"unicode/utf8"
 )
@@ -140,19 +142,55 @@ func nextInnerItem(s string) (item *InnerItem, next string, minLen int, maxLen i
 			next = s[idx:]
 			s = s[:idx]
 		}
-		v := runesExpand([]rune(s))
-		if len(v) == 0 {
+		runes := runesExpand([]rune(s))
+		if len(runes) == 0 {
 			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+		}
+		if len(runes) == 1 {
+			var v string
+			for k := range runes {
+				v = string(k)
+			}
+			// one item optimization
+			return &InnerItem{
+				Typ: NodeString,
+				P:   v,
+			}, next, 1, 1, nil
 		}
 		return &InnerItem{
 			Typ:   NodeRune,
-			Runes: v,
+			Runes: runes,
 		}, next, 1, 1, nil
 	case '{':
-		// TODO: implement nodeList
-		return nil, s, 0, 0, ErrNodeUnclosed{s}
+		if idx := strings.Index(s, "}"); idx != -1 {
+			idx++
+			next = s[idx:]
+			s = s[:idx]
+		}
+		v := listExpand(s)
+		if len(v) == 0 {
+			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+		}
+		if len(v) == 1 {
+			// one item optimization
+			return &InnerItem{
+				Typ: NodeString,
+				P:   v[0],
+			}, next, len(v[0]), len(v[0]), nil
+		}
+		sort.Strings(v)
+		return &InnerItem{
+			Typ:  NodeList,
+			Vals: v,
+		}, next, 1, 1, nil
 	case '*':
-		next := nextString(s, 1)
+		var next string
+		for i, c := range s {
+			if c != '*' {
+				next = s[i:]
+				break
+			}
+		}
 		return &InnerItem{
 			Typ: NodeStar,
 		}, next, 0, 0, nil
@@ -239,6 +277,87 @@ func (node *NodeItem) Match(part string, nextParts string, items *[]string) {
 				child.Match(part, nextParts, items)
 			}
 		}
+	}
+}
+
+// Merge is trying to merge inners
+func (node *NodeItem) Merge(inners []*InnerItem) {
+	if len(inners) == 1 {
+		if node.Typ != NodeEmpty {
+			// bug
+			panic(fmt.Sprintf("%#v on %#v", inners[0], node))
+		}
+		// merge
+		if inners[0].Typ == NodeString {
+			if node.P != "" || node.Suffix != "" {
+				var sb strings.Builder
+				sb.Grow(len(node.P) + len(node.Suffix) + len(inners[0].P))
+				sb.WriteString(node.P)
+				sb.WriteString(inners[0].P)
+				sb.WriteString(node.Suffix)
+				node.Suffix = ""
+				inners[0].P = sb.String()
+			}
+		} else {
+			inners[0].P = node.P
+		}
+
+		node.InnerItem = *inners[0]
+
+		return
+	} else {
+		var sb strings.Builder
+		if inners[0].Typ == NodeString {
+			// merge strings from prefix
+			sb.Grow(len(node.P) + len(node.Suffix) + len(inners[0].P))
+			sb.WriteString(node.P)
+			sb.WriteString(inners[0].P)
+			i := 1
+			for i < len(inners) && inners[i].Typ == NodeString {
+				sb.WriteString(inners[i].P)
+				i++
+			}
+			inners = inners[i:]
+			if len(inners) == 0 {
+				//merge to string
+				sb.WriteString(node.Suffix)
+				node.P = sb.String()
+				node.Suffix = ""
+				node.Typ = NodeString
+
+				return
+			} else if len(inners) == 1 {
+				//merge to prefix
+				inners[0].P = sb.String()
+				node.InnerItem = *inners[0]
+
+				return
+			}
+			node.P = sb.String()
+		}
+
+		last := len(inners) - 1
+		if inners[last].Typ == NodeString {
+			//merge to suffix
+			size := len(node.Suffix)
+			i := last - 1
+			for i > 1 && inners[i].Typ == NodeString {
+				size += len(inners[i].P)
+			}
+			i++
+			last = i
+			sb.Reset()
+			sb.Grow(size)
+			for ; i < len(inners); i++ {
+				sb.WriteString(inners[i].P)
+			}
+			sb.WriteString(node.Suffix)
+			node.Suffix = sb.String()
+			inners = inners[:last]
+		}
+
+		node.Typ = NodeInners
+		node.Inners = inners
 	}
 }
 
@@ -360,17 +479,8 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 					if len(inners) == 0 {
 						// no inners for inner node
 						return ErrGlobNotExpanded{newNode.Node}
-					} else if len(inners) == 1 {
-						if inners[0].Typ == NodeString || inners[0].P != "" {
-							// bug
-							panic(inners[0])
-						}
-						// merge
-						newNode.InnerItem = *inners[0]
-					} else {
-						newNode.Typ = NodeInners
-						newNode.Inners = inners
 					}
+					newNode.Merge(inners)
 				}
 			}
 			node.Childs = append(node.Childs, newNode)
@@ -394,17 +504,16 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 		return nil
 	}
 	partsCount := pathLevel(path)
-	var items []string
 	if node, ok := w.Root[partsCount]; ok {
-		items = make([]string, 0, min(4, len(node.Childs)))
+		globs = make([]string, 0, min(4, len(node.Childs)))
 		for _, node := range node.Childs {
 			part, nextParts, _ := strings.Cut(path, ".")
 			// match first node
-			node.Match(part, nextParts, &items)
+			node.Match(part, nextParts, &globs)
 		}
 	}
 
-	return items
+	return globs
 }
 
 func (w *GlobMatcher) MatchP(path string, globs *[]string) {
