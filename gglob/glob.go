@@ -13,11 +13,19 @@ const (
 	NodeRoot           // root node (initial)
 	NodeString
 	NodeList   // {a,bc}
-	NodeRange  // [a-c]
+	NodeRune   // [a-c]
 	NodeOne    // ?
 	NodeStar   // *
 	NodeInners // composite type, contains prefix, suffix, subitems in []inners
 )
+
+var (
+	nodeTypeStrings = []string{"", "root", "string", "list", "rune", "?", "*", "inners"}
+)
+
+func (n NodeType) String() string {
+	return nodeTypeStrings[n]
+}
 
 // TODO: nodeListSkip scan
 
@@ -28,10 +36,13 @@ type InnerItem struct {
 	// string (nodeString)
 	P string
 
-	// nodeList or 	nodeRange
-	Vals    []string // strings for nodeList
+	// nodeList
+	Vals    []string // strings
 	ValsMin int      // min len in vals or min rune in range
 	ValsMax int      // max len in vals or max rune in range
+
+	// 	nodeRange
+	Runes map[rune]struct{}
 }
 
 func (item *InnerItem) matchStar(part string, nextParts string, nextItems []*InnerItem) (found bool) {
@@ -96,7 +107,12 @@ func (item *InnerItem) matchItem(part string, nextParts string, nextItems []*Inn
 		}
 	case NodeOne:
 		if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
-			if len(part) >= n {
+			found = true
+			part = part[n:]
+		}
+	case NodeRune:
+		if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
+			if _, ok := item.Runes[c]; ok {
 				found = true
 				part = part[n:]
 			}
@@ -105,21 +121,33 @@ func (item *InnerItem) matchItem(part string, nextParts string, nextItems []*Inn
 	if found {
 		if part != "" && len(nextItems) > 0 {
 			found = nextItems[0].matchItem(part, nextParts, nextItems[1:])
-		} else if part != "" || len(nextItems) > 0 {
+		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
 	}
 	return
 }
 
-func nextInnerItem(s string) (*InnerItem, string, int, int, error) {
+// nextInnerItem extract InnerItem
+func nextInnerItem(s string) (item *InnerItem, next string, minLen int, maxLen int, err error) {
 	if s == "" {
 		return nil, s, 0, 0, io.EOF
 	}
 	switch s[0] {
 	case '[':
-		// TODO: implement nodeRange
-		return nil, s, 0, 0, ErrNodeUnclosed{s}
+		if idx := strings.Index(s, "]"); idx != -1 {
+			idx++
+			next = s[idx:]
+			s = s[:idx]
+		}
+		v := runesExpand([]rune(s))
+		if len(v) == 0 {
+			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+		}
+		return &InnerItem{
+			Typ:   NodeRune,
+			Runes: v,
+		}, next, 1, 1, nil
 	case '{':
 		// TODO: implement nodeList
 		return nil, s, 0, 0, ErrNodeUnclosed{s}
@@ -149,7 +177,7 @@ func nextInnerItem(s string) (*InnerItem, string, int, int, error) {
 type NodeItem struct {
 	Node string // raw string (or full glob for terminated)
 
-	Terminated bool // end of chain
+	Terminated string // end of chain (resulting glob)
 
 	// size check optimization
 	MinSize int
@@ -203,11 +231,11 @@ func (node *NodeItem) Match(part string, nextParts string, items *[]string) {
 	}
 
 	if found {
-		if node.Terminated {
-			*items = append(*items, node.Node)
+		if node.Terminated != "" {
+			*items = append(*items, node.Terminated)
 		} else if len(nextParts) > 0 {
+			part, nextParts, _ = strings.Cut(nextParts, ".")
 			for _, child := range node.Childs {
-				part, nextParts, _ = strings.Cut(nextParts, ".")
 				child.Match(part, nextParts, items)
 			}
 		}
@@ -260,7 +288,7 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 	for i, part := range parts {
 		found := false
 		for _, child := range node.Childs {
-			if part == node.Node {
+			if part == child.Node {
 				node = child
 				found = true
 				break
@@ -269,7 +297,7 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 		if !found {
 			if i == last {
 				// last node, so terminate match
-				newNode = &NodeItem{Node: glob, Terminated: true}
+				newNode = &NodeItem{Node: part, Terminated: glob}
 			} else {
 				newNode = &NodeItem{Node: part}
 			}
@@ -351,8 +379,8 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 	}
 
 	if newNode != nil {
-		if len(newNode.Childs) > 0 || !newNode.Terminated {
-			// childs for terminated node
+		if len(newNode.Childs) == 0 && newNode.Terminated == "" {
+			// child  or/and terminated node
 			return ErrNodeNotEnd{newNode.Node}
 		}
 		w.Globs[glob] = true

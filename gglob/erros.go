@@ -1,11 +1,20 @@
 package gglob
 
+type ErrNodeMissmatch struct {
+	typ  NodeType
+	node string
+}
+
+func (e ErrNodeMissmatch) Error() string {
+	return "node type " + e.typ.String() + " mismatch: " + e.node
+}
+
 type ErrNodeNotEnd struct {
 	node string
 }
 
 func (e ErrNodeNotEnd) Error() string {
-	return "node contains childs and glob: " + e.node
+	return "node contains no childs or terminated: " + e.node
 }
 
 type ErrGlobNotExpanded struct {
