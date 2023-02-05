@@ -154,7 +154,9 @@ func TestGlobMatcher_One(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
-						Childs:    []*NodeItem{{Node: "?", Terminated: true, InnerItem: InnerItem{Typ: NodeOne}}},
+						Childs: []*NodeItem{
+							{Node: "?", Terminated: true, InnerItem: InnerItem{Typ: NodeOne}, MinSize: 1, MaxSize: 1},
+						},
 					},
 				},
 				Globs: map[string]bool{"?": true},
@@ -169,7 +171,7 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "a?", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"}},
+							{Node: "a?", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"}, MinSize: 2, MaxSize: 2},
 						},
 					},
 				},
@@ -185,7 +187,7 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "a?c", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"}, Suffix: "c"},
+							{Node: "a?c", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"}, Suffix: "c", MinSize: 3, MaxSize: 3},
 						},
 					},
 				},
@@ -211,7 +213,9 @@ func TestGlobMatcher_Star(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
-						Childs:    []*NodeItem{{Node: "*", Terminated: true, InnerItem: InnerItem{Typ: NodeStar}}},
+						Childs: []*NodeItem{
+							{Node: "*", Terminated: true, InnerItem: InnerItem{Typ: NodeStar}, MaxSize: -1},
+						},
 					},
 				},
 				Globs: map[string]bool{"*": true},
@@ -226,7 +230,7 @@ func TestGlobMatcher_Star(t *testing.T) {
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c"},
+							{Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c", MinSize: 2, MaxSize: -1},
 						},
 					},
 				},
@@ -248,6 +252,7 @@ func TestGlobMatcher_Star(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a*b?c", Terminated: true, InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
+								MinSize: 4, MaxSize: -1,
 								Inners: []*InnerItem{
 									{Typ: NodeStar},
 									{Typ: NodeString, P: "b"},
@@ -285,9 +290,10 @@ func TestGlobMatcher_Multi(t *testing.T) {
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c"},
+							{Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c", MinSize: 2, MaxSize: -1},
 							{
 								Node: "a*b?c", Terminated: true, InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
+								MinSize: 4, MaxSize: -1,
 								Inners: []*InnerItem{
 									{Typ: NodeStar},
 									{Typ: NodeString, P: "b"},
@@ -302,7 +308,7 @@ func TestGlobMatcher_Multi(t *testing.T) {
 							{
 								Node: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"},
 								Childs: []*NodeItem{
-									{Node: "a.b?d", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "b"}, Suffix: "d"}},
+									{Node: "a.b?d", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "b"}, Suffix: "d", MinSize: 3, MaxSize: 3}},
 							},
 						},
 					},
@@ -439,6 +445,37 @@ func BenchmarkStarMiss_Precompiled_R(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if w.MatchString(pathStarMiss) {
 			b.Fatal(pathStarMiss)
+		}
+	}
+}
+
+var (
+	targetSizeCheck = "sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertg*tem.sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertg*tem.sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertg*tem"
+	pathSizeCheck   = "sysabcdertgebabcdertgicadtglsysabcdertgebabcdertgicagltem.sysabcdertgebabcdertgicadtglsysabcdertgebabcdertgicagltem.sysabcdertgebabcdertgicadtglsysabcdertgebabcdertgicagltem"
+)
+
+// skip by size
+func BenchmarkSizeCheck(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetSizeCheck)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(pathSizeCheck)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkSizeCheck_R(b *testing.B) {
+	w := buildGlobRegexp(targetSizeCheck)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathSizeCheck) {
+			b.Fatal(pathSizeCheck)
 		}
 	}
 }

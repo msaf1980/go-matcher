@@ -105,36 +105,36 @@ func (item *InnerItem) matchItem(part string, nextParts []string, nextItems []*I
 	return
 }
 
-func nextInnerItem(s string) (*InnerItem, string, error) {
+func nextInnerItem(s string) (*InnerItem, string, int, int, error) {
 	if s == "" {
-		return nil, s, io.EOF
+		return nil, s, 0, 0, io.EOF
 	}
 	switch s[0] {
 	case '[':
 		// TODO: implement nodeRange
-		return nil, s, ErrNodeUnclosed{s}
+		return nil, s, 0, 0, ErrNodeUnclosed{s}
 	case '{':
 		// TODO: implement nodeList
-		return nil, s, ErrNodeUnclosed{s}
+		return nil, s, 0, 0, ErrNodeUnclosed{s}
 	case '*':
 		next := nextString(s, 1)
 		return &InnerItem{
 			Typ: NodeStar,
-		}, next, nil
+		}, next, 0, 0, nil
 	case '?':
 		next := nextString(s, 1)
 		return &InnerItem{
 			Typ: NodeOne,
-		}, next, nil
+		}, next, 1, 1, nil
 	case ']', '}':
-		return nil, s, ErrNodeUnclosed{s}
+		return nil, s, 0, 0, ErrNodeUnclosed{s}
 	default:
 		// string segment
 		end := IndexWildcard(s)
 		v, next := splitString(s, end)
 		return &InnerItem{
 			Typ: NodeString, P: v,
-		}, next, nil
+		}, next, len(v), len(v), nil
 	}
 }
 
@@ -143,6 +143,10 @@ type NodeItem struct {
 	Node string // raw string (or full glob for terminated)
 
 	Terminated bool // end of chain
+
+	// size check optimization
+	MinSize int
+	MaxSize int // 0 or -1 for unlimited
 
 	InnerItem // if one item, no need to use []inners
 
@@ -157,6 +161,14 @@ func (node *NodeItem) Match(part string, nextParts []string, items *[]string) {
 	var found bool
 
 	if node.Typ != NodeString {
+		if len(part) < node.MinSize {
+			return
+		}
+		if node.MaxSize > 0 {
+			if len(part) > node.MaxSize {
+				return
+			}
+		}
 		if node.P != "" {
 			if !strings.HasPrefix(part, node.P) {
 				// prefix not match
@@ -261,6 +273,8 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 				if pos > 0 {
 					newNode.P = part[:pos] // prefix
 					part = part[pos:]
+					newNode.MinSize = len(newNode.P)
+					newNode.MaxSize = len(newNode.P)
 				}
 				end := IndexLastWildcard(part)
 				if end == 0 && part[0] != '?' && part[0] != '*' {
@@ -269,23 +283,41 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 				if end < len(part)-1 {
 					end++
 					newNode.Suffix = part[end:]
-					part = part[:end] //
+					part = part[:end]
+					newNode.MinSize += len(newNode.Suffix)
+					newNode.MaxSize += len(newNode.Suffix)
 				}
 
 				switch part {
 				case "*":
 					newNode.Typ = NodeStar
+					newNode.MaxSize = -1 // unlimited
 				case "?":
 					newNode.Typ = NodeOne
+					newNode.MinSize++
+					if newNode.MaxSize != -1 {
+						newNode.MaxSize++
+					}
 				default:
 					var inner *InnerItem
 					innerCount := WildcardCount(part)
 					inners := make([]*InnerItem, 0, innerCount)
 
+					var (
+						min, max int
+					)
 					for part != "" {
-						inner, part, err = nextInnerItem(part)
+						inner, part, min, max, err = nextInnerItem(part)
 						if err != nil {
 							return
+						}
+						newNode.MinSize += min
+						if newNode.MaxSize != -1 {
+							if inner.Typ == NodeStar {
+								newNode.MaxSize = -1
+							} else {
+								newNode.MaxSize += max
+							}
 						}
 						inners = append(inners, inner)
 					}
