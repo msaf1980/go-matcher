@@ -361,7 +361,7 @@ func BenchmarkSuffixMiss(b *testing.B) {
 	}
 }
 
-func BenchmarkSuffixMiss_R(b *testing.B) {
+func BenchmarkSuffixMiss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := buildGlobRegexp(targetSuffixMiss)
 		if w.MatchString(pathSuffixMiss) {
@@ -385,7 +385,23 @@ func BenchmarkSuffixMiss_Precompiled(b *testing.B) {
 	}
 }
 
-func BenchmarkSuffixMiss_Precompiled_R(b *testing.B) {
+func BenchmarkSuffixMiss_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetSuffixMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w.MatchP(pathSuffixMiss, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkSuffixMiss_Precompiled_Regex(b *testing.B) {
 	w := buildGlobRegexp(targetSuffixMiss)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -415,7 +431,7 @@ func BenchmarkStarMiss(b *testing.B) {
 	}
 }
 
-func BenchmarkStarMiss_R(b *testing.B) {
+func BenchmarkStarMiss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := buildGlobRegexp(targetStarMiss)
 		if w.MatchString(pathStarMiss) {
@@ -439,7 +455,23 @@ func BenchmarkStarMiss_Precompiled(b *testing.B) {
 	}
 }
 
-func BenchmarkStarMiss_Precompiled_R(b *testing.B) {
+func BenchmarkStarMiss_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetStarMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w.MatchP(pathStarMiss, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkStarMiss_Precompiled_Regex(b *testing.B) {
 	w := buildGlobRegexp(targetStarMiss)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -470,7 +502,23 @@ func BenchmarkSizeCheck(b *testing.B) {
 	}
 }
 
-func BenchmarkSizeCheck_R(b *testing.B) {
+func BenchmarkSizeCheck_P(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetSizeCheck)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w.MatchP(pathSizeCheck, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkSizeCheck_Regex(b *testing.B) {
 	w := buildGlobRegexp(targetSizeCheck)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

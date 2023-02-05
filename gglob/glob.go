@@ -39,9 +39,12 @@ func (item *InnerItem) matchStar(part string, nextParts string, nextItems []*Inn
 		return true
 	}
 
-	for ; part != ""; part = part[1:] {
+	nextOffset := 1 // string skip optimization
+LOOP:
+	for ; part != ""; part = part[nextOffset:] {
 		part := part           // avoid overwrite outer loop
 		nextItems := nextItems // avoid overwrite outer loop
+		nextOffset = 1
 		if len(nextItems) > 0 {
 			nextItem := nextItems[0]
 			switch nextItem.Typ {
@@ -49,8 +52,9 @@ func (item *InnerItem) matchStar(part string, nextParts string, nextItems []*Inn
 			case NodeString:
 				if idx := strings.Index(part, nextItem.P); idx == -1 {
 					// string not found, no need star scan
-					break
+					break LOOP
 				} else {
+					nextOffset += idx
 					idx += len(nextItem.P)
 					part = part[idx:]
 					nextItems = nextItems[1:]
@@ -69,7 +73,7 @@ func (item *InnerItem) matchStar(part string, nextParts string, nextItems []*Inn
 				found = false
 			}
 			if found {
-				break
+				break LOOP
 			}
 		}
 	}
@@ -373,4 +377,19 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 	}
 
 	return items
+}
+
+func (w *GlobMatcher) MatchP(path string, globs *[]string) {
+	*globs = (*globs)[:0]
+	if path == "" {
+		return
+	}
+	partsCount := pathLevel(path)
+	if node, ok := w.Root[partsCount]; ok {
+		for _, node := range node.Childs {
+			part, nextParts, _ := strings.Cut(path, ".")
+			// match first node
+			node.Match(part, nextParts, globs)
+		}
+	}
 }
