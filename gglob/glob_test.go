@@ -2,6 +2,8 @@ package gglob
 
 import (
 	"reflect"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -167,9 +169,7 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "a?", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"},
-							},
+							{Node: "a?", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"}},
 						},
 					},
 				},
@@ -185,9 +185,7 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "a?c", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"}, Suffix: "c",
-							},
+							{Node: "a?c", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "a"}, Suffix: "c"},
 						},
 					},
 				},
@@ -228,9 +226,7 @@ func TestGlobMatcher_Star(t *testing.T) {
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c",
-							},
+							{Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c"},
 						},
 					},
 				},
@@ -283,15 +279,13 @@ func TestGlobMatcher_Multi(t *testing.T) {
 	tests := []testGlobMatcher{
 		// composite
 		{
-			name: `{"a*c", "a*b?c"}`, globs: []string{"a*c", "a*b?c"},
+			name: `{"a*c", "a*b?c", "a.b?d"}`, globs: []string{"a*c", "a*b?c", "a.b?d"},
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
 						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c",
-							},
+							{Node: "a*c", Terminated: true, InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c"},
 							{
 								Node: "a*b?c", Terminated: true, InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
 								Inners: []*InnerItem{
@@ -302,13 +296,24 @@ func TestGlobMatcher_Multi(t *testing.T) {
 							},
 						},
 					},
+					2: {
+						InnerItem: InnerItem{Typ: NodeRoot},
+						Childs: []*NodeItem{
+							{
+								Node: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"},
+								Childs: []*NodeItem{
+									{Node: "a.b?d", Terminated: true, InnerItem: InnerItem{Typ: NodeOne, P: "b"}, Suffix: "d"}},
+							},
+						},
+					},
 				},
-				Globs: map[string]bool{"a*c": true, "a*b?c": true},
+				Globs: map[string]bool{"a*c": true, "a*b?c": true, "a.b?d": true},
 			},
 			matchGlobs: map[string][]string{
 				"acbec": {"a*c", "a*b?c"},
+				"a.bfd": {"a.b?d"},
 			},
-			miss: []string{"", "ab", "c", "ace", "a.c", "abbece"},
+			miss: []string{"", "ab", "c", "ace", "abbece", "a.b", "a.bd"},
 		},
 	}
 	for _, tt := range tests {
@@ -318,37 +323,122 @@ func TestGlobMatcher_Multi(t *testing.T) {
 	}
 }
 
+func buildGlobRegexp(g string) *regexp.Regexp {
+	s := g
+	s = strings.ReplaceAll(s, ".", `\.`)
+	s = strings.ReplaceAll(s, "$", `\$`)
+	s = strings.ReplaceAll(s, "{", "(")
+	s = strings.ReplaceAll(s, "}", ")")
+	s = strings.ReplaceAll(s, "?", `\?`)
+	s = strings.ReplaceAll(s, ",", "|")
+	s = strings.ReplaceAll(s, "*", ".*")
+	return regexp.MustCompile("^" + s + "$")
+}
+
+var (
+	targetSuffixMiss = "sy?abcdertg?babcdertg?cabcdertg?sy?abcdertg?babcdertg?cabcdertg?tem"
+	pathSuffixMiss   = "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltems"
+)
+
 // becnmark for suffix optimization
 func BenchmarkSuffixMiss(b *testing.B) {
-	target := "sy?abcdertg?babcdertg?cabcdertg?sy?abcdertg?babcdertg?cabcdertg?tem"
-	path := "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltems"
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(target)
+		err := w.Add(targetSuffixMiss)
 		if err != nil {
 			b.Fatal(err)
 		}
-		globs := w.Match(path)
+		globs := w.Match(pathSuffixMiss)
 		if len(globs) > 0 {
 			b.Fatal(globs)
 		}
 	}
 }
 
-// becnmark for suffix optimization
+func BenchmarkSuffixMiss_R(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := buildGlobRegexp(targetSuffixMiss)
+		if w.MatchString(pathSuffixMiss) {
+			b.Fatal(pathSuffixMiss)
+		}
+	}
+}
+
 func BenchmarkSuffixMiss_Precompiled(b *testing.B) {
-	target := "sy?abcdertg?babcdertg?cabcdertg?sy?abcdertg?babcdertg?cabcdertg?tem"
-	path := "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltems"
 	w := NewGlobMatcher()
-	err := w.Add(target)
+	err := w.Add(targetSuffixMiss)
 	if err != nil {
 		b.Fatal(err)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs := w.Match(path)
+		globs := w.Match(pathSuffixMiss)
 		if len(globs) > 0 {
 			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkSuffixMiss_Precompiled_R(b *testing.B) {
+	w := buildGlobRegexp(targetSuffixMiss)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathSuffixMiss) {
+			b.Fatal(pathSuffixMiss)
+		}
+	}
+}
+
+var (
+	targetStarMiss = "sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertMISSg*tem"
+	pathStarMiss   = "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltem"
+)
+
+// becnmark for suffix optimization
+func BenchmarkStarMiss(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(targetStarMiss)
+		if err != nil {
+			b.Fatal(err)
+		}
+		globs := w.Match(pathStarMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkStarMiss_R(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := buildGlobRegexp(targetStarMiss)
+		if w.MatchString(pathStarMiss) {
+			b.Fatal(pathStarMiss)
+		}
+	}
+}
+
+func BenchmarkStarMiss_Precompiled(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetStarMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(pathStarMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkStarMiss_Precompiled_R(b *testing.B) {
+	w := buildGlobRegexp(targetStarMiss)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathStarMiss) {
+			b.Fatal(pathStarMiss)
 		}
 	}
 }
