@@ -417,3 +417,42 @@ func BenchmarkList_Precompiled_Regex(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkList_Batch(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Adds(targetsBatchList)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, path := range pathsBatchList {
+			_ = w.Match(path)
+		}
+	}
+}
+
+func BenchmarkList_Batch_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetsBatchList[0])
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, path := range pathsBatchList {
+			w.MatchP(path, &globs)
+		}
+	}
+}
+
+func BenchmarkList_Batch_Regex(b *testing.B) {
+	w := buildGlobRegexp(targetsBatchList[0])
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, path := range pathsBatchList {
+			w.MatchString(path)
+		}
+	}
+}
