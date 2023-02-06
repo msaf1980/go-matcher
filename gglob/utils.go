@@ -20,16 +20,16 @@ func min(a, b int) int {
 	return b
 }
 
-func pathLevel(path string) int {
+func PathLevel(path string) (string, int) {
 	if path == "" {
-		return 0
+		return path, 0
 	}
 
 	if path[len(path)-1] == '.' {
-		return strings.Count(path, ".")
+		return path[:len(path)-1], strings.Count(path, ".")
 	}
 
-	return strings.Count(path, ".") + 1
+	return path, strings.Count(path, ".") + 1
 }
 
 func pathSplit(path string) []string {

@@ -430,6 +430,130 @@ func (node *NodeItem) Merge(inners []*InnerItem) {
 	}
 }
 
+func (node *NodeItem) MatchRoot(path string, globs *[]string) {
+	for _, node := range node.Childs {
+		part, nextParts, _ := strings.Cut(path, ".")
+		// match first node
+		node.Match(part, nextParts, globs)
+	}
+}
+
+func ParseItems(root map[int]*NodeItem, glob string) (lastNode *NodeItem, err error) {
+	glob, partsCount := PathLevel(glob)
+
+	node, ok := root[partsCount]
+	if !ok {
+		node = &NodeItem{InnerItem: InnerItem{Typ: NodeRoot}}
+		root[partsCount] = node
+	}
+	var (
+		i    int
+		part string
+	)
+
+	last := partsCount - 1
+	nextParts := glob
+	for nextParts != "" {
+		found := false
+		part, nextParts, _ = strings.Cut(nextParts, ".")
+		if part == "" {
+			return nil, ErrNodeEmpty{glob}
+		}
+		for _, child := range node.Childs {
+			// TODO: may be normalize parts for equals like {a,z} and {z,a} ?
+			if part == child.Node {
+				node = child
+				found = true
+				break
+			}
+		}
+		if !found {
+			if i == last {
+				// last node, so terminate match
+				lastNode = &NodeItem{Node: part, Terminated: glob}
+			} else {
+				lastNode = &NodeItem{Node: part}
+			}
+			pos := IndexWildcard(part)
+			if pos == -1 {
+				lastNode.Typ = NodeString
+				lastNode.P = part
+			} else {
+				if pos > 0 {
+					lastNode.P = part[:pos] // prefix
+					part = part[pos:]
+					lastNode.MinSize = len(lastNode.P)
+					lastNode.MaxSize = len(lastNode.P)
+				}
+				end := IndexLastWildcard(part)
+				if end == 0 && part[0] != '?' && part[0] != '*' {
+					err = ErrNodeUnclosed{part}
+					return
+				}
+				if end < len(part)-1 {
+					end++
+					lastNode.Suffix = part[end:]
+					part = part[:end]
+					lastNode.MinSize += len(lastNode.Suffix)
+					lastNode.MaxSize += len(lastNode.Suffix)
+				}
+
+				switch part {
+				case "*":
+					lastNode.Typ = NodeStar
+					lastNode.MaxSize = -1 // unlimited
+				case "?":
+					lastNode.Typ = NodeOne
+					lastNode.MinSize++
+					if lastNode.MaxSize != -1 {
+						lastNode.MaxSize++
+					}
+				default:
+					var (
+						inner    *InnerItem
+						min, max int
+					)
+					innerCount := WildcardCount(part)
+					inners := make([]*InnerItem, 0, innerCount)
+
+					for part != "" {
+						inner, part, min, max, err = nextInnerItem(part)
+						if err != nil {
+							return
+						}
+						if inner == nil {
+							continue
+						}
+						lastNode.MinSize += min
+						if lastNode.MaxSize != -1 {
+							if inner.Typ == NodeStar {
+								lastNode.MaxSize = -1
+							} else {
+								lastNode.MaxSize += max
+							}
+						}
+						inners = append(inners, inner)
+					}
+					lastNode.Merge(inners)
+				}
+			}
+			node.Childs = append(node.Childs, lastNode)
+			node = lastNode
+		}
+		i++
+	}
+	if lastNode == nil {
+		err = ErrGlobNotExpanded{glob}
+		return
+	}
+	if i != partsCount || (len(lastNode.Childs) == 0 && lastNode.Terminated == "") {
+		// child  or/and terminated node
+		err = ErrNodeNotEnd{lastNode.Node}
+	}
+
+	return
+}
+
 // GlobMatcher is dotted-separated segment glob matcher, like a.b.[c-e]?.{f-o}*, writted for graphite project
 type GlobMatcher struct {
 	Root  map[int]*NodeItem
@@ -460,110 +584,11 @@ func (w *GlobMatcher) Add(glob string) (err error) {
 		// aleady added
 		return
 	}
-	parts := pathSplit(glob)
-	if hasEmptyParts(parts) {
-		return ErrNodeEmpty{glob}
+	if _, err = ParseItems(w.Root, glob); err != nil {
+		return err
 	}
 
-	node, ok := w.Root[len(parts)]
-	if !ok {
-		node = &NodeItem{InnerItem: InnerItem{Typ: NodeRoot}}
-		w.Root[len(parts)] = node
-	}
-	var newNode *NodeItem
-
-	last := len(parts) - 1
-	for i, part := range parts {
-		found := false
-		for _, child := range node.Childs {
-			// TODO: may be normalize parts for equals like {a,z} and {z,a} ?
-			if part == child.Node {
-				node = child
-				found = true
-				break
-			}
-		}
-		if !found {
-			if i == last {
-				// last node, so terminate match
-				newNode = &NodeItem{Node: part, Terminated: glob}
-			} else {
-				newNode = &NodeItem{Node: part}
-			}
-			pos := IndexWildcard(part)
-			if pos == -1 {
-				newNode.Typ = NodeString
-				newNode.P = part
-			} else {
-				if pos > 0 {
-					newNode.P = part[:pos] // prefix
-					part = part[pos:]
-					newNode.MinSize = len(newNode.P)
-					newNode.MaxSize = len(newNode.P)
-				}
-				end := IndexLastWildcard(part)
-				if end == 0 && part[0] != '?' && part[0] != '*' {
-					return ErrNodeUnclosed{part}
-				}
-				if end < len(part)-1 {
-					end++
-					newNode.Suffix = part[end:]
-					part = part[:end]
-					newNode.MinSize += len(newNode.Suffix)
-					newNode.MaxSize += len(newNode.Suffix)
-				}
-
-				switch part {
-				case "*":
-					newNode.Typ = NodeStar
-					newNode.MaxSize = -1 // unlimited
-				case "?":
-					newNode.Typ = NodeOne
-					newNode.MinSize++
-					if newNode.MaxSize != -1 {
-						newNode.MaxSize++
-					}
-				default:
-					var (
-						inner    *InnerItem
-						min, max int
-					)
-					innerCount := WildcardCount(part)
-					inners := make([]*InnerItem, 0, innerCount)
-
-					for part != "" {
-						inner, part, min, max, err = nextInnerItem(part)
-						if err != nil {
-							return
-						}
-						if inner == nil {
-							continue
-						}
-						newNode.MinSize += min
-						if newNode.MaxSize != -1 {
-							if inner.Typ == NodeStar {
-								newNode.MaxSize = -1
-							} else {
-								newNode.MaxSize += max
-							}
-						}
-						inners = append(inners, inner)
-					}
-					newNode.Merge(inners)
-				}
-			}
-			node.Childs = append(node.Childs, newNode)
-			node = newNode
-		}
-	}
-
-	if newNode != nil {
-		if len(newNode.Childs) == 0 && newNode.Terminated == "" {
-			// child  or/and terminated node
-			return ErrNodeNotEnd{newNode.Node}
-		}
-		w.Globs[glob] = true
-	}
+	w.Globs[glob] = true
 
 	return
 }
@@ -572,14 +597,10 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 	if path == "" {
 		return nil
 	}
-	partsCount := pathLevel(path)
+	path, partsCount := PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
 		globs = make([]string, 0, min(4, len(node.Childs)))
-		for _, node := range node.Childs {
-			part, nextParts, _ := strings.Cut(path, ".")
-			// match first node
-			node.Match(part, nextParts, &globs)
-		}
+		node.MatchRoot(path, &globs)
 	}
 
 	return globs
@@ -590,12 +611,8 @@ func (w *GlobMatcher) MatchP(path string, globs *[]string) {
 	if path == "" {
 		return
 	}
-	partsCount := pathLevel(path)
+	path, partsCount := PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
-		for _, node := range node.Childs {
-			part, nextParts, _ := strings.Cut(path, ".")
-			// match first node
-			node.Match(part, nextParts, globs)
-		}
+		node.MatchRoot(path, globs)
 	}
 }
