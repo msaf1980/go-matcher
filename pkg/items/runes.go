@@ -1,11 +1,11 @@
-package gglob
+package items
 
 import (
 	"unicode/utf8"
 )
 
-// runesExpand expand runes like [a-z0]
-func runesExpand(runes []rune) (m map[rune]struct{}, failed bool) {
+// RunesExpand expand runes like [a-z0]
+func RunesExpand(runes []rune) (m map[rune]struct{}, failed bool) {
 	var r rune
 	if len(runes) > 1 && runes[0] == '[' && runes[len(runes)-1] == ']' {
 		m = make(map[rune]struct{})

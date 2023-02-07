@@ -1,4 +1,4 @@
-package gglob
+package items
 
 import (
 	"reflect"
@@ -28,7 +28,7 @@ func Test_listExpand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
-			gotList, gotSuccess := listExpand(tt.s)
+			gotList, gotSuccess := ListExpand(tt.s)
 			if !reflect.DeepEqual(gotList, tt.wantList) {
 				t.Errorf("listExpand(%s) = %s", tt.s, cmp.Diff(tt.wantList, gotList))
 			}

@@ -1,6 +1,10 @@
 package gglob
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
+)
 
 func TestGlobMatcher_Multi(t *testing.T) {
 	tests := []testGlobMatcher{
@@ -10,45 +14,43 @@ func TestGlobMatcher_Multi(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a*c", Terminated: "a*c", InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c",
+								Node: "a*c", Terminated: "a*c", P: "a", Suffix: "c",
+								Inners:  []items.InnerItem{items.ItemStar{}},
 								MinSize: 2, MaxSize: -1,
 							},
 							{
-								Node: "a*c*", Terminated: "a*c*", InnerItem: InnerItem{Typ: NodeInners, P: "a"},
+								Node: "a*c*", Terminated: "a*c*", P: "a",
 								MinSize: 2, MaxSize: -1,
-								Inners: []*InnerItem{
-									{Typ: NodeStar},
-									{Typ: NodeString, P: "c"},
-									{Typ: NodeStar},
-								},
+								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("c"), items.ItemStar{}},
 							},
 							{
-								Node: "a*b?c", Terminated: "a*b?c", InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
+								Node: "a*b?c", Terminated: "a*b?c", P: "a", Suffix: "c",
 								MinSize: 4, MaxSize: -1,
-								Inners: []*InnerItem{
-									{Typ: NodeStar},
-									{Typ: NodeString, P: "b"},
-									{Typ: NodeOne},
-								},
+								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("b"), items.ItemOne{}},
 							},
 						},
 					},
 					2: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"},
+								Node: "a", Inners: []items.InnerItem{items.ItemString("a")},
 								Childs: []*NodeItem{
-									{Node: "b?d", Terminated: "a.b?d", InnerItem: InnerItem{Typ: NodeOne, P: "b"}, Suffix: "d", MinSize: 3, MaxSize: 3},
+									{
+										Node: "b?d", Terminated: "a.b?d", P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
+										Inners: []items.InnerItem{items.ItemOne{}},
+									},
 								},
 							},
 							{
-								Node: "a*c", InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c", MinSize: 2, MaxSize: -1,
+								Node: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+								Inners: []items.InnerItem{items.ItemStar{}},
 								Childs: []*NodeItem{
-									{Node: "b", Terminated: "a*c.b", InnerItem: InnerItem{Typ: NodeString, P: "b"}, MinSize: 0, MaxSize: 0},
+									{
+										Node: "b", Terminated: "a*c.b", MinSize: 0, MaxSize: 0,
+										Inners: []items.InnerItem{items.ItemString("b")},
+									},
 								},
 							},
 						},

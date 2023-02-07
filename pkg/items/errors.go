@@ -1,42 +1,42 @@
-package gglob
+package items
 
 type ErrNodeMissmatch struct {
-	typ  NodeType
-	node string
+	Typ  NodeType
+	Node string
 }
 
 func (e ErrNodeMissmatch) Error() string {
-	return "node type " + e.typ.String() + " mismatch: " + e.node
+	return "node type " + e.Typ.String() + " mismatch: " + e.Node
 }
 
 type ErrNodeNotEnd struct {
-	node string
+	Node string
 }
 
 func (e ErrNodeNotEnd) Error() string {
-	return "node contains no childs or terminated: " + e.node
+	return "node contains no childs or terminated: " + e.Node
 }
 
 type ErrGlobNotExpanded struct {
-	node string
+	Node string
 }
 
 func (e ErrGlobNotExpanded) Error() string {
-	return "empty node: " + e.node
+	return "empty node: " + e.Node
 }
 
 type ErrNodeEmpty struct {
-	path string
+	Path string
 }
 
 func (e ErrNodeEmpty) Error() string {
-	return "empty node in path: " + e.path
+	return "empty node in path: " + e.Path
 }
 
 type ErrNodeUnclosed struct {
-	segment string
+	Segment string
 }
 
 func (e ErrNodeUnclosed) Error() string {
-	return "glob contain unclosed node segment: " + e.segment
+	return "glob contain unclosed node segment: " + e.Segment
 }

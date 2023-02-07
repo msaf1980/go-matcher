@@ -1,6 +1,10 @@
 package gglob
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
+)
 
 func TestGlobMatcher_Rune(t *testing.T) {
 	tests := []testGlobMatcher{
@@ -9,12 +13,11 @@ func TestGlobMatcher_Rune(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
 								Node: "[a-c]", Terminated: "[a-c]", MinSize: 1, MaxSize: 1,
-								InnerItem: InnerItem{
-									Typ: NodeRune, Runes: map[int32]struct{}{'a': {}, 'b': {}, 'c': {}},
+								Inners: []items.InnerItem{
+									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}),
 								},
 							},
 						},
@@ -30,12 +33,11 @@ func TestGlobMatcher_Rune(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
 								Node: "[a-c]z", Terminated: "[a-c]z", MinSize: 2, MaxSize: 2, Suffix: "z",
-								InnerItem: InnerItem{
-									Typ: NodeRune, Runes: map[int32]struct{}{'a': {}, 'b': {}, 'c': {}},
+								Inners: []items.InnerItem{
+									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}),
 								},
 							},
 						},
@@ -51,14 +53,11 @@ func TestGlobMatcher_Rune(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
 								Node: "[a-c]*", Terminated: "[a-c]*", MinSize: 1, MaxSize: -1,
-								InnerItem: InnerItem{Typ: NodeInners},
-								Inners: []*InnerItem{
-									{Typ: NodeRune, Runes: map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}},
-									{Typ: NodeStar},
+								Inners: []items.InnerItem{
+									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}), items.ItemStar{},
 								},
 							},
 						},
@@ -78,11 +77,9 @@ func TestGlobMatcher_Rune(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "[a-]", Terminated: "[a-]", MinSize: 1, MaxSize: 1,
-								InnerItem: InnerItem{Typ: NodeString, P: "a"},
+								Node: "[a-]", Terminated: "[a-]", P: "a", MinSize: 1, MaxSize: 1,
 							},
 						},
 					},
@@ -97,11 +94,9 @@ func TestGlobMatcher_Rune(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a[a-]Z", Terminated: "a[a-]Z", MinSize: 3, MaxSize: 3,
-								InnerItem: InnerItem{Typ: NodeString, P: "aaZ"},
+								Node: "a[a-]Z", Terminated: "a[a-]Z", P: "aaZ", MinSize: 3, MaxSize: 3,
 							},
 						},
 					},
@@ -116,11 +111,9 @@ func TestGlobMatcher_Rune(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", MinSize: 4, MaxSize: 4,
-								InnerItem: InnerItem{Typ: NodeString, P: "aaZQ"},
+								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", P: "aaZQ", MinSize: 4, MaxSize: 4,
 							},
 						},
 					},
@@ -151,12 +144,8 @@ func TestGlobMatcher_Rune_Broken(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "[]a", Terminated: "[]a", MinSize: 1, MaxSize: 1,
-								InnerItem: InnerItem{Typ: NodeString, P: "a"},
-							},
+							{Node: "[]a", Terminated: "[]a", P: "a", MinSize: 1, MaxSize: 1},
 						},
 					},
 				},

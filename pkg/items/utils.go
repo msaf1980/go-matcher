@@ -1,19 +1,15 @@
-package gglob
+package items
 
 import (
 	"strings"
 	"unicode/utf8"
 )
 
-func splitString(s string, start int) (string, string) {
+func SplitString(s string, start int) (string, string) {
 	return s[:start], s[start:]
 }
 
-func nextString(s string, last int) string {
-	return s[last:]
-}
-
-func min(a, b int) int {
+func Min(a, b int) int {
 	if a < b {
 		return a
 	}

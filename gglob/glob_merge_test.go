@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestNodeItem_Merge(t *testing.T) {
 	tests := []struct {
 		name       string
 		node       *NodeItem
-		inners     []*InnerItem
+		inners     []items.InnerItem
 		wantNode   *NodeItem
 		matchGlobs map[string][]string // must match with glob
 		miss       []string
@@ -20,14 +21,13 @@ func TestNodeItem_Merge(t *testing.T) {
 			name: "merge strings #all",
 			node: &NodeItem{
 				Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", MinSize: 4, MaxSize: 4,
-				InnerItem: InnerItem{P: "a"},
+				P: "a",
 			},
-			inners: []*InnerItem{
-				{Typ: NodeString, P: "a"}, {Typ: NodeString, P: "Z"}, {Typ: NodeString, P: "Q"},
+			inners: []items.InnerItem{
+				items.ItemString("a"), items.ItemString("Z"), items.ItemString("Q"),
 			},
 			wantNode: &NodeItem{
-				Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", MinSize: 4, MaxSize: 4,
-				InnerItem: InnerItem{Typ: NodeString, P: "aaZQ"},
+				Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", P: "aaZQ", MinSize: 4, MaxSize: 4,
 			},
 			matchGlobs: map[string][]string{
 				"aaZQ": {"a[a-]Z[Q]"},
@@ -37,15 +37,14 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #prefix",
 			node: &NodeItem{
-				Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", MinSize: 4, MaxSize: -1,
-				InnerItem: InnerItem{P: "a"},
+				Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", P: "a", MinSize: 4, MaxSize: -1,
 			},
-			inners: []*InnerItem{
-				{Typ: NodeString, P: "a"}, {Typ: NodeString, P: "Z"}, {Typ: NodeString, P: "Q"}, {Typ: NodeStar},
+			inners: []items.InnerItem{
+				items.ItemString("a"), items.ItemString("Z"), items.ItemString("Q"), items.ItemStar{},
 			},
 			wantNode: &NodeItem{
-				Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", MinSize: 4, MaxSize: -1,
-				InnerItem: InnerItem{Typ: NodeStar, P: "aaZQ"},
+				Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", P: "aaZQ", MinSize: 4, MaxSize: -1,
+				Inners: []items.InnerItem{items.ItemStar{}},
 			},
 			matchGlobs: map[string][]string{
 				"aaZQ":  {"a[a-]Z[Q]*"},
@@ -57,18 +56,15 @@ func TestNodeItem_Merge(t *testing.T) {
 			name: "merge strings #suffix",
 			node: &NodeItem{
 				Node: "a[a-]Z[Q]*[z-]l", Terminated: "a[a-]Z[Q]*[z-]l", MinSize: 6, MaxSize: -1,
-				InnerItem: InnerItem{P: "a"}, Suffix: "l",
+				P: "a", Suffix: "l",
 			},
-			inners: []*InnerItem{
-				{Typ: NodeString, P: "a"}, {Typ: NodeString, P: "Z"}, {Typ: NodeString, P: "Q"},
-				{Typ: NodeStar}, {Typ: NodeString, P: "z"},
+			inners: []items.InnerItem{
+				items.ItemString("a"), items.ItemString("Z"), items.ItemString("Q"), items.ItemStar{}, items.ItemString("z"),
 			},
 			wantNode: &NodeItem{
 				Node: "a[a-]Z[Q]*[z-]l", Terminated: "a[a-]Z[Q]*[z-]l", MinSize: 6, MaxSize: -1,
-				InnerItem: InnerItem{Typ: NodeInners, P: "aaZQ"}, Suffix: "zl",
-				Inners: []*InnerItem{
-					{Typ: NodeStar},
-				},
+				P: "aaZQ", Suffix: "zl",
+				Inners: []items.InnerItem{items.ItemStar{}},
 			},
 			matchGlobs: map[string][]string{
 				"aaZQzl":  {"a[a-]Z[Q]*[z-]l"},
@@ -84,7 +80,7 @@ func TestNodeItem_Merge(t *testing.T) {
 				t.Errorf("NodeItem.Merge() = %s", cmp.Diff(tt.wantNode, tt.node))
 			} else {
 				w := NewGlobMatcher()
-				rootNode := &NodeItem{InnerItem: InnerItem{Typ: NodeRoot}}
+				rootNode := &NodeItem{}
 				w.Root[1] = rootNode
 				rootNode.Childs = append(rootNode.Childs, tt.node)
 				verifyGlobMatcher(t, tt.matchGlobs, tt.miss, w)

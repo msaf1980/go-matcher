@@ -1,6 +1,10 @@
 package gglob
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
+)
 
 func TestGlobMatcher_One(t *testing.T) {
 	tests := []testGlobMatcher{
@@ -10,9 +14,8 @@ func TestGlobMatcher_One(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "?", Terminated: "?", InnerItem: InnerItem{Typ: NodeOne}, MinSize: 1, MaxSize: 1},
+							{Node: "?", Terminated: "?", Inners: []items.InnerItem{items.ItemOne{}}, MinSize: 1, MaxSize: 1},
 						},
 					},
 				},
@@ -26,9 +29,11 @@ func TestGlobMatcher_One(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "a?", Terminated: "a?", InnerItem: InnerItem{Typ: NodeOne, P: "a"}, MinSize: 2, MaxSize: 2},
+							{
+								Node: "a?", Terminated: "a?", P: "a", Inners: []items.InnerItem{items.ItemOne{}},
+								MinSize: 2, MaxSize: 2,
+							},
 						},
 					},
 				},
@@ -42,10 +47,9 @@ func TestGlobMatcher_One(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a?c", Terminated: "a?c", InnerItem: InnerItem{Typ: NodeOne, P: "a"}, Suffix: "c",
+								Node: "a?c", Terminated: "a?c", P: "a", Inners: []items.InnerItem{items.ItemOne{}}, Suffix: "c",
 								MinSize: 3, MaxSize: 3,
 							},
 						},

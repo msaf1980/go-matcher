@@ -1,6 +1,10 @@
 package gglob
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
+)
 
 func TestGlobMatcher_Star(t *testing.T) {
 	tests := []testGlobMatcher{
@@ -10,11 +14,11 @@ func TestGlobMatcher_Star(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a******c", Terminated: "a******c", InnerItem: InnerItem{Typ: NodeStar, P: "a"},
-								MinSize: 2, MaxSize: -1, Suffix: "c",
+								Node: "a******c", Terminated: "a******c", P: "a", Suffix: "c",
+								MinSize: 2, MaxSize: -1,
+								Inners: []items.InnerItem{items.ItemStar{}},
 							},
 						},
 					},
@@ -30,9 +34,8 @@ func TestGlobMatcher_Star(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "*", Terminated: "*", InnerItem: InnerItem{Typ: NodeStar}, MaxSize: -1},
+							{Node: "*", Terminated: "*", Inners: []items.InnerItem{items.ItemStar{}}, MaxSize: -1},
 						},
 					},
 				},
@@ -46,9 +49,11 @@ func TestGlobMatcher_Star(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{Node: "a*c", Terminated: "a*c", InnerItem: InnerItem{Typ: NodeStar, P: "a"}, Suffix: "c", MinSize: 2, MaxSize: -1},
+							{
+								Node: "a*c", Terminated: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+								Inners: []items.InnerItem{items.ItemStar{}},
+							},
 						},
 					},
 				},
@@ -66,16 +71,11 @@ func TestGlobMatcher_Star(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a*b?c", Terminated: "a*b?c", InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
+								Node: "a*b?c", Terminated: "a*b?c", P: "a", Suffix: "c",
 								MinSize: 4, MaxSize: -1,
-								Inners: []*InnerItem{
-									{Typ: NodeStar},
-									{Typ: NodeString, P: "b"},
-									{Typ: NodeOne},
-								},
+								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("b"), items.ItemOne{}},
 							},
 						},
 					},

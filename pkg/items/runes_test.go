@@ -1,4 +1,4 @@
-package gglob
+package items
 
 import (
 	"reflect"
@@ -30,7 +30,7 @@ func Test_runesExpand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.runes, func(t *testing.T) {
-			gotM, gotSuccess := runesExpand([]rune(tt.runes))
+			gotM, gotSuccess := RunesExpand([]rune(tt.runes))
 			if !reflect.DeepEqual(gotM, tt.wantM) {
 				t.Errorf("runesExpand(%s) = %s", tt.runes, cmp.Diff(tt.wantM, gotM))
 			}

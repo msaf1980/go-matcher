@@ -1,6 +1,10 @@
 package gglob
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
+)
 
 func TestGlobMatcherString(t *testing.T) {
 	tests := []testGlobMatcher{
@@ -24,8 +28,9 @@ func TestGlobMatcherString(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
-						Childs:    []*NodeItem{{Node: "a", Terminated: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"}}},
+						Childs: []*NodeItem{
+							{Node: "a", Terminated: "a", Inners: []items.InnerItem{items.ItemString("a")}},
+						},
 					},
 				},
 				Globs: map[string]bool{"a": true},
@@ -38,12 +43,11 @@ func TestGlobMatcherString(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					2: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"},
+								Node: "a", Inners: []items.InnerItem{items.ItemString("a")},
 								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "a.bc", InnerItem: InnerItem{Typ: NodeString, P: "bc"}},
+									{Node: "bc", Terminated: "a.bc", Inners: []items.InnerItem{items.ItemString("bc")}},
 								},
 							},
 						},
@@ -59,23 +63,23 @@ func TestGlobMatcherString(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
-						Childs:    []*NodeItem{{Node: "a", Terminated: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"}}},
+						Childs: []*NodeItem{
+							{Node: "a", Terminated: "a", Inners: []items.InnerItem{items.ItemString("a")}},
+						},
 					},
 					2: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
-								Node: "a", InnerItem: InnerItem{Typ: NodeString, P: "a"},
+								Node: "a", Inners: []items.InnerItem{items.ItemString("a")},
 								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "a.bc", InnerItem: InnerItem{Typ: NodeString, P: "bc"}},
-									{Node: "dc", Terminated: "a.dc", InnerItem: InnerItem{Typ: NodeString, P: "dc"}},
+									{Node: "bc", Terminated: "a.bc", Inners: []items.InnerItem{items.ItemString("bc")}},
+									{Node: "dc", Terminated: "a.dc", Inners: []items.InnerItem{items.ItemString("dc")}},
 								},
 							},
 							{
-								Node: "b", InnerItem: InnerItem{Typ: NodeString, P: "b"},
+								Node: "b", Inners: []items.InnerItem{items.ItemString("b")},
 								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "b.bc", InnerItem: InnerItem{Typ: NodeString, P: "bc"}},
+									{Node: "bc", Terminated: "b.bc", Inners: []items.InnerItem{items.ItemString("bc")}},
 								},
 							},
 						},
@@ -89,10 +93,10 @@ func TestGlobMatcherString(t *testing.T) {
 				},
 			},
 			matchGlobs: map[string][]string{
-				// "a":    {"a"},
-				// "a.bc": {"a.bc"},
+				"a":    {"a"},
+				"a.bc": {"a.bc"},
 				"a.dc": {"a.dc"},
-				// "b.bc": {"b.bc"},
+				"b.bc": {"b.bc"},
 			},
 			miss: []string{"", "b", "ab", "bc", "abc", "c.bc", "a.be", "a.bce", "a.bc.e"},
 		},

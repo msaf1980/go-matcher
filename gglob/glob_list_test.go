@@ -1,6 +1,10 @@
 package gglob
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
+)
 
 func TestGlobMatcher_List(t *testing.T) {
 	tests := []testGlobMatcher{
@@ -9,11 +13,12 @@ func TestGlobMatcher_List(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
 								Node: "{a,bc}", Terminated: "{a,bc}", MinSize: 1, MaxSize: 2,
-								InnerItem: InnerItem{Typ: NodeList, Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+								Inners: []items.InnerItem{
+									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+								},
 							},
 						},
 					},
@@ -28,14 +33,13 @@ func TestGlobMatcher_List(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
 								Node: "a{a,bc}{qa,q}c", Terminated: "a{a,bc}{qa,q}c", MinSize: 4, MaxSize: 6,
-								InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
-								Inners: []*InnerItem{
-									{Typ: NodeList, Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
-									{Typ: NodeList, Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
+								P: "a", Suffix: "c",
+								Inners: []items.InnerItem{
+									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+									&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
 								},
 							},
 						},
@@ -51,15 +55,14 @@ func TestGlobMatcher_List(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
 							{
 								Node: "a{a,bc}Z{qa,q}c", Terminated: "a{a,bc}Z{qa,q}c", MinSize: 5, MaxSize: 7,
-								InnerItem: InnerItem{Typ: NodeInners, P: "a"}, Suffix: "c",
-								Inners: []*InnerItem{
-									{Typ: NodeList, Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
-									{Typ: NodeString, P: "Z"},
-									{Typ: NodeList, Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
+								P: "a", Suffix: "c",
+								Inners: []items.InnerItem{
+									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+									items.ItemString("Z"),
+									&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
 								},
 							},
 						},
@@ -76,12 +79,8 @@ func TestGlobMatcher_List(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "{a}", Terminated: "{a}", MinSize: 1, MaxSize: 1,
-								InnerItem: InnerItem{Typ: NodeString, P: "a"},
-							},
+							{Node: "{a}", Terminated: "{a}", MinSize: 1, MaxSize: 1, P: "a"},
 						},
 					},
 				},
@@ -95,12 +94,8 @@ func TestGlobMatcher_List(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "{a,}", Terminated: "{a,}", MinSize: 1, MaxSize: 1,
-								InnerItem: InnerItem{Typ: NodeString, P: "a"},
-							},
+							{Node: "{a,}", Terminated: "{a,}", MinSize: 1, MaxSize: 1, P: "a"},
 						},
 					},
 				},
@@ -128,12 +123,8 @@ func TestGlobMatcher_List_Broken(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						InnerItem: InnerItem{Typ: NodeRoot},
 						Childs: []*NodeItem{
-							{
-								Node: "{}a", Terminated: "{}a", MinSize: 1, MaxSize: 1,
-								InnerItem: InnerItem{Typ: NodeString, P: "a"},
-							},
+							{Node: "{}a", Terminated: "{}a", MinSize: 1, MaxSize: 1, P: "a"},
 						},
 					},
 				},

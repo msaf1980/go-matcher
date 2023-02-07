@@ -1,11 +1,11 @@
-package gglob
+package items
 
 import (
 	"sort"
 	"strings"
 )
 
-func listExpand(s string) (list []string, failed bool) {
+func ListExpand(s string) (list []string, failed bool) {
 	last := len(s) - 1
 	if len(s) > 1 && s[0] == '{' && s[last] == '}' {
 		s = s[1:last]
