@@ -21,19 +21,20 @@ func PathLevel(path string) (string, int) {
 	return path, strings.Count(path, ".") + 1
 }
 
-func pathSplit(path string) []string {
+func PathSplit(path string) (parts []string) {
 	if path == "" {
 		return []string{}
 	}
 
 	if path[len(path)-1] == '.' {
-		return strings.Split(path[:len(path)-1], ".")
+		parts = strings.Split(path[:len(path)-1], ".")
+	} else {
+		parts = strings.Split(path, ".")
 	}
-
-	return strings.Split(path, ".")
+	return
 }
 
-func hasEmptyParts(parts []string) bool {
+func HasEmptyParts(parts []string) bool {
 	for _, part := range parts {
 		if part == "" {
 			return true

@@ -354,6 +354,18 @@ func (node *NodeItem) MatchItems(part string, nextParts string, matched *[]strin
 	}
 }
 
+func (node *NodeItem) MatchItemsPart(part string, parts []string, matched *[]string) {
+	if node.MatchNode(part) {
+		if node.Terminated != "" {
+			*matched = append(*matched, node.Terminated)
+		} else if len(parts) > 0 {
+			for _, child := range node.Childs {
+				child.MatchItemsPart(parts[0], parts[1:], matched)
+			}
+		}
+	}
+}
+
 // Merge is trying to merge inners
 func (node *NodeItem) Merge(inners []InnerItem) {
 	if len(inners) == 0 {
@@ -439,6 +451,13 @@ func (node *NodeItem) Match(path string, matched *[]string) {
 		part, nextParts, _ := strings.Cut(path, ".")
 		// match first node
 		node.MatchItems(part, nextParts, matched)
+	}
+}
+
+func (node *NodeItem) MatchByParts(parts []string, matched *[]string) {
+	for _, node := range node.Childs {
+		// match first node
+		node.MatchItemsPart(parts[0], parts[1:], matched)
 	}
 }
 

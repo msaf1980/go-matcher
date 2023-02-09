@@ -185,6 +185,21 @@ func BenchmarkList(b *testing.B) {
 	}
 }
 
+func BenchmarkList_ByParts(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(targetsBatchList[0])
+		if err != nil {
+			b.Fatal(err)
+		}
+		parts := items.PathSplit(pathsBatchList[0])
+		globs := w.MatchByParts(parts)
+		if len(globs) != 1 {
+			b.Fatal(globs)
+		}
+	}
+}
+
 func BenchmarkList_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := buildGlobRegexp(targetsBatchList[0])
@@ -225,6 +240,40 @@ func BenchmarkList_Prealloc(b *testing.B) {
 	}
 }
 
+func BenchmarkList_Prealloc_ByParts(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetsBatchList[0])
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		parts := items.PathSplit(pathsBatchList[0])
+		w.MatchByPartsB(parts, &globs)
+		if len(globs) != 1 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkList_Prealloc_ByParts2(b *testing.B) {
+	parts := items.PathSplit(pathsBatchList[0])
+	w := NewGlobMatcher()
+	err := w.Add(targetsBatchList[0])
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w.MatchByPartsB(parts, &globs)
+		if len(globs) != 1 {
+			b.Fatal(globs)
+		}
+	}
+}
+
 func BenchmarkList_Precompiled_Regex(b *testing.B) {
 	w := buildGlobRegexp(targetsBatchList[0])
 	b.ResetTimer()
@@ -249,6 +298,21 @@ func BenchmarkList_Batch(b *testing.B) {
 	}
 }
 
+func BenchmarkList_Batch_ByParts(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Adds(targetsBatchList)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, path := range pathsBatchList {
+			parts := items.PathSplit(path)
+			_ = w.MatchByParts(parts)
+		}
+	}
+}
+
 func BenchmarkList_Batch_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
 	err := w.Add(targetsBatchList[0])
@@ -260,6 +324,41 @@ func BenchmarkList_Batch_Prealloc(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, path := range pathsBatchList {
 			w.MatchB(path, &globs)
+		}
+	}
+}
+
+func BenchmarkList_Batch_Prealloc_ByParts(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetsBatchList[0])
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, path := range pathsBatchList {
+			parts := items.PathSplit(path)
+			w.MatchByPartsB(parts, &globs)
+		}
+	}
+}
+
+func BenchmarkList_Batch_Prealloc_ByParts2(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetsBatchList[0])
+	if err != nil {
+		b.Fatal(err)
+	}
+	partsBatchList := make([][]string, len(pathsBatchList))
+	for i, path := range pathsBatchList {
+		partsBatchList[i] = items.PathSplit(path)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, parts := range partsBatchList {
+			w.MatchByPartsB(parts, &globs)
 		}
 	}
 }

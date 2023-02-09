@@ -71,12 +71,34 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 }
 
 func (w *GlobMatcher) MatchB(path string, globs *[]string) {
-	*globs = (*globs)[:0]
 	if path == "" {
 		return
 	}
+	*globs = (*globs)[:0]
 	path, partsCount := items.PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
 		node.Match(path, globs)
+	}
+}
+
+func (w *GlobMatcher) MatchByParts(parts []string) (globs []string) {
+	if len(parts) == 0 {
+		return nil
+	}
+	if node, ok := w.Root[len(parts)]; ok {
+		globs = make([]string, 0, utils.Min(4, len(node.Childs)))
+		node.MatchByParts(parts, &globs)
+	}
+
+	return
+}
+
+func (w *GlobMatcher) MatchByPartsB(parts []string, globs *[]string) {
+	if len(parts) == 0 {
+		return
+	}
+	*globs = (*globs)[:0]
+	if node, ok := w.Root[len(parts)]; ok {
+		node.MatchByParts(parts, globs)
 	}
 }

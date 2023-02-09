@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/msaf1980/go-matcher/pkg/items"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,10 +44,18 @@ func verifyGlobMatcher(t *testing.T, matchGlobs map[string][]string, miss []stri
 		if globs := w.Match(path); !reflect.DeepEqual(wantGlobs, globs) {
 			t.Errorf("GlobMatcher.Match(%q) = %s", path, cmp.Diff(wantGlobs, globs))
 		}
+		parts := items.PathSplit(path)
+		if globs := w.MatchByParts(parts); !reflect.DeepEqual(wantGlobs, globs) {
+			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
+		}
 	}
 	for _, path := range miss {
 		if globs := w.Match(path); len(globs) != 0 {
 			t.Errorf("GlobMatcher.Match(%q) != %q", path, globs)
+		}
+		parts := items.PathSplit(path)
+		if globs := w.MatchByParts(parts); len(globs) != 0 {
+			t.Errorf("GlobMatcher.MatchByParts(%q) != %q", path, globs)
 		}
 	}
 }
