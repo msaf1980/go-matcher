@@ -61,8 +61,13 @@ LOOP:
 }
 
 func Unescape(s string) string {
-	var sb strings.Builder
-	return UnescapeTo(s, &sb)
+	first := strings.IndexAny(s, "%+")
+	if first == -1 {
+		return s
+	} else {
+		var sb strings.Builder
+		return unescape(s, first, &sb)
+	}
 }
 
 // unescape unescapes a string; the mode specifies
