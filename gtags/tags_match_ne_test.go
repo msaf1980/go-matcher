@@ -10,12 +10,19 @@ func TestTagsMatcher_Regex_Match_Ne(t *testing.T) {
 		{
 			name: `{"seriesByTag('name=a', 'b!=~c(a|z)\.a')"}`, queries: []string{`seriesByTag('name=a', 'b!=~c(a|z)\.a')`},
 			wantW: &TagsMatcher{
-				Root: []*TagsItem{
-					{
-						Query: `seriesByTag('name=a', 'b!=~c(a|z)\.a')`,
-						Terms: TaggedTermList{
-							{Key: "__name__", Op: TaggedTermEq, Value: "a"},
-							{Key: "b", Op: TaggedTermNotMatch, Value: `c(a|z)\.a`, Re: regexp.MustCompile(`c(a|z)\.a`)},
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermNotMatch, Value: `c(a|z)\.a`,
+										Re: regexp.MustCompile(`c(a|z)\.a`),
+									},
+									Terminated: []string{`seriesByTag('name=a', 'b!=~c(a|z)\.a')`},
+								},
+							},
 						},
 					},
 				},

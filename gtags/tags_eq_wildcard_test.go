@@ -12,14 +12,20 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 		{
 			name: `{"seriesByTag('name=a', 'b=c*')"}`, queries: []string{"seriesByTag('name=a', 'b=c*')"},
 			wantW: &TagsMatcher{
-				Root: []*TagsItem{
-					{
-						Query: "seriesByTag('name=a', 'b=c*')",
-						Terms: TaggedTermList{
-							{Key: "__name__", Op: TaggedTermEq, Value: "a"},
-							{
-								Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
-								Glob: &WildcardItems{MinSize: 1, MaxSize: -1, P: "c", Inners: []items.InnerItem{items.ItemStar{}}},
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
+										Glob: &WildcardItems{
+											MinSize: 1, MaxSize: -1, P: "c", Inners: []items.InnerItem{items.ItemStar{}},
+										},
+									},
+									Terminated: []string{"seriesByTag('name=a', 'b=c*')"},
+								},
 							},
 						},
 					},
@@ -37,16 +43,20 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 		{
 			name: `{"seriesByTag('name=a.b', 'b=c*.a')"}`, queries: []string{"seriesByTag('name=a.b', 'b=c*.a')"},
 			wantW: &TagsMatcher{
-				Root: []*TagsItem{
-					{
-						Query: "seriesByTag('name=a.b', 'b=c*.a')",
-						Terms: TaggedTermList{
-							{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
-							{
-								Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
-								Glob: &WildcardItems{
-									MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
-									Inners: []items.InnerItem{items.ItemStar{}},
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
+										Glob: &WildcardItems{
+											MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
+											Inners: []items.InnerItem{items.ItemStar{}},
+										},
+									},
+									Terminated: []string{"seriesByTag('name=a.b', 'b=c*.a')"},
 								},
 							},
 						},
@@ -67,12 +77,16 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 		{
 			name: `{"seriesByTag('name=a', 'b=c[a]')"}`, queries: []string{"seriesByTag('name=a', 'b=c[a]')"},
 			wantW: &TagsMatcher{
-				Root: []*TagsItem{
-					{
-						Query: "seriesByTag('name=a', 'b=c[a]')",
-						Terms: TaggedTermList{
-							{Key: "__name__", Op: TaggedTermEq, Value: "a"},
-							{Key: "b", Op: TaggedTermEq, Value: "ca"},
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term:       &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "ca"},
+									Terminated: []string{"seriesByTag('name=a', 'b=c[a]')"},
+								},
+							},
 						},
 					},
 				},
@@ -106,27 +120,12 @@ func BenchmarkEqualW_ByTags(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		tags, err := PathTagsMap(pathEqualW)
+		tags, err := PathTags(pathEqualW)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		queries := w.MatchByTags(tags)
-		if len(queries) != 1 {
-			b.Fatal(queries)
-		}
-	}
-}
-
-func BenchmarkEqualW_ByPath(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		w := NewTagsMatcher()
-		err := w.Add(queryEqualW)
-		if err != nil {
-			b.Fatal(err)
-		}
-
-		queries := w.MatchByPath(pathEqualW)
 		if len(queries) != 1 {
 			b.Fatal(queries)
 		}
@@ -152,7 +151,33 @@ func BenchmarkEqualW_Precompiled_ByTags(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		w.MatchByPathB(pathEqualW, &queries)
+		tags, err := PathTags(pathEqualW)
+		if err != nil {
+			b.Fatal(err)
+		}
+		w.MatchByTagsB(tags, &queries)
+		if len(queries) != 1 {
+			b.Fatal(queries)
+		}
+	}
+}
+
+func BenchmarkEqualW_Precompiled_ByTags2(b *testing.B) {
+	w := NewTagsMatcher()
+	err := w.Add(queryEqualW)
+	if err != nil {
+		b.Fatal(err)
+	}
+	queries := make([]string, 0, 1)
+	tags, err := PathTags(pathEqualW)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		w.MatchByTagsB(tags, &queries)
 		if len(queries) != 1 {
 			b.Fatal(queries)
 		}

@@ -54,7 +54,7 @@ func BenchmarkBatch_Precompiled_ByTags(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, path := range pathsBatchList {
-			tags, err := PathTagsMap(path)
+			tags, err := PathTags(path)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -63,23 +63,30 @@ func BenchmarkBatch_Precompiled_ByTags(b *testing.B) {
 	}
 }
 
-func BenchmarkBatch_Precompiled_ByPath(b *testing.B) {
+func BenchmarkBatch_Precompiled_ByTags2(b *testing.B) {
 	w := NewTagsMatcher()
 	err := w.Adds(queriesBatchList)
 	if err != nil {
 		b.Fatal(err)
 	}
+	tagsBatchList := make([][]Tag, len(pathsBatchList))
+	for i, path := range pathsBatchList {
+		if tagsBatchList[i], err = PathTags(path); err != nil {
+			b.Fatal(err)
+		}
+	}
+
 	queries := make([]string, 0, 1)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _, path := range pathsBatchList {
-			w.MatchByPathB(path, &queries)
+		for _, tags := range tagsBatchList {
+			w.MatchByTagsB(tags, &queries)
 		}
 	}
 }
 
-func BenchmarkBatch_Regex_Precompiled_ByTags(b *testing.B) {
+func BenchmarkBatch_Regex_Precompiled(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, path := range pathsBatchList {
 			if !reBatchList[0].MatchString(path) {

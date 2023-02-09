@@ -9,13 +9,21 @@ func TestTagsMatcherNe(t *testing.T) {
 		{
 			name: `{"seriesByTag('name=a', 'b=c', 'c!=vc')"}`, queries: []string{"seriesByTag('name=a', 'b=c', 'c!=vc')"},
 			wantW: &TagsMatcher{
-				Root: []*TagsItem{
-					{
-						Query: "seriesByTag('name=a', 'b=c', 'c!=vc')",
-						Terms: TaggedTermList{
-							{Key: "__name__", Op: TaggedTermEq, Value: "a"},
-							{Key: "b", Op: TaggedTermEq, Value: "c"},
-							{Key: "c", Op: TaggedTermNe, Value: "vc"},
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "c"},
+									Childs: []*TaggedItem{
+										{
+											Term:       &TaggedTerm{Key: "c", Op: TaggedTermNe, Value: "vc"},
+											Terminated: []string{"seriesByTag('name=a', 'b=c', 'c!=vc')"},
+										},
+									},
+								},
+							},
 						},
 					},
 				},

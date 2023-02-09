@@ -10,12 +10,19 @@ func TestTagsMatcher_Regex_Match(t *testing.T) {
 		{
 			name: `{"seriesByTag('name=a', 'b=~c(a|z)\.a')"}`, queries: []string{`seriesByTag('name=a', 'b=~c(a|z)\.a')`},
 			wantW: &TagsMatcher{
-				Root: []*TagsItem{
-					{
-						Query: `seriesByTag('name=a', 'b=~c(a|z)\.a')`,
-						Terms: TaggedTermList{
-							{Key: "__name__", Op: TaggedTermEq, Value: "a"},
-							{Key: "b", Op: TaggedTermMatch, Value: `c(a|z)\.a`, Re: regexp.MustCompile(`c(a|z)\.a`)},
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermMatch, Value: `c(a|z)\.a`,
+										Re: regexp.MustCompile(`c(a|z)\.a`),
+									},
+									Terminated: []string{`seriesByTag('name=a', 'b=~c(a|z)\.a')`},
+								},
+							},
 						},
 					},
 				},
@@ -50,27 +57,12 @@ func BenchmarkEqualR_ByTags(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		tags, err := PathTagsMap(pathEqualR)
+		tags, err := PathTags(pathEqualR)
 		if err != nil {
 			b.Fatal(err)
 		}
 
 		queries := w.MatchByTags(tags)
-		if len(queries) != 1 {
-			b.Fatal(queries)
-		}
-	}
-}
-
-func BenchmarkEqualR_ByPath(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		w := NewTagsMatcher()
-		err := w.Add(queryEqualR)
-		if err != nil {
-			b.Fatal(err)
-		}
-
-		queries := w.MatchByPath(pathEqualR)
 		if len(queries) != 1 {
 			b.Fatal(queries)
 		}
@@ -96,7 +88,7 @@ func BenchmarkEqualR_Precompiled_ByTags(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tags, err := PathTagsMap(pathEqualR)
+		tags, err := PathTags(pathEqualR)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -107,17 +99,21 @@ func BenchmarkEqualR_Precompiled_ByTags(b *testing.B) {
 	}
 }
 
-func BenchmarkEqualR_Precompiled_ByPath(b *testing.B) {
+func BenchmarkEqualR_Precompiled_ByTags2(b *testing.B) {
 	w := NewTagsMatcher()
 	err := w.Add(queryEqualR)
 	if err != nil {
 		b.Fatal(err)
 	}
 	queries := make([]string, 0, 1)
+	tags, err := PathTags(pathEqualR)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		w.MatchByPathB(pathEqualR, &queries)
+		w.MatchByTagsB(tags, &queries)
 		if len(queries) != 1 {
 			b.Fatal(queries)
 		}

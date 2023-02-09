@@ -21,6 +21,14 @@ const (
 	TaggedTermNotMatch TaggedTermOp = 4 // !=~
 )
 
+var (
+	stringsTaggedTermOp = []string{"none", "=", "=~", "!=", "!=~"}
+)
+
+func (t TaggedTermOp) String() string {
+	return stringsTaggedTermOp[t]
+}
+
 type TaggedTerm struct {
 	Key         string
 	Op          TaggedTermOp
@@ -30,15 +38,27 @@ type TaggedTerm struct {
 	Re          *regexp.Regexp // regexp
 }
 
-func (term *TaggedTerm) Merge() {
-	if term.HasWildcard && len(term.Glob.Inners) == 0 {
-		term.Value = term.Glob.P
-		term.Glob = nil
-		term.HasWildcard = false
+func (term *TaggedTerm) Build() (err error) {
+	if term.HasWildcard {
+		term.Glob = new(WildcardItems)
+		if err = term.Glob.Parse(term.Value); err != nil {
+			return
+		}
+		if len(term.Glob.Inners) == 0 {
+			term.Value = term.Glob.P
+			term.Glob = nil
+			term.HasWildcard = false
+		}
+	} else if term.Op == TaggedTermMatch || term.Op == TaggedTermNotMatch {
+		term.Re, err = regexp.Compile(term.Value)
+		if err != nil {
+			err = ErrExprInvalid{term.Value}
+		}
 	}
+	return
 }
 
-func (term TaggedTerm) Match(v string) bool {
+func (term *TaggedTerm) Match(v string) bool {
 	switch term.Op {
 	case TaggedTermEq:
 		if term.HasWildcard {
@@ -63,7 +83,23 @@ func (term TaggedTerm) Match(v string) bool {
 
 type TaggedTermList []TaggedTerm
 
-func (terms TaggedTermList) MatchByTags(tags map[string]string) bool {
+func (t TaggedTermList) Write(sb *strings.Builder) string {
+	sb.WriteString("seriesByTag(")
+	for i, term := range t {
+		if i > 0 {
+			sb.WriteByte(',')
+		}
+		sb.WriteByte('\'')
+		sb.WriteString(term.Key)
+		sb.WriteString(term.Op.String())
+		sb.WriteString(term.Value)
+		sb.WriteByte('\'')
+	}
+	sb.WriteString(")")
+	return sb.String()
+}
+
+func (terms TaggedTermList) MatchByTagsMap(tags map[string]string) bool {
 	for _, term := range terms {
 		if v, ok := tags[term.Key]; ok {
 			if !term.Match(v) {
@@ -77,7 +113,7 @@ func (terms TaggedTermList) MatchByTags(tags map[string]string) bool {
 	return true
 }
 
-func nextTag(tags string) (tag, value, next string, found bool) {
+func NextTag(tags string) (tag, value, next string, found bool) {
 	tag, next, found = strings.Cut(tags, "=")
 	if found {
 		value, next, _ = strings.Cut(next, "&")
@@ -85,13 +121,13 @@ func nextTag(tags string) (tag, value, next string, found bool) {
 	return
 }
 
-// MatchByPath match against GraphiteMergeTree path format (lime name?a=v1&b=v2&c=v3)
+// MatchByPath match against GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3)
 func (terms TaggedTermList) MatchByPath(path string) bool {
 	var (
 		tag, value string
 	)
 	name, tags, _ := strings.Cut(path, "?")
-	tag, value, tags, _ = nextTag(tags)
+	tag, value, tags, _ = NextTag(tags)
 
 LOOP:
 	for _, term := range terms {
@@ -110,7 +146,7 @@ LOOP:
 			if term.Key != tag {
 				// scan for tag
 				for {
-					tag, value, tags, _ = nextTag(tags)
+					tag, value, tags, _ = NextTag(tags)
 					if tag == "" {
 						if term.Op == TaggedTermNe || term.Op == TaggedTermNotMatch {
 							// != and ~=! can be skiped and key can not exist
@@ -241,18 +277,18 @@ func ParseTaggedConditions(conditions []string) (TaggedTermList, error) {
 		case TaggedTermEq, TaggedTermNe:
 			if items.HasWildcard(terms[i].Value) {
 				terms[i].HasWildcard = true
-				terms[i].Glob = new(WildcardItems)
-				if err := terms[i].Glob.Parse(terms[i].Value); err != nil {
-					return nil, err
-				}
-				terms[i].Merge()
+				// terms[i].Glob = new(WildcardItems)
+				// if err := terms[i].Glob.Parse(terms[i].Value); err != nil {
+				// 	return nil, err
+				// }
+				// terms[i].Build()
 			}
 		case TaggedTermMatch, TaggedTermNotMatch:
-			var err error
-			terms[i].Re, err = regexp.Compile(terms[i].Value)
-			if err != nil {
-				return nil, ErrExprInvalid{s}
-			}
+		// 	var err error
+		// 	terms[i].Re, err = regexp.Compile(terms[i].Value)
+		// 	if err != nil {
+		// 		return nil, ErrExprInvalid{s}
+		// 	}
 		default:
 			return nil, ErrExprInvalid{s}
 		}
@@ -282,18 +318,46 @@ func PathTagsMap(path string) (tags map[string]string, err error) {
 		err = ErrPathInvalid{"name", "not found"}
 	}
 	tags = make(map[string]string)
-	tags["__name__"] = name
+	tags["__name__"] = escape.Unescape(name)
 	var (
-		kv string
+		kv, k, v string
 	)
 	for args != "" {
-		kv, args, _ = strings.Cut(args, "&")
-		if k, v, ok := strings.Cut(kv, "="); ok {
+		if k, args, ok = strings.Cut(args, "="); ok {
+			v, args, _ = strings.Cut(args, "&")
 			key := escape.Unescape(k)
 			tags[key] = escape.Unescape(v)
 		} else {
 			err = ErrPathInvalid{kv, "not delimited with ="}
-			return
+			break
+		}
+	}
+	return
+}
+
+type Tag struct {
+	Key   string
+	Value string
+}
+
+func PathTags(path string) (tags []Tag, err error) {
+	name, args, ok := strings.Cut(path, "?")
+	if !ok || strings.Contains(name, "=") {
+		err = ErrPathInvalid{"name", "not found"}
+	}
+	tagsCount := strings.Count(args, "&") + 2
+	tags = make([]Tag, 0, tagsCount)
+	var (
+		kv, k, v string
+	)
+	tags = append(tags, Tag{Key: "__name__", Value: escape.Unescape(name)})
+	for args != "" {
+		if k, args, ok = strings.Cut(args, "="); ok {
+			v, args, _ = strings.Cut(args, "&")
+			tags = append(tags, Tag{Key: escape.Unescape(k), Value: escape.Unescape(v)})
+		} else {
+			err = ErrPathInvalid{kv, "not delimited with ="}
+			break
 		}
 	}
 	return
