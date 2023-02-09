@@ -9,13 +9,6 @@ func SplitString(s string, start int) (string, string) {
 	return s[:start], s[start:]
 }
 
-func Min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func PathLevel(path string) (string, int) {
 	if path == "" {
 		return path, 0

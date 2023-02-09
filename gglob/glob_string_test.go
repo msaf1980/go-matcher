@@ -11,14 +11,14 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: "empty #1", globs: []string{},
 			wantW: &GlobMatcher{
-				Root:  map[int]*NodeItem{},
+				Root:  map[int]*items.NodeItem{},
 				Globs: map[string]bool{},
 			},
 		},
 		{
 			name: "empty #2", globs: []string{""},
 			wantW: &GlobMatcher{
-				Root:  map[int]*NodeItem{},
+				Root:  map[int]*items.NodeItem{},
 				Globs: map[string]bool{},
 			},
 		},
@@ -26,60 +26,56 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: `{"a"}`, globs: []string{"a"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*items.NodeItem{
 					1: {
-						Childs: []*NodeItem{
-							{Node: "a", Terminated: "a", Inners: []items.InnerItem{items.ItemString("a")}},
-						},
+						Childs: []*items.NodeItem{{Node: "a", Terminated: "a", P: "a"}},
 					},
 				},
 				Globs: map[string]bool{"a": true},
 			},
-			matchGlobs: map[string][]string{"a": {"a"}},
-			miss:       []string{"", "b", "ab", "ba"},
+			matchPaths: map[string][]string{"a": {"a"}},
+			missPaths:  []string{"", "b", "ab", "ba"},
 		},
 		{
 			name: `{"a.bc"}`, globs: []string{"a.bc"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*items.NodeItem{
 					2: {
-						Childs: []*NodeItem{
+						Childs: []*items.NodeItem{
 							{
-								Node: "a", Inners: []items.InnerItem{items.ItemString("a")},
-								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "a.bc", Inners: []items.InnerItem{items.ItemString("bc")}},
-								},
+								Node: "a", P: "a",
+								Childs: []*items.NodeItem{{Node: "bc", Terminated: "a.bc", P: "bc"}},
 							},
 						},
 					},
 				},
 				Globs: map[string]bool{"a.bc": true},
 			},
-			matchGlobs: map[string][]string{"a.bc": {"a.bc"}},
-			miss:       []string{"", "b", "ab", "bc", "abc", "b.bc", "a.bce", "a.bc.e"},
+			matchPaths: map[string][]string{"a.bc": {"a.bc"}},
+			missPaths:  []string{"", "b", "ab", "bc", "abc", "b.bc", "a.bce", "a.bc.e"},
 		},
 		{
 			name: `{"a", "a.bc", "a.dc", "b.bc"}`, globs: []string{"a", "a.bc", "a.dc", "b.bc"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*items.NodeItem{
 					1: {
-						Childs: []*NodeItem{
-							{Node: "a", Terminated: "a", Inners: []items.InnerItem{items.ItemString("a")}},
+						Childs: []*items.NodeItem{
+							{Node: "a", Terminated: "a", P: "a"},
 						},
 					},
 					2: {
-						Childs: []*NodeItem{
+						Childs: []*items.NodeItem{
 							{
-								Node: "a", Inners: []items.InnerItem{items.ItemString("a")},
-								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "a.bc", Inners: []items.InnerItem{items.ItemString("bc")}},
-									{Node: "dc", Terminated: "a.dc", Inners: []items.InnerItem{items.ItemString("dc")}},
+								Node: "a", P: "a",
+								Childs: []*items.NodeItem{
+									{Node: "bc", Terminated: "a.bc", P: "bc"},
+									{Node: "dc", Terminated: "a.dc", P: "dc"},
 								},
 							},
 							{
-								Node: "b", Inners: []items.InnerItem{items.ItemString("b")},
-								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "b.bc", Inners: []items.InnerItem{items.ItemString("bc")}},
+								Node: "b", P: "b",
+								Childs: []*items.NodeItem{
+									{Node: "bc", Terminated: "b.bc", P: "bc"},
 								},
 							},
 						},
@@ -92,13 +88,13 @@ func TestGlobMatcherString(t *testing.T) {
 					"b.bc": true,
 				},
 			},
-			matchGlobs: map[string][]string{
+			matchPaths: map[string][]string{
 				"a":    {"a"},
 				"a.bc": {"a.bc"},
 				"a.dc": {"a.dc"},
 				"b.bc": {"b.bc"},
 			},
-			miss: []string{"", "b", "ab", "bc", "abc", "c.bc", "a.be", "a.bce", "a.bc.e"},
+			missPaths: []string{"", "b", "ab", "bc", "abc", "c.bc", "a.be", "a.bce", "a.bc.e"},
 		},
 	}
 	for _, tt := range tests {

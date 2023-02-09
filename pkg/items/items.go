@@ -5,6 +5,8 @@ import (
 	"math"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/msaf1980/go-matcher/pkg/utils"
 )
 
 type NodeType int8
@@ -208,8 +210,8 @@ LOOP:
 	return
 }
 
-// nextInnerItem extract InnerItem
-func nextInnerItem(s string) (item InnerItem, next string, minLen int, maxLen int, err error) {
+// NextInnerItem extract InnerItem
+func NextInnerItem(s string) (item InnerItem, next string, minLen int, maxLen int, err error) {
 	if s == "" {
 		return nil, s, 0, 0, io.EOF
 	}
@@ -304,9 +306,7 @@ type NodeItem struct {
 	Childs []*NodeItem // next possible parts tree
 }
 
-func (node *NodeItem) Match(part string, nextParts string, items *[]string) {
-	var found bool
-
+func (node *NodeItem) MatchNode(part string) (matched bool) {
 	if len(part) < node.MinSize {
 		return
 	}
@@ -319,7 +319,7 @@ func (node *NodeItem) Match(part string, nextParts string, items *[]string) {
 		if node.Suffix != "" {
 			return
 		}
-		found = (node.P == part)
+		matched = (node.P == part)
 	} else {
 		if node.P != "" {
 			if !strings.HasPrefix(part, node.P) {
@@ -336,16 +336,19 @@ func (node *NodeItem) Match(part string, nextParts string, items *[]string) {
 			part = part[:len(part)-len(node.Suffix)]
 		}
 
-		found = node.Inners[0].Match(part, nextParts, node.Inners[1:])
+		matched = node.Inners[0].Match(part, "", node.Inners[1:])
 	}
+	return
+}
 
-	if found {
+func (node *NodeItem) MatchItems(part string, nextParts string, matched *[]string) {
+	if node.MatchNode(part) {
 		if node.Terminated != "" {
-			*items = append(*items, node.Terminated)
-		} else if len(nextParts) > 0 {
+			*matched = append(*matched, node.Terminated)
+		} else if nextParts != "" {
 			part, nextParts, _ = strings.Cut(nextParts, ".")
 			for _, child := range node.Childs {
-				child.Match(part, nextParts, items)
+				child.MatchItems(part, nextParts, matched)
 			}
 		}
 	}
@@ -431,11 +434,11 @@ func (node *NodeItem) Merge(inners []InnerItem) {
 	}
 }
 
-func (node *NodeItem) MatchRoot(path string, globs *[]string) {
+func (node *NodeItem) Match(path string, matched *[]string) {
 	for _, node := range node.Childs {
 		part, nextParts, _ := strings.Cut(path, ".")
 		// match first node
-		node.Match(part, nextParts, globs)
+		node.MatchItems(part, nextParts, matched)
 	}
 }
 
@@ -470,7 +473,7 @@ func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, er
 			}
 			pos := IndexWildcard(part)
 			if pos == -1 {
-				lastNode.Inners = []InnerItem{ItemString(part)}
+				lastNode.P = part
 			} else {
 				if pos > 0 {
 					lastNode.P = part[:pos] // prefix
@@ -510,7 +513,7 @@ func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, er
 					inners := make([]InnerItem, 0, innerCount)
 
 					for part != "" {
-						inner, part, min, max, err = nextInnerItem(part)
+						inner, part, min, max, err = NextInnerItem(part)
 						if err != nil {
 							return
 						}
@@ -604,8 +607,8 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 	}
 	path, partsCount := PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
-		globs = make([]string, 0, Min(4, len(node.Childs)))
-		node.MatchRoot(path, &globs)
+		globs = make([]string, 0, utils.Min(4, len(node.Childs)))
+		node.Match(path, &globs)
 	}
 
 	return globs
@@ -618,6 +621,85 @@ func (w *GlobMatcher) MatchP(path string, globs *[]string) {
 	}
 	path, partsCount := PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
-		node.MatchRoot(path, globs)
+		node.Match(path, globs)
+	}
+}
+
+// NextWildcardItem extract InnerItem
+func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen int, err error) {
+	if s == "" {
+		return nil, s, 0, 0, io.EOF
+	}
+	switch s[0] {
+	case '[':
+		if idx := strings.Index(s, "]"); idx != -1 {
+			idx++
+			next = s[idx:]
+			s = s[:idx]
+		}
+		runes, failed := RunesExpand([]rune(s))
+		if failed {
+			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+		}
+		if len(runes) == 0 {
+			return nil, next, 0, 0, nil
+		}
+		if len(runes) == 1 {
+			var v string
+			for k := range runes {
+				v = string(k)
+			}
+			// one item optimization
+			return ItemString(v), next, 1, 1, nil
+		}
+		return ItemRune(runes), next, 1, 1, nil
+	case '{':
+		if idx := strings.Index(s, "}"); idx != -1 {
+			idx++
+			next = s[idx:]
+			s = s[:idx]
+		}
+		vals, failed := ListExpand(s)
+		if failed {
+			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+		}
+		if len(vals) == 0 {
+			return nil, next, 0, 0, nil
+		}
+		if len(vals) == 1 {
+			// one item optimization
+			return ItemString(vals[0]), next, len(vals[0]), len(vals[0]), nil
+		}
+		minLen := math.MaxInt
+		maxLen := 0
+		for _, v := range vals {
+			l := len(v)
+			if maxLen < l {
+				maxLen = l
+			}
+			if minLen > l {
+				minLen = l
+			}
+		}
+		return &ItemList{Vals: vals, ValsMin: minLen, ValsMax: maxLen}, next, minLen, maxLen, nil
+	case '*':
+		var next string
+		for i, c := range s {
+			if c != '*' {
+				next = s[i:]
+				break
+			}
+		}
+		return ItemStar{}, next, 0, 0, nil
+	case '?':
+		next := s[1:]
+		return ItemOne{}, next, 1, 1, nil
+	case ']', '}':
+		return nil, s, 0, 0, ErrNodeUnclosed{s}
+	default:
+		// string segment
+		end := IndexWildcard(s)
+		v, next := SplitString(s, end)
+		return ItemString(v), next, len(v), len(v), nil
 	}
 }
