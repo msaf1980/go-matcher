@@ -1,20 +1,26 @@
 package items
 
 import (
+	"math"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
-func interception(a []string) string {
+func interceptionLeft(a []string) string {
 	switch len(a) {
 	case 0:
 		return ""
 	case 1:
 		return a[0]
 	default:
-		for i := range a[0] {
+		for i, c := range a[0] {
 			for n := 1; n < len(a); n++ {
-				if i == len(a[n]) || a[0][i] != a[n][i] {
+				if i == len(a[n]) {
+					return a[0][:i]
+				}
+				r, _ := utf8.DecodeRuneInString(a[n][i:])
+				if c != r {
 					return a[0][:i]
 				}
 			}
@@ -23,7 +29,22 @@ func interception(a []string) string {
 	}
 }
 
+func interceptionRight(a []string) string {
+	if len(a) <= 1 {
+		return ""
+	}
+	for i := range a[0] {
+		for n := 1; n < len(a); n++ {
+			if i == len(a[n]) || a[0][i] != a[n][i] {
+				return a[0][:i]
+			}
+		}
+	}
+	return ""
+}
+
 func removeDuplicated(a []string) []string {
+	// try to truncate from start
 	n := len(a)
 	i := 0
 	for ; i < n-1; i++ {
@@ -31,13 +52,17 @@ func removeDuplicated(a []string) []string {
 			break
 		}
 	}
-	if i < n {
-		a = a[i:]
-		n = len(a)
+	j := n - 1
+	for ; j > i; j-- {
+		if a[j-1] != a[j] {
+			break
+		}
 	}
+	a = a[i : j+1]
+	n = len(a)
 
 	// this index will move only when we modify the array in-place to include a new	non-duplicate element.
-	j := 0
+	j = 0
 
 	for i = 0; i < n; i++ {
 		//  If the current element is equal to the next element, then skip the current element because it's a duplicate.
@@ -128,5 +153,31 @@ LOOP:
 			}
 		}
 	}
+	return
+}
+
+// func NewItemList return optimized version of InnerItem
+func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
+	if len(vals) == 0 {
+		return
+	}
+	if len(vals) == 1 {
+		// one item optimization
+		return ItemString(vals[0]), len(vals[0]), len(vals[0])
+	}
+	minLen = math.MaxInt
+	maxLen = 0
+	for _, v := range vals {
+		l := len(v)
+		if maxLen < l {
+			maxLen = l
+		}
+		if minLen > l {
+			minLen = l
+		}
+	}
+
+	item = &ItemList{Vals: vals, ValsMin: minLen, ValsMax: maxLen}
+
 	return
 }

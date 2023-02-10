@@ -2,7 +2,6 @@ package items
 
 import (
 	"io"
-	"math"
 	"strings"
 	"unicode/utf8"
 
@@ -435,25 +434,8 @@ func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen
 		if failed {
 			return nil, s, 0, 0, ErrNodeMissmatch{"list", s}
 		}
-		if len(vals) == 0 {
-			return nil, next, 0, 0, nil
-		}
-		if len(vals) == 1 {
-			// one item optimization
-			return ItemString(vals[0]), next, len(vals[0]), len(vals[0]), nil
-		}
-		minLen := math.MaxInt
-		maxLen := 0
-		for _, v := range vals {
-			l := len(v)
-			if maxLen < l {
-				maxLen = l
-			}
-			if minLen > l {
-				minLen = l
-			}
-		}
-		return &ItemList{Vals: vals, ValsMin: minLen, ValsMax: maxLen}, next, minLen, maxLen, nil
+		item, minLen, maxLen = NewItemList(vals)
+		return
 	case '*':
 		var next string
 		for i, c := range s {
