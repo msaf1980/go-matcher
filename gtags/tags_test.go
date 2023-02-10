@@ -30,8 +30,7 @@ func runTestTagsMatcher(t *testing.T, tt testTagsMatcher) {
 	w := NewTagsMatcher()
 	err := w.Adds(tt.queries)
 	if (err != nil) != tt.wantErr {
-		t.Errorf("TagsMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
-		return
+		t.Fatalf("TagsMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
 	}
 	if err == nil {
 		if !cmp.Equal(w, tt.wantW, cmpTransform) {

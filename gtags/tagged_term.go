@@ -38,6 +38,7 @@ type TaggedTerm struct {
 	Re          *regexp.Regexp // regexp
 }
 
+// Build compile regexp/glob
 func (term *TaggedTerm) Build() (err error) {
 	if term.HasWildcard {
 		term.Glob = new(WildcardItems)
@@ -83,6 +84,16 @@ func (term *TaggedTerm) Match(v string) bool {
 
 type TaggedTermList []TaggedTerm
 
+// Build compile all regexp/glob
+func (t TaggedTermList) Build() (err error) {
+	for i := range t {
+		if err = t[i].Build(); err != nil {
+			return
+		}
+	}
+	return
+}
+
 func (t TaggedTermList) Write(sb *strings.Builder) string {
 	sb.WriteString("seriesByTag(")
 	for i, term := range t {
@@ -99,6 +110,7 @@ func (t TaggedTermList) Write(sb *strings.Builder) string {
 	return sb.String()
 }
 
+// MatchByPath match against tags map
 func (terms TaggedTermList) MatchByTagsMap(tags map[string]string) bool {
 	for _, term := range terms {
 		if v, ok := tags[term.Key]; ok {
@@ -113,55 +125,35 @@ func (terms TaggedTermList) MatchByTagsMap(tags map[string]string) bool {
 	return true
 }
 
-func NextTag(tags string) (tag, value, next string, found bool) {
-	tag, next, found = strings.Cut(tags, "=")
-	if found {
-		value, next, _ = strings.Cut(next, "&")
-	}
-	return
-}
-
-// MatchByPath match against GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3)
-func (terms TaggedTermList) MatchByPath(path string) bool {
-	var (
-		tag, value string
-	)
-	name, tags, _ := strings.Cut(path, "?")
-	tag, value, tags, _ = NextTag(tags)
-
+// MatchByPath match against tags slice
+func (terms TaggedTermList) MatchByTags(tags []Tag) bool {
+	var i int
 LOOP:
 	for _, term := range terms {
-		if term.Key == "__name__" {
-			if !term.Match(name) {
-				return false
+		if len(tags) == i {
+			if term.Op == TaggedTermNe || term.Op == TaggedTermNotMatch {
+				// != and ~=! can be skiped and key can not exist
+				continue LOOP
 			}
-		} else {
-			if tag == "" {
+			return false
+		}
+		if term.Key != tags[i].Key {
+			// scan for tag
+			for ; i < len(tags); i++ {
+				if tags[i].Key == term.Key {
+					break
+				}
+			}
+			if len(tags) == i {
 				if term.Op == TaggedTermNe || term.Op == TaggedTermNotMatch {
 					// != and ~=! can be skiped and key can not exist
 					continue LOOP
 				}
 				return false
 			}
-			if term.Key != tag {
-				// scan for tag
-				for {
-					tag, value, tags, _ = NextTag(tags)
-					if tag == "" {
-						if term.Op == TaggedTermNe || term.Op == TaggedTermNotMatch {
-							// != and ~=! can be skiped and key can not exist
-							continue LOOP
-						}
-						return false
-					}
-					if tag == term.Key {
-						break
-					}
-				}
-			}
-			if !term.Match(value) {
-				return false
-			}
+		}
+		if !term.Match(tags[i].Value) {
+			return false
 		}
 	}
 	return true
@@ -312,6 +304,7 @@ func ParseTaggedConditions(conditions []string) (TaggedTermList, error) {
 	return terms, nil
 }
 
+// PathTags split GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3) into Tag's map
 func PathTagsMap(path string) (tags map[string]string, err error) {
 	name, args, ok := strings.Cut(path, "?")
 	if !ok || strings.Contains(name, "=") {
@@ -335,11 +328,20 @@ func PathTagsMap(path string) (tags map[string]string, err error) {
 	return
 }
 
+func NextTag(tags string) (tag, value, next string, found bool) {
+	tag, next, found = strings.Cut(tags, "=")
+	if found {
+		value, next, _ = strings.Cut(next, "&")
+	}
+	return
+}
+
 type Tag struct {
 	Key   string
 	Value string
 }
 
+// PathTags split GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3) into Tag's slice
 func PathTags(path string) (tags []Tag, err error) {
 	name, args, ok := strings.Cut(path, "?")
 	if !ok || strings.Contains(name, "=") {
@@ -352,8 +354,7 @@ func PathTags(path string) (tags []Tag, err error) {
 	)
 	tags = append(tags, Tag{Key: "__name__", Value: escape.Unescape(name)})
 	for args != "" {
-		if k, args, ok = strings.Cut(args, "="); ok {
-			v, args, _ = strings.Cut(args, "&")
+		if k, v, args, ok = NextTag(args); ok {
 			tags = append(tags, Tag{Key: escape.Unescape(k), Value: escape.Unescape(v)})
 		} else {
 			err = ErrPathInvalid{kv, "not delimited with ="}

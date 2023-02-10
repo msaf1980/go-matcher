@@ -5,8 +5,68 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
+
+type testTaggedTermList struct {
+	query      string
+	want       TaggedTermList
+	wantErr    bool
+	matchPaths []string
+	missPaths  []string
+}
+
+func runTestTaggedTermList(t *testing.T, tt testTaggedTermList) {
+	terms, err := ParseSeriesByTag(tt.query)
+	if (err != nil) != tt.wantErr {
+		t.Fatalf("ParseSeriesByTag(%q) error = %v, wantErr %v", tt.query, err, tt.wantErr)
+	}
+	if err = terms.Build(); err == nil {
+		if !cmp.Equal(terms, tt.want, cmpTransform) {
+			t.Errorf("TagsMatcher.Add() = %s", cmp.Diff(tt.want, terms, cmpTransform))
+		}
+		verifyTaggedTermList(t, tt.matchPaths, tt.missPaths, terms)
+	}
+	if tt.wantErr {
+		assert.Equal(t, 0, len(tt.matchPaths), "can't check on error")
+		assert.Equal(t, 0, len(tt.missPaths), "can't check on error")
+	}
+}
+
+func verifyTaggedTermList(t *testing.T, matchPaths, missPaths []string, terms TaggedTermList) {
+	for _, path := range matchPaths {
+		tags, err := PathTagsMap(path)
+		if err != nil {
+			t.Errorf("PathTags(%q) err = %q", path, err.Error())
+		}
+		if !terms.MatchByTagsMap(tags) {
+			t.Errorf("TaggedTermList.MatchByPathMap(%q) != true", path)
+		}
+		tagsMap, err := PathTagsMap(path)
+		if err != nil {
+			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
+		}
+		if !terms.MatchByTagsMap(tagsMap) {
+			t.Errorf("TaggedTermList.MatchByPathMap(%q) != true", path)
+		}
+	}
+	for _, path := range missPaths {
+		tags, err := PathTags(path)
+		if err != nil {
+			t.Errorf("PathTags(%q) err = %q", path, err.Error())
+		}
+		if terms.MatchByTags(tags) {
+			t.Errorf("TaggedTermList.MatchByPath(%q) != false", path)
+		}
+		tagsMap, err := PathTagsMap(path)
+		if err != nil {
+			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
+		}
+		if terms.MatchByTagsMap(tagsMap) {
+			t.Errorf("TaggedTermList.MatchByPathMap(%q) != false", path)
+		}
+	}
+}
 
 func TestPathTagsMap(t *testing.T) {
 	tests := []struct {
@@ -83,13 +143,17 @@ var (
 func BenchmarkPathTagsMap(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := PathTagsMap(pathTags)
-		require.NoError(b, err)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
 func BenchmarkPathTags(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := PathTags(pathTags)
-		require.NoError(b, err)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
