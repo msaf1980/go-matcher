@@ -38,3 +38,30 @@ func RunesExpand(runes []rune) (m map[rune]struct{}, failed bool) {
 
 	return
 }
+
+type ItemRune map[rune]struct{}
+
+// func (ItemRune) Type() NodeType {
+// 	return NodeRune
+// }
+
+func (item ItemRune) IsString() (string, bool) {
+	return "", false
+}
+
+func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
+		if _, ok := item[c]; ok {
+			found = true
+			part = part[n:]
+		}
+	}
+	if found {
+		if part != "" && len(nextItems) > 0 {
+			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+		} else if part != "" && len(nextItems) == 0 {
+			found = false
+		}
+	}
+	return
+}

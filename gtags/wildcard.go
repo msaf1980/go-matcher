@@ -89,10 +89,13 @@ func (node *WildcardItems) Merge(inners []items.InnerItem) {
 			sb.WriteString(node.P)
 			sb.WriteString(s)
 			i := 1
-			for i < len(inners) && inners[i].Type() == items.NodeString {
-				s := string(inners[i].(items.ItemString))
-				sb.WriteString(s)
-				i++
+			for i < len(inners) {
+				if s, ok := inners[i].IsString(); ok {
+					sb.WriteString(s)
+					i++
+				} else {
+					break
+				}
 			}
 
 			if i == len(inners) {
@@ -113,16 +116,21 @@ func (node *WildcardItems) Merge(inners []items.InnerItem) {
 			//merge to suffix
 			size := len(node.Suffix) + len(v)
 			i := last - 1
-			for i > 0 && inners[i].Type() == items.NodeString {
-				size += len(inners[i].(items.ItemString))
-				i--
+			for i > 0 {
+				if s, ok := inners[i].IsString(); ok {
+					size += len(s)
+					i--
+				} else {
+					break
+				}
 			}
 			i++
 			last = i
 			var sb strings.Builder
 			sb.Grow(size)
 			for ; i < len(inners); i++ {
-				sb.WriteString(string(inners[i].(items.ItemString)))
+				s, _ := inners[i].IsString()
+				sb.WriteString(s)
 			}
 			sb.WriteString(node.Suffix)
 			node.Suffix = sb.String()
@@ -185,7 +193,7 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 				}
 				node.MinSize += min
 				if node.MaxSize != -1 {
-					if inner.Type() == items.NodeStar {
+					if max == -1 {
 						node.MaxSize = -1
 					} else {
 						node.MaxSize += max

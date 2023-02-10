@@ -30,3 +30,57 @@ func ListExpand(s string) (list []string, failed bool) {
 
 	return
 }
+
+type ItemList struct {
+	// nodeList
+	Vals    []string // strings
+	ValsMin int      // min len in vals or min rune in range
+	ValsMax int      // max len in vals or max rune in range
+}
+
+// func (*ItemList) Type() NodeType {
+// 	return NodeList
+// }
+
+func (item *ItemList) IsString() (string, bool) {
+	return "", false
+}
+
+func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+	// TODO: nodeList Skip scan
+	l := len(part)
+	if l < item.ValsMin {
+		return
+	}
+	if len(nextItems) == 0 && l > item.ValsMax {
+		return
+	}
+	// TODO: may be optimize scan of duplicate with prefix tree ?
+LOOP:
+	for _, s := range item.Vals {
+		part := part
+		if part == s {
+			// full match
+			found = true
+			part = ""
+		} else if strings.HasPrefix(part, s) {
+			// strip prefix
+			found = true
+			part = part[len(s):]
+		} else {
+			// try to next
+			continue
+		}
+		if found {
+			if part != "" && len(nextItems) > 0 {
+				found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			} else if part != "" || len(nextItems) > 0 {
+				found = false
+			}
+			if found {
+				break LOOP
+			}
+		}
+	}
+	return
+}

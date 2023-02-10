@@ -9,86 +9,42 @@ import (
 	"github.com/msaf1980/go-matcher/pkg/utils"
 )
 
-type NodeType int8
+// type NodeType int8
 
-const (
-	NodeEmpty NodeType = iota
-	NodeRoot           // root node (initial)
-	NodeString
-	NodeList   // {a,bc}
-	NodeRune   // [a-c]
-	NodeOne    // ?
-	NodeStar   // *
-	NodeInners // composite type, contains prefix, suffix, subitems in []inners
-)
+// const (
+// 	NodeEmpty NodeType = iota
+// 	NodeRoot           // root node (initial)
+// 	NodeString
+// 	NodeList   // {a,bc}
+// 	NodeRune   // [a-c]
+// 	NodeOne    // ?
+// 	NodeStar   // *
+// 	NodeInners // composite type, contains prefix, suffix, subitems in []inners
+// )
 
-var (
-	nodeTypeStrings = []string{"", "root", "string", "list", "rune", "?", "*", "inners"}
-)
+// var (
+// 	nodeTypeStrings = []string{"", "root", "string", "list", "rune", "?", "*", "inners"}
+// )
 
-func (n NodeType) String() string {
-	return nodeTypeStrings[n]
-}
+// func (n NodeType) String() string {
+// 	return nodeTypeStrings[n]
+// }
 
 type InnerItem interface {
-	Type() NodeType
+	// Type() NodeType
+	// String check if string
+	IsString() (s string, ok bool)
 	Match(part string, nextParts string, nextItems []InnerItem) (found bool)
-}
-
-type ItemRune map[rune]struct{}
-
-func (ItemRune) Type() NodeType {
-	return NodeRune
-}
-
-func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
-	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
-		if _, ok := item[c]; ok {
-			found = true
-			part = part[n:]
-		}
-	}
-	if found {
-		if part != "" && len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 {
-			found = false
-		}
-	}
-	return
-}
-
-type ItemString string
-
-func (ItemString) Type() NodeType {
-	return NodeString
-}
-
-func (item ItemString) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
-	s := string(item)
-	if part == s {
-		// full match
-		found = true
-		part = ""
-	} else if strings.HasPrefix(part, s) {
-		// strip prefix
-		found = true
-		part = part[len(s):]
-	}
-	if found {
-		if part != "" && len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 {
-			found = false
-		}
-	}
-	return
 }
 
 type ItemOne struct{}
 
-func (ItemOne) Type() NodeType {
-	return NodeOne
+// func (ItemOne) Type() NodeType {
+// 	return NodeOne
+// }
+
+func (item ItemOne) IsString() (string, bool) {
+	return "", false
 }
 
 func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -101,110 +57,6 @@ func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem) 
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
-		}
-	}
-	return
-}
-
-type ItemStar struct{}
-
-func (ItemStar) Type() NodeType {
-	return NodeStar
-}
-
-func (item ItemStar) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
-	if part == "" && len(nextItems) == 0 {
-		return true
-	}
-
-	nextOffset := 1 // string skip optimization
-LOOP:
-	for ; part != ""; part = part[nextOffset:] {
-		part := part           // avoid overwrite outer loop
-		nextItems := nextItems // avoid overwrite outer loop
-		nextOffset = 1
-		if len(nextItems) > 0 {
-			nextItem := nextItems[0]
-			switch v := nextItem.(type) {
-			// speedup NodeString find
-			case ItemString:
-				s := string(v)
-				if idx := strings.Index(part, s); idx == -1 {
-					// string not found, no need star scan
-					break LOOP
-				} else {
-					nextOffset += idx
-					idx += len(s)
-					part = part[idx:]
-					nextItems = nextItems[1:]
-					found = true
-				}
-				// TODO: may be other optimization: may be for list
-			}
-		} else {
-			// all of string matched to *
-			part = ""
-			found = true
-		}
-		if found {
-			if part != "" && len(nextItems) > 0 {
-				found = nextItems[0].Match(part, nextParts, nextItems[1:])
-			} else if part != "" || len(nextItems) > 0 {
-				found = false
-			}
-			if found {
-				break LOOP
-			}
-		}
-	}
-	return
-}
-
-type ItemList struct {
-	// nodeList
-	Vals    []string // strings
-	ValsMin int      // min len in vals or min rune in range
-	ValsMax int      // max len in vals or max rune in range
-}
-
-func (*ItemList) Type() NodeType {
-	return NodeList
-}
-
-func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
-	// TODO: nodeList Skip scan
-	l := len(part)
-	if l < item.ValsMin {
-		return
-	}
-	if len(nextItems) == 0 && l > item.ValsMax {
-		return
-	}
-	// TODO: may be optimize scan of duplicate with prefix tree ?
-LOOP:
-	for _, s := range item.Vals {
-		part := part
-		if part == s {
-			// full match
-			found = true
-			part = ""
-		} else if strings.HasPrefix(part, s) {
-			// strip prefix
-			found = true
-			part = part[len(s):]
-		} else {
-			// try to next
-			continue
-		}
-		if found {
-			if part != "" && len(nextItems) > 0 {
-				found = nextItems[0].Match(part, nextParts, nextItems[1:])
-			} else if part != "" || len(nextItems) > 0 {
-				found = false
-			}
-			if found {
-				break LOOP
-			}
 		}
 	}
 	return
@@ -224,7 +76,7 @@ func NextInnerItem(s string) (item InnerItem, next string, minLen int, maxLen in
 		}
 		runes, failed := RunesExpand([]rune(s))
 		if failed {
-			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+			return nil, s, 0, 0, ErrNodeMissmatch{"rune", s}
 		}
 		if len(runes) == 0 {
 			return nil, next, 0, 0, nil
@@ -246,7 +98,7 @@ func NextInnerItem(s string) (item InnerItem, next string, minLen int, maxLen in
 		}
 		vals, failed := ListExpand(s)
 		if failed {
-			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+			return nil, s, 0, 0, ErrNodeMissmatch{"list", s}
 		}
 		if len(vals) == 0 {
 			return nil, next, 0, 0, nil
@@ -275,7 +127,7 @@ func NextInnerItem(s string) (item InnerItem, next string, minLen int, maxLen in
 				break
 			}
 		}
-		return ItemStar{}, next, 0, 0, nil
+		return ItemStar{}, next, 0, -1, nil
 	case '?':
 		next := s[1:]
 		return ItemOne{}, next, 1, 1, nil
@@ -402,10 +254,13 @@ func (node *NodeItem) Merge(inners []InnerItem) {
 			sb.WriteString(node.P)
 			sb.WriteString(s)
 			i := 1
-			for i < len(inners) && inners[i].Type() == NodeString {
-				s := string(inners[i].(ItemString))
-				sb.WriteString(s)
-				i++
+			for i < len(inners) {
+				if s, ok := inners[i].IsString(); ok {
+					sb.WriteString(s)
+					i++
+				} else {
+					break
+				}
 			}
 
 			if i == len(inners) {
@@ -426,9 +281,13 @@ func (node *NodeItem) Merge(inners []InnerItem) {
 			//merge to suffix
 			size := len(node.Suffix) + len(v)
 			i := last - 1
-			for i > 0 && inners[i].Type() == NodeString {
-				size += len(inners[i].(ItemString))
-				i--
+			for i > 0 {
+				if s, ok := inners[i].IsString(); ok {
+					size += len(s)
+					i--
+				} else {
+					break
+				}
 			}
 			i++
 			last = i
@@ -541,7 +400,7 @@ func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, er
 						}
 						lastNode.MinSize += min
 						if lastNode.MaxSize != -1 {
-							if inner.Type() == NodeStar {
+							if max == -1 {
 								lastNode.MaxSize = -1
 							} else {
 								lastNode.MaxSize += max
@@ -658,7 +517,7 @@ func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen
 		}
 		runes, failed := RunesExpand([]rune(s))
 		if failed {
-			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+			return nil, s, 0, 0, ErrNodeMissmatch{"rune", s}
 		}
 		if len(runes) == 0 {
 			return nil, next, 0, 0, nil
@@ -680,7 +539,7 @@ func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen
 		}
 		vals, failed := ListExpand(s)
 		if failed {
-			return nil, s, 0, 0, ErrNodeMissmatch{NodeRune, s}
+			return nil, s, 0, 0, ErrNodeMissmatch{"list", s}
 		}
 		if len(vals) == 0 {
 			return nil, next, 0, 0, nil

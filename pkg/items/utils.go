@@ -100,9 +100,3 @@ func IntersectGlobs(globs []string) string {
 		pos += n
 	}
 }
-
-func splitList(s string) ([]string, error) {
-	m := make([]string, 0, 8)
-
-	return m, nil
-}

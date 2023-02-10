@@ -1,12 +1,12 @@
 package items
 
 type ErrNodeMissmatch struct {
-	Typ  NodeType
+	Type string
 	Node string
 }
 
 func (e ErrNodeMissmatch) Error() string {
-	return "node type " + e.Typ.String() + " mismatch: " + e.Node
+	return "node type '" + e.Type + "'mismatch: " + e.Node
 }
 
 type ErrNodeNotEnd struct {
