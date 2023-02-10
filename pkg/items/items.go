@@ -34,7 +34,7 @@ type InnerItem interface {
 	// Type() NodeType
 	// String check if string
 	IsString() (s string, ok bool)
-	Match(part string, nextParts string, nextItems []InnerItem) (found bool)
+	Match(part string, nextParts string, nextItems []InnerItem, gready bool) (found bool, offset int)
 }
 
 type ItemOne struct{}
@@ -47,14 +47,14 @@ func (item ItemOne) IsString() (string, bool) {
 	return "", false
 }
 
-func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem, _ bool) (found bool, _ int) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		found = true
 		part = part[n:]
 	}
 	if found {
 		if part != "" && len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found, _ = nextItems[0].Match(part, nextParts, nextItems[1:], false)
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
@@ -188,7 +188,7 @@ func (node *NodeItem) MatchNode(part string) (matched bool) {
 			part = part[:len(part)-len(node.Suffix)]
 		}
 
-		matched = node.Inners[0].Match(part, "", node.Inners[1:])
+		matched, _ = node.Inners[0].Match(part, "", node.Inners[1:], false)
 	}
 	return
 }

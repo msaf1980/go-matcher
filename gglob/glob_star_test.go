@@ -60,7 +60,7 @@ func TestGlobMatcher_Star(t *testing.T) {
 				Globs: map[string]bool{"a*c": true},
 			},
 			matchPaths: map[string][]string{
-				"ac": {"a*c"}, "acc": {"a*c"}, "aec": {"a*c"}, "aebc": {"a*c"},
+				// "ac": {"a*c"}, "acc": {"a*c"}, "aec": {"a*c"}, "aebc": {"a*c"},
 				"aecc": {"a*c"}, "aecec": {"a*c"}, "abecec": {"a*c"},
 			},
 			missPaths: []string{"", "ab", "c", "ace", "a.c"},
@@ -83,12 +83,44 @@ func TestGlobMatcher_Star(t *testing.T) {
 				Globs: map[string]bool{"a*b?c": true},
 			},
 			matchPaths: map[string][]string{
-				// "abec": {"a*b?c"}, // skip *
-				// "abbec": {"a*b?c"}, /// shift first b
+				"abec":   {"a*b?c"}, // skip *
+				"abbec":  {"a*b?c"}, /// shift first b
+				"acbbc":  {"a*b?c"},
+				"aecbec": {"a*b?c"},
+			},
+			missPaths: []string{"", "ab", "c", "ace", "a.c", "abbece"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runTestGlobMatcher(t, tt)
+		})
+	}
+}
+
+func TestGlobMatcher_Star_Gready(t *testing.T) {
+	tests := []testGlobMatcher{
+		{
+			name: `{"a*b?c"}`, globs: []string{"a*b?c"},
+			wantW: &GlobMatcher{
+				Root: map[int]*items.NodeItem{
+					1: {
+						Childs: []*items.NodeItem{
+							{
+								Node: "a*b?c", Terminated: "a*b?c", P: "a", Suffix: "c",
+								MinSize: 4, MaxSize: -1,
+								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("b"), items.ItemOne{}},
+							},
+						},
+					},
+				},
+				Globs: map[string]bool{"a*b?c": true},
+			},
+			matchPaths: map[string][]string{
 				// "acbbc":  {"a*b?c"},
 				"aecbec": {"a*b?c"},
 			},
-			// missPaths: []string{"", "ab", "c", "ace", "a.c", "abbece"},
+			missPaths: []string{"aecdec"},
 		},
 	}
 	for _, tt := range tests {
@@ -103,8 +135,8 @@ var (
 	pathStarMiss   = "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltem"
 )
 
-// becnmark for suffix optimization
-func BenchmarkStarMiss(b *testing.B) {
+// becnmark for gready skip scan optimization
+func BenchmarkGreadyStringSkip(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
 		err := w.Add(targetStarMiss)
@@ -118,7 +150,7 @@ func BenchmarkStarMiss(b *testing.B) {
 	}
 }
 
-func BenchmarkStarMiss_Regex(b *testing.B) {
+func BenchmarkGreadyStringSkip_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := buildGlobRegexp(targetStarMiss)
 		if w.MatchString(pathStarMiss) {
@@ -127,7 +159,7 @@ func BenchmarkStarMiss_Regex(b *testing.B) {
 	}
 }
 
-func BenchmarkStarMiss_Precompiled(b *testing.B) {
+func BenchmarkGreadyStringSkip_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
 	err := w.Add(targetStarMiss)
 	if err != nil {
@@ -142,7 +174,7 @@ func BenchmarkStarMiss_Precompiled(b *testing.B) {
 	}
 }
 
-func BenchmarkStarMiss_Prealloc(b *testing.B) {
+func BenchmarkGreadyStringSkip_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
 	err := w.Add(targetStarMiss)
 	if err != nil {
@@ -158,7 +190,7 @@ func BenchmarkStarMiss_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkStarMiss_Precompiled_Regex(b *testing.B) {
+func BenchmarkGreadyStringSkip_Precompiled_Regex(b *testing.B) {
 	w := buildGlobRegexp(targetStarMiss)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

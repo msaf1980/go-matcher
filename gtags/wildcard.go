@@ -48,7 +48,7 @@ func (node *WildcardItems) Match(part string) (matched bool) {
 			part = part[:len(part)-len(node.Suffix)]
 		}
 
-		matched = node.Inners[0].Match(part, "", node.Inners[1:])
+		matched, _ = node.Inners[0].Match(part, "", node.Inners[1:], false)
 	}
 	return
 }

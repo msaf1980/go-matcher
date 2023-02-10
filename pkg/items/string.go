@@ -12,12 +12,16 @@ func (item ItemString) IsString() (string, bool) {
 	return string(item), true
 }
 
-func (item ItemString) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemString) Match(part string, nextParts string, nextItems []InnerItem, gready bool) (found bool, offset int) {
 	s := string(item)
-	if part == s {
-		// full match
-		found = true
-		part = ""
+	if gready {
+		if offset = strings.Index(part, s); offset == -1 {
+			return
+		} else {
+			found = true
+			offset += len(s)
+			part = part[offset:]
+		}
 	} else if strings.HasPrefix(part, s) {
 		// strip prefix
 		found = true
@@ -25,7 +29,7 @@ func (item ItemString) Match(part string, nextParts string, nextItems []InnerIte
 	}
 	if found {
 		if part != "" && len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found, _ = nextItems[0].Match(part, nextParts, nextItems[1:], false)
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}

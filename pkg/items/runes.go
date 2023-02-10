@@ -49,7 +49,7 @@ func (item ItemRune) IsString() (string, bool) {
 	return "", false
 }
 
-func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem, _ bool) (found bool, _ int) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		if _, ok := item[c]; ok {
 			found = true
@@ -58,7 +58,7 @@ func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem)
 	}
 	if found {
 		if part != "" && len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found, _ = nextItems[0].Match(part, nextParts, nextItems[1:], false)
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}

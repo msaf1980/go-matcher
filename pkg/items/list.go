@@ -46,7 +46,7 @@ func (item *ItemList) IsString() (string, bool) {
 	return "", false
 }
 
-func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem, _ bool) (found bool, offset int) {
 	// TODO: nodeList Skip scan
 	l := len(part)
 	if l < item.ValsMin {
@@ -73,7 +73,7 @@ LOOP:
 		}
 		if found {
 			if part != "" && len(nextItems) > 0 {
-				found = nextItems[0].Match(part, nextParts, nextItems[1:])
+				found, _ = nextItems[0].Match(part, nextParts, nextItems[1:], false)
 			} else if part != "" || len(nextItems) > 0 {
 				found = false
 			}
