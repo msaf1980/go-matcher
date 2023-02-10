@@ -21,6 +21,9 @@ func Test_listExpand(t *testing.T) {
 		{"{,abc}", []string{"abc"}, false},
 		{"{abc,}", []string{"abc"}, false},
 		{"{abc,,,q}", []string{"abc", "q"}, false},
+		// duplicate
+		{"{a,a}", []string{"a"}, false},
+		{"{a,b,a}", []string{"a", "b"}, false},
 		// broken
 		{"", nil, true},
 		{"{a,", nil, true},

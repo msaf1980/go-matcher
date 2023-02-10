@@ -23,6 +23,35 @@ func interception(a []string) string {
 	}
 }
 
+func removeDuplicated(a []string) []string {
+	n := len(a)
+	i := 0
+	for ; i < n-1; i++ {
+		if a[i] != a[i+1] {
+			break
+		}
+	}
+	if i < n {
+		a = a[i:]
+		n = len(a)
+	}
+
+	// this index will move only when we modify the array in-place to include a new	non-duplicate element.
+	j := 0
+
+	for i = 0; i < n; i++ {
+		//  If the current element is equal to the next element, then skip the current element because it's a duplicate.
+		if i < n-1 && a[i] == a[i+1] {
+			continue
+		}
+
+		a[j] = a[i]
+		j++
+	}
+
+	return a[:j]
+}
+
 func ListExpand(s string) (list []string, failed bool) {
 	last := len(s) - 1
 	if len(s) > 1 && s[0] == '{' && s[last] == '}' {
@@ -33,14 +62,13 @@ func ListExpand(s string) (list []string, failed bool) {
 		list = strings.Split(s, ",")
 		if len(list) > 0 {
 			sort.Strings(list)
-			// remove empty string in-place
-			// from start
-			i := 0
-			for ; i < len(list) && list[i] == ""; i++ {
+			// cleanup duplicated
+			list = removeDuplicated(list)
+			// remove empty string  from start
+			if list[0] == "" {
+				list = list[1:]
 			}
-			if i != len(list) {
-				list = list[i:]
-			}
+
 		}
 	} else {
 		failed = true
