@@ -233,6 +233,7 @@ func BenchmarkList_Prealloc(b *testing.B) {
 	globs := make([]string, 0, 4)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		globs = globs[:0]
 		w.MatchB(pathsBatchList[0], &globs)
 		if len(globs) != 1 {
 			b.Fatal(globs)
@@ -250,6 +251,7 @@ func BenchmarkList_Prealloc_ByParts(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		parts := items.PathSplit(pathsBatchList[0])
+		globs = globs[:0]
 		w.MatchByPartsB(parts, &globs)
 		if len(globs) != 1 {
 			b.Fatal(globs)
@@ -267,6 +269,7 @@ func BenchmarkList_Prealloc_ByParts2(b *testing.B) {
 	globs := make([]string, 0, 4)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		globs = globs[:0]
 		w.MatchByPartsB(parts, &globs)
 		if len(globs) != 1 {
 			b.Fatal(globs)
@@ -323,6 +326,7 @@ func BenchmarkList_Batch_Prealloc(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, path := range pathsBatchList {
+			globs = globs[:0]
 			w.MatchB(path, &globs)
 		}
 	}
@@ -339,6 +343,7 @@ func BenchmarkList_Batch_Prealloc_ByParts(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, path := range pathsBatchList {
 			parts := items.PathSplit(path)
+			globs = globs[:0]
 			w.MatchByPartsB(parts, &globs)
 		}
 	}
@@ -358,6 +363,7 @@ func BenchmarkList_Batch_Prealloc_ByParts2(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, parts := range partsBatchList {
+			globs = globs[:0]
 			w.MatchByPartsB(parts, &globs)
 		}
 	}

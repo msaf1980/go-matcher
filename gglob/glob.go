@@ -71,7 +71,7 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 }
 
 func (w *GlobMatcher) MatchB(path string, globs *[]string) {
-	*globs = (*globs)[:0]
+	// *globs = (*globs)[:0]
 	if path == "" {
 		return
 	}
@@ -94,7 +94,7 @@ func (w *GlobMatcher) MatchByParts(parts []string) (globs []string) {
 }
 
 func (w *GlobMatcher) MatchByPartsB(parts []string, globs *[]string) {
-	*globs = (*globs)[:0]
+	// *globs = (*globs)[:0]
 	if len(parts) == 0 {
 		return
 	}

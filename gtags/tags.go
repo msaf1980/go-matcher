@@ -63,7 +63,7 @@ func (w *TagsMatcher) MatchByTagsMap(tags map[string]string) (queries []string) 
 }
 
 func (w *TagsMatcher) MatchByTagsMapB(tags map[string]string, queries *[]string) {
-	*queries = (*queries)[:0]
+	// *queries = (*queries)[:0]
 	if len(tags) == 0 {
 		return
 	}
@@ -81,7 +81,7 @@ func (w *TagsMatcher) MatchByTags(tags []Tag) (queries []string) {
 }
 
 func (w *TagsMatcher) MatchByTagsB(tags []Tag, queries *[]string) {
-	*queries = (*queries)[:0]
+	// *queries = (*queries)[:0]
 	if len(tags) == 0 {
 		return
 	}

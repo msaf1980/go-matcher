@@ -112,6 +112,7 @@ func BenchmarkBatch_Precompiled_ByTags(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
+			queries = queries[:0]
 			w.MatchByTagsB(tags, &queries)
 		}
 	}
@@ -129,6 +130,7 @@ func BenchmarkBatch_Precompiled_ByTags2(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, tags := range tagsBatchList {
+			queries = queries[:0]
 			w.MatchByTagsB(tags, &queries)
 		}
 	}

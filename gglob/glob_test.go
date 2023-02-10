@@ -176,6 +176,7 @@ func BenchmarkSizeCheck_P(b *testing.B) {
 	globs := make([]string, 0, 4)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		globs = globs[:0]
 		w.MatchB(pathSizeCheck, &globs)
 		if len(globs) > 0 {
 			b.Fatal(globs)

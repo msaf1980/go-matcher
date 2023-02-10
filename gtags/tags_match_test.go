@@ -174,6 +174,7 @@ func BenchmarkEqualR_Precompiled_ByTags(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+		queries = queries[:0]
 		w.MatchByTagsB(tags, &queries)
 		if len(queries) != 1 {
 			b.Fatal(queries)
@@ -195,6 +196,7 @@ func BenchmarkEqualR_Precompiled_ByTags2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		queries = queries[:0]
 		w.MatchByTagsB(tags, &queries)
 		if len(queries) != 1 {
 			b.Fatal(queries)
