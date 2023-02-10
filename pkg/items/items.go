@@ -9,39 +9,12 @@ import (
 	"github.com/msaf1980/go-matcher/pkg/utils"
 )
 
-// type NodeType int8
-
-// const (
-// 	NodeEmpty NodeType = iota
-// 	NodeRoot           // root node (initial)
-// 	NodeString
-// 	NodeList   // {a,bc}
-// 	NodeRune   // [a-c]
-// 	NodeOne    // ?
-// 	NodeStar   // *
-// 	NodeInners // composite type, contains prefix, suffix, subitems in []inners
-// )
-
-// var (
-// 	nodeTypeStrings = []string{"", "root", "string", "list", "rune", "?", "*", "inners"}
-// )
-
-// func (n NodeType) String() string {
-// 	return nodeTypeStrings[n]
-// }
-
 type InnerItem interface {
-	// Type() NodeType
-	// String check if string
 	IsString() (s string, ok bool)
 	Match(part string, nextParts string, nextItems []InnerItem) (found bool)
 }
 
 type ItemOne struct{}
-
-// func (ItemOne) Type() NodeType {
-// 	return NodeOne
-// }
 
 func (item ItemOne) IsString() (string, bool) {
 	return "", false

@@ -32,3 +32,12 @@ func (item ItemString) Match(part string, nextParts string, nextItems []InnerIte
 	}
 	return
 }
+
+func (item ItemString) Locate(part string) (offset int, found bool) {
+	s := string(item)
+	if offset = strings.Index(part, s); offset != -1 {
+		offset += len(s)
+		found = true
+	}
+	return
+}

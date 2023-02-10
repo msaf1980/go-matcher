@@ -1,12 +1,6 @@
 package items
 
-import "strings"
-
 type ItemStar struct{}
-
-// func (ItemStar) Type() NodeType {
-// 	return NodeStar
-// }
 
 func (item ItemStar) IsString() (string, bool) {
 	return "", false
@@ -28,13 +22,11 @@ LOOP:
 			switch v := nextItem.(type) {
 			// speedup NodeString find
 			case ItemString:
-				s := string(v)
-				if idx := strings.Index(part, s); idx == -1 {
-					// string not found, no need star scan
+				var idx int
+				if idx, found = v.Locate(part); !found {
 					break LOOP
 				} else {
 					nextOffset += idx
-					idx += len(s)
 					part = part[idx:]
 					nextItems = nextItems[1:]
 					found = true
@@ -43,19 +35,18 @@ LOOP:
 			}
 		} else {
 			// all of string matched to *
-			part = ""
 			found = true
+			break LOOP
 		}
-		if found {
-			if part != "" && len(nextItems) > 0 {
-				found = nextItems[0].Match(part, nextParts, nextItems[1:])
-			} else if part != "" || len(nextItems) > 0 {
-				found = false
-			}
-			if found {
+		if part != "" && len(nextItems) > 0 {
+			if found = nextItems[0].Match(part, nextParts, nextItems[1:]); found {
 				break LOOP
 			}
+		} else if part != "" || len(nextItems) > 0 {
+			found = false
+			break LOOP
 		}
+
 	}
 	return
 }
