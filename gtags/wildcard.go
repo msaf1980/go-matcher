@@ -184,7 +184,7 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 			inners := make([]items.InnerItem, 0, innerCount)
 
 			for glob != "" {
-				inner, glob, min, max, err = items.NextInnerItem(glob)
+				inner, glob, min, max, err = items.NextWildcardItem(glob)
 				if err != nil {
 					return
 				}

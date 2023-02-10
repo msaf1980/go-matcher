@@ -5,6 +5,24 @@ import (
 	"strings"
 )
 
+func interception(a []string) string {
+	switch len(a) {
+	case 0:
+		return ""
+	case 1:
+		return a[0]
+	default:
+		for i := range a[0] {
+			for n := 1; n < len(a); n++ {
+				if i == len(a[n]) || a[0][i] != a[n][i] {
+					return a[0][:i]
+				}
+			}
+		}
+		return a[0]
+	}
+}
+
 func ListExpand(s string) (list []string, failed bool) {
 	last := len(s) - 1
 	if len(s) > 1 && s[0] == '{' && s[last] == '}' {

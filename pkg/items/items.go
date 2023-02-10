@@ -35,85 +35,6 @@ func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem) 
 	return
 }
 
-// NextInnerItem extract InnerItem
-func NextInnerItem(s string) (item InnerItem, next string, minLen int, maxLen int, err error) {
-	if s == "" {
-		return nil, s, 0, 0, io.EOF
-	}
-	switch s[0] {
-	case '[':
-		if idx := strings.Index(s, "]"); idx != -1 {
-			idx++
-			next = s[idx:]
-			s = s[:idx]
-		}
-		runes, failed := RunesExpand([]rune(s))
-		if failed {
-			return nil, s, 0, 0, ErrNodeMissmatch{"rune", s}
-		}
-		if len(runes) == 0 {
-			return nil, next, 0, 0, nil
-		}
-		if len(runes) == 1 {
-			var v string
-			for k := range runes {
-				v = string(k)
-			}
-			// one item optimization
-			return ItemString(v), next, 1, 1, nil
-		}
-		return ItemRune(runes), next, 1, 1, nil
-	case '{':
-		if idx := strings.Index(s, "}"); idx != -1 {
-			idx++
-			next = s[idx:]
-			s = s[:idx]
-		}
-		vals, failed := ListExpand(s)
-		if failed {
-			return nil, s, 0, 0, ErrNodeMissmatch{"list", s}
-		}
-		if len(vals) == 0 {
-			return nil, next, 0, 0, nil
-		}
-		if len(vals) == 1 {
-			// one item optimization
-			return ItemString(vals[0]), next, len(vals[0]), len(vals[0]), nil
-		}
-		minLen := math.MaxInt
-		maxLen := 0
-		for _, v := range vals {
-			l := len(v)
-			if maxLen < l {
-				maxLen = l
-			}
-			if minLen > l {
-				minLen = l
-			}
-		}
-		return &ItemList{Vals: vals, ValsMin: minLen, ValsMax: maxLen}, next, minLen, maxLen, nil
-	case '*':
-		var next string
-		for i, c := range s {
-			if c != '*' {
-				next = s[i:]
-				break
-			}
-		}
-		return ItemStar{}, next, 0, -1, nil
-	case '?':
-		next := s[1:]
-		return ItemOne{}, next, 1, 1, nil
-	case ']', '}':
-		return nil, s, 0, 0, ErrNodeUnclosed{s}
-	default:
-		// string segment
-		end := IndexWildcard(s)
-		v, next := SplitString(s, end)
-		return ItemString(v), next, len(v), len(v), nil
-	}
-}
-
 // NodeItem contains pattern node item
 type NodeItem struct {
 	Node string // raw string (or full glob for terminated)
@@ -364,7 +285,7 @@ func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, er
 					inners := make([]InnerItem, 0, innerCount)
 
 					for part != "" {
-						inner, part, min, max, err = NextInnerItem(part)
+						inner, part, min, max, err = NextWildcardItem(part)
 						if err != nil {
 							return
 						}
@@ -476,7 +397,7 @@ func (w *GlobMatcher) MatchP(path string, globs *[]string) {
 	}
 }
 
-// NextWildcardItem extract InnerItem
+// NextWildcardItem extract InnerItem from glob (not regexp)
 func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen int, err error) {
 	if s == "" {
 		return nil, s, 0, 0, io.EOF
@@ -541,7 +462,7 @@ func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen
 				break
 			}
 		}
-		return ItemStar{}, next, 0, 0, nil
+		return ItemStar{}, next, 0, -1, nil
 	case '?':
 		next := s[1:]
 		return ItemOne{}, next, 1, 1, nil
