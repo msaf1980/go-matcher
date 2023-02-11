@@ -90,19 +90,24 @@ func TestGlobMatcher_List(t *testing.T) {
 			missPaths:  []string{"", "b", "d", "ab", "a.b"},
 		},
 		{
-			name: `{"{a,}"}`, globs: []string{"{a,}"},
+			name: `{"b{a,}"}`, globs: []string{"b{a,}"},
 			wantW: &GlobMatcher{
 				Root: map[int]*items.NodeItem{
 					1: {
 						Childs: []*items.NodeItem{
-							{Node: "{a,}", Terminated: "{a,}", MinSize: 1, MaxSize: 1, P: "a"},
+							{
+								Node: "b{a,}", Terminated: "b{a,}", MinSize: 1, MaxSize: 2, P: "b",
+								Inners: []items.InnerItem{
+									&items.ItemList{Vals: []string{"", "a"}, ValsMax: 1},
+								},
+							},
 						},
 					},
 				},
-				Globs: map[string]bool{"{a,}": true},
+				Globs: map[string]bool{"b{a,}": true},
 			},
-			matchPaths: map[string][]string{"a": {"{a,}"}},
-			missPaths:  []string{"", "b", "d", "ab", "a.b"},
+			matchPaths: map[string][]string{"b": {"b{a,}"}, "ba": {"b{a,}"}},
+			missPaths:  []string{"", "bb", "bd", "ab", "bab", "ba.b"},
 		},
 	}
 	for _, tt := range tests {

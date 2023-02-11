@@ -17,16 +17,16 @@ func Test_listExpand(t *testing.T) {
 		{"{}", nil, false},
 		{"{abc}", []string{"abc"}, false},
 		{"{abc,z}", []string{"abc", "z"}, false},
-		// partially broken
-		{"{,abc}", []string{"abc"}, false},
-		{"{abc,}", []string{"abc"}, false},
-		{"{abc,,,q}", []string{"abc", "q"}, false},
+		// has empty item
+		{"{,abc}", []string{"", "abc"}, false},
+		{"{abc,}", []string{"", "abc"}, false},
+		{"{abc,,,q}", []string{"", "abc", "q"}, false},
 		// duplicate
 		{"{a,a}", []string{"a"}, false},
 		{"{a,b,a}", []string{"a", "b"}, false},
 		{"{b,a,b}", []string{"a", "b"}, false},
 		{"{b,a,b,z}", []string{"a", "b", "z"}, false},
-		{"{c,a,b,a,c,z}", []string{"a", "b", "c", "z"}, false},
+		{"{c,a,b,a,c,,z}", []string{"", "a", "b", "c", "z"}, false},
 		// broken
 		{"", nil, true},
 		{"{a,", nil, true},
