@@ -20,7 +20,7 @@ LOOP:
 		if len(nextItems) > 0 {
 			nextItem := nextItems[0]
 			switch v := nextItem.(type) {
-			// speedup NodeString find
+			// gready string skip scan, speedup NodeString find
 			case ItemString:
 				var idx int
 				if idx, found = v.Locate(part); !found {
@@ -31,7 +31,16 @@ LOOP:
 					nextItems = nextItems[1:]
 					found = true
 				}
-				// TODO: may be other optimization: may be for list
+			case *ItemList:
+				if v.ValsMin > 0 {
+					// gready list skip scan, speedup find any first rune
+					if idx := v.LocateFirst(part); idx == -1 {
+						break LOOP
+					} else {
+						nextOffset += idx
+						part = part[idx:]
+					}
+				}
 			}
 		} else {
 			// all of string matched to *

@@ -90,9 +90,10 @@ func ListExpand(s string) (list []string, failed bool) {
 
 type ItemList struct {
 	// nodeList
-	Vals    []string // strings
-	ValsMin int      // min len in vals or min rune in range
-	ValsMax int      // max len in vals or max rune in range
+	FirstRunes map[rune]struct{} // for gready skip scan, if no empty string in list
+	Vals       []string          // strings
+	ValsMin    int               // min len in vals or min rune in range
+	ValsMax    int               // max len in vals or max rune in range
 }
 
 // func (*ItemList) Type() NodeType {
@@ -142,6 +143,18 @@ LOOP:
 	return
 }
 
+// LocateFirst find any of first runes pos (call only if ValsMin > 0)
+func (item *ItemList) LocateFirst(part string) (offset int) {
+	offset = -1
+	for i, c := range part {
+		if _, ok := item.FirstRunes[c]; !ok {
+			offset += i
+			return
+		}
+	}
+	return
+}
+
 // func NewItemList return optimized version of InnerItem
 func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
 	if len(vals) == 0 {
@@ -162,8 +175,21 @@ func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
 			minLen = l
 		}
 	}
+	var firstsRunes map[rune]struct{}
+	if minLen > 0 {
+		// if no empty string in list
+		var firstsRunes = make(map[rune]struct{})
+		last := utf8.RuneError
+		for _, v := range vals {
+			c, _ := utf8.DecodeRuneInString(v)
+			if c != last {
+				firstsRunes[c] = struct{}{}
+				last = c
+			}
+		}
+	}
 
-	item = &ItemList{Vals: vals, ValsMin: minLen, ValsMax: maxLen}
+	item = &ItemList{Vals: vals, FirstRunes: firstsRunes, ValsMin: minLen, ValsMax: maxLen}
 
 	return
 }
