@@ -228,7 +228,6 @@ func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, er
 			return nil, ErrNodeEmpty{glob}
 		}
 		for _, child := range node.Childs {
-			// TODO: may be normalize parts for equals like {a,z} and {z,a} ?
 			if part == child.Node {
 				node = child
 				found = true

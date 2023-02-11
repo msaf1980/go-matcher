@@ -75,11 +75,6 @@ func ListExpand(s string) (list []string, failed bool) {
 			sort.Strings(list)
 			// cleanup duplicated
 			list = removeDuplicated(list)
-			// remove empty string  from start
-			if list[0] == "" {
-				list = list[1:]
-			}
-
 		}
 	} else {
 		failed = true
@@ -105,7 +100,6 @@ func (item *ItemList) IsString() (string, bool) {
 }
 
 func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
-	// TODO: nodeList Skip scan
 	l := len(part)
 	if l < item.ValsMin {
 		return
@@ -113,7 +107,7 @@ func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem
 	if len(nextItems) == 0 && l > item.ValsMax {
 		return
 	}
-	// TODO: may be optimize scan of duplicate with prefix tree ?
+	// TODO: may be optimize scan of duplicate with prefix tree (runes ?) ?
 LOOP:
 	for _, s := range item.Vals {
 		part := part
