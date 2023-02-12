@@ -16,17 +16,17 @@ func TestGlobMatcher_Multi(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a*c", Terminated: "a*c", P: "a", Suffix: "c",
+								Node: "a*c", Terminated: "a*c", TermIndex: -1, P: "a", Suffix: "c",
 								Inners:  []items.InnerItem{items.ItemStar{}},
 								MinSize: 2, MaxSize: -1,
 							},
 							{
-								Node: "a*c*", Terminated: "a*c*", P: "a",
+								Node: "a*c*", Terminated: "a*c*", TermIndex: -1, P: "a",
 								MinSize: 2, MaxSize: -1,
 								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("c"), items.ItemStar{}},
 							},
 							{
-								Node: "a*b?c", Terminated: "a*b?c", P: "a", Suffix: "c",
+								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1, P: "a", Suffix: "c",
 								MinSize: 4, MaxSize: -1,
 								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("b"), items.ItemOne{}},
 							},
@@ -38,7 +38,7 @@ func TestGlobMatcher_Multi(t *testing.T) {
 								Node: "a", P: "a",
 								Childs: []*items.NodeItem{
 									{
-										Node: "b?d", Terminated: "a.b?d", P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
+										Node: "b?d", Terminated: "a.b?d", TermIndex: -1, P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
 										Inners: []items.InnerItem{items.ItemOne{}},
 									},
 								},
@@ -47,13 +47,13 @@ func TestGlobMatcher_Multi(t *testing.T) {
 								Node: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
 								Inners: []items.InnerItem{items.ItemStar{}},
 								Childs: []*items.NodeItem{
-									{Node: "b", Terminated: "a*c.b", P: "b", MinSize: 0, MaxSize: 0},
+									{Node: "b", Terminated: "a*c.b", TermIndex: -1, P: "b"},
 								},
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a*c": true, "a*c*": true, "a*b?c": true, "a*c.b": true, "a.b?d": true},
+				Globs: map[string]int{"a*c": -1, "a*c*": -1, "a*b?c": -1, "a*c.b": -1, "a.b?d": -1},
 			},
 			matchPaths: map[string][]string{
 				"acbec":  {"a*c", "a*c*", "a*b?c"},

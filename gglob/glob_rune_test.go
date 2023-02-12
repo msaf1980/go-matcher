@@ -15,7 +15,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "[a-c]", Terminated: "[a-c]", MinSize: 1, MaxSize: 1,
+								Node: "[a-c]", Terminated: "[a-c]", TermIndex: -1, MinSize: 1, MaxSize: 1,
 								Inners: []items.InnerItem{
 									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}),
 								},
@@ -23,7 +23,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]bool{"[a-c]": true},
+				Globs: map[string]int{"[a-c]": -1},
 			},
 			matchPaths: map[string][]string{"a": {"[a-c]"}, "c": {"[a-c]"}, "b": {"[a-c]"}},
 			missPaths:  []string{"", "d", "ab", "a.b"},
@@ -35,7 +35,8 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "[a-c]z", Terminated: "[a-c]z", MinSize: 2, MaxSize: 2, Suffix: "z",
+								Node: "[a-c]z", Terminated: "[a-c]z", TermIndex: -1,
+								MinSize: 2, MaxSize: 2, Suffix: "z",
 								Inners: []items.InnerItem{
 									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}),
 								},
@@ -43,7 +44,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]bool{"[a-c]z": true},
+				Globs: map[string]int{"[a-c]z": -1},
 			},
 			matchPaths: map[string][]string{"az": {"[a-c]z"}, "cz": {"[a-c]z"}, "bz": {"[a-c]z"}},
 			missPaths:  []string{"", "d", "ab", "dz", "a.z"},
@@ -55,7 +56,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "[a-c]*", Terminated: "[a-c]*", MinSize: 1, MaxSize: -1,
+								Node: "[a-c]*", Terminated: "[a-c]*", TermIndex: -1, MinSize: 1, MaxSize: -1,
 								Inners: []items.InnerItem{
 									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}), items.ItemStar{},
 								},
@@ -63,7 +64,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]bool{"[a-c]*": true},
+				Globs: map[string]int{"[a-c]*": -1},
 			},
 			matchPaths: map[string][]string{
 				"a": {"[a-c]*"}, "c": {"[a-c]*"},
@@ -79,12 +80,13 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "[a-]", Terminated: "[a-]", P: "a", MinSize: 1, MaxSize: 1,
+								Node: "[a-]", Terminated: "[a-]", TermIndex: -1,
+								P: "a", MinSize: 1, MaxSize: 1,
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"[a-]": true},
+				Globs: map[string]int{"[a-]": -1},
 			},
 			matchPaths: map[string][]string{"a": {"[a-]"}},
 			missPaths:  []string{"", "b", "d", "ab", "a.b"},
@@ -96,12 +98,13 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a[a-]Z", Terminated: "a[a-]Z", P: "aaZ", MinSize: 3, MaxSize: 3,
+								Node: "a[a-]Z", Terminated: "a[a-]Z", TermIndex: -1,
+								P: "aaZ", MinSize: 3, MaxSize: 3,
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a[a-]Z": true},
+				Globs: map[string]int{"a[a-]Z": -1},
 			},
 			matchPaths: map[string][]string{"aaZ": {"a[a-]Z"}},
 			missPaths:  []string{"", "a", "b", "d", "ab", "aaz", "aaZa", "a.b"},
@@ -113,12 +116,13 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", P: "aaZQ", MinSize: 4, MaxSize: 4,
+								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", TermIndex: -1,
+								P: "aaZQ", MinSize: 4, MaxSize: 4,
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a[a-]Z[Q]": true},
+				Globs: map[string]int{"a[a-]Z[Q]": -1},
 			},
 			matchPaths: map[string][]string{"aaZQ": {"a[a-]Z[Q]"}},
 			missPaths:  []string{"", "a", "Q", "aaZ", "aaZQa", "a.b"},
@@ -145,11 +149,11 @@ func TestGlobMatcher_Rune_Broken(t *testing.T) {
 				Root: map[int]*items.NodeItem{
 					1: {
 						Childs: []*items.NodeItem{
-							{Node: "[]a", Terminated: "[]a", P: "a", MinSize: 1, MaxSize: 1},
+							{Node: "[]a", Terminated: "[]a", TermIndex: -1, P: "a", MinSize: 1, MaxSize: 1},
 						},
 					},
 				},
-				Globs: map[string]bool{"[]a": true},
+				Globs: map[string]int{"[]a": -1},
 			},
 			matchPaths: map[string][]string{"a": {"[]a"}},
 			missPaths:  []string{"", "b", "ab"},

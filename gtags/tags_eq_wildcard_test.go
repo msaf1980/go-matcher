@@ -80,7 +80,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{"seriesByTag('name=a', 'b=c*')": true},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=c*')": -1},
 			},
 			matchPaths: map[string][]string{
 				"a?a=v1&b=ca":      {"seriesByTag('name=a', 'b=c*')"},
@@ -112,7 +112,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{"seriesByTag('name=a.b', 'b=c*.a')": true},
+				Queries: map[string]int{"seriesByTag('name=a.b', 'b=c*.a')": -1},
 			},
 			matchPaths: map[string][]string{
 				"a.b?a=v1&b=ca.a":      {"seriesByTag('name=a.b', 'b=c*.a')"},
@@ -140,7 +140,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{"seriesByTag('name=a', 'b=c[a]')": true},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=c[a]')": -1},
 			},
 			matchPaths: map[string][]string{
 				"a?a=v1&b=ca":      {"seriesByTag('name=a', 'b=c[a]')"},

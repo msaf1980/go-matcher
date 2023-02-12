@@ -61,7 +61,7 @@ func TestTagsMatcherNe_Wildcard(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{"seriesByTag('name=a', 'b!=c*')": true},
+				Queries: map[string]int{"seriesByTag('name=a', 'b!=c*')": -1},
 			},
 			matchPaths: map[string][]string{
 				"a?a=v1&b=ba":      {"seriesByTag('name=a', 'b!=c*')"},
@@ -90,7 +90,7 @@ func TestTagsMatcherNe_Wildcard(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{"seriesByTag('name=a', 'b!=c[a]')": true},
+				Queries: map[string]int{"seriesByTag('name=a', 'b!=c[a]')": -1},
 			},
 			matchPaths: map[string][]string{
 				"a?b=c":            {"seriesByTag('name=a', 'b!=c[a]')"},

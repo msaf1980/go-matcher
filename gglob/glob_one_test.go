@@ -15,11 +15,14 @@ func TestGlobMatcher_One(t *testing.T) {
 				Root: map[int]*items.NodeItem{
 					1: {
 						Childs: []*items.NodeItem{
-							{Node: "?", Terminated: "?", Inners: []items.InnerItem{items.ItemOne{}}, MinSize: 1, MaxSize: 1},
+							{
+								Node: "?", Terminated: "?", TermIndex: -1, MinSize: 1, MaxSize: 1,
+								Inners: []items.InnerItem{items.ItemOne{}},
+							},
 						},
 					},
 				},
-				Globs: map[string]bool{"?": true},
+				Globs: map[string]int{"?": -1},
 			},
 			matchPaths: map[string][]string{"a": {"?"}, "c": {"?"}},
 			missPaths:  []string{"", "ab", "a.b"},
@@ -31,13 +34,13 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a?", Terminated: "a?", P: "a", Inners: []items.InnerItem{items.ItemOne{}},
-								MinSize: 2, MaxSize: 2,
+								Node: "a?", Terminated: "a?", TermIndex: -1, MinSize: 2, MaxSize: 2,
+								P: "a", Inners: []items.InnerItem{items.ItemOne{}},
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a?": true},
+				Globs: map[string]int{"a?": -1},
 			},
 			matchPaths: map[string][]string{"ac": {"a?"}, "az": {"a?"}},
 			missPaths:  []string{"", "a", "bc", "ace", "a.c"},
@@ -49,13 +52,14 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a?c", Terminated: "a?c", P: "a", Inners: []items.InnerItem{items.ItemOne{}}, Suffix: "c",
+								Node: "a?c", Terminated: "a?c", TermIndex: -1, P: "a",
+								Inners: []items.InnerItem{items.ItemOne{}}, Suffix: "c",
 								MinSize: 3, MaxSize: 3,
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a?c": true},
+				Globs: map[string]int{"a?c": -1},
 			},
 			matchPaths: map[string][]string{"acc": {"a?c"}, "aec": {"a?c"}},
 			missPaths:  []string{"", "ab", "ac", "ace", "a.c"},

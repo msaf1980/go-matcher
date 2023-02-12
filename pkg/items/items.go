@@ -4,8 +4,6 @@ import (
 	"io"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/msaf1980/go-matcher/pkg/utils"
 )
 
 type InnerItem interface {
@@ -39,6 +37,7 @@ type NodeItem struct {
 	Node string // raw string (or full glob for terminated)
 
 	Terminated string // end of chain (resulting glob)
+	TermIndex  int    // rule num of end of chain (resulting glob), can be used in specific cases
 
 	// size check optimization
 	MinSize int
@@ -94,6 +93,60 @@ func (node *NodeItem) MatchItems(part string, nextParts string, matched *[]strin
 			part, nextParts, _ = strings.Cut(nextParts, ".")
 			for _, child := range node.Childs {
 				child.MatchItems(part, nextParts, matched)
+			}
+		}
+	}
+}
+
+func (node *NodeItem) MatchIndexedItems(part string, nextParts string, matched *[]int) {
+	if node.MatchNode(part) {
+		if node.Terminated != "" {
+			*matched = append(*matched, node.TermIndex)
+		} else if nextParts != "" {
+			part, nextParts, _ = strings.Cut(nextParts, ".")
+			for _, child := range node.Childs {
+				child.MatchIndexedItems(part, nextParts, matched)
+			}
+		}
+	}
+}
+
+func (node *NodeItem) MatchFirstItems(part string, nextParts string, minMatched *int) {
+	if node.MatchNode(part) {
+		if node.Terminated != "" {
+			if *minMatched == -1 || *minMatched > node.TermIndex {
+				*minMatched = node.TermIndex
+			}
+		} else if nextParts != "" {
+			part, nextParts, _ = strings.Cut(nextParts, ".")
+			for _, child := range node.Childs {
+				child.MatchFirstItems(part, nextParts, minMatched)
+			}
+		}
+	}
+}
+
+func (node *NodeItem) MatchIndexedItemsPart(part string, parts []string, matched *[]int) {
+	if node.MatchNode(part) {
+		if node.Terminated != "" {
+			*matched = append(*matched, node.TermIndex)
+		} else if len(parts) > 0 {
+			for _, child := range node.Childs {
+				child.MatchIndexedItemsPart(parts[0], parts[1:], matched)
+			}
+		}
+	}
+}
+
+func (node *NodeItem) MatchFirstItemsPart(part string, parts []string, minMatched *int) {
+	if node.MatchNode(part) {
+		if node.Terminated != "" {
+			if *minMatched == -1 || *minMatched > node.TermIndex {
+				*minMatched = node.TermIndex
+			}
+		} else if len(parts) > 0 {
+			for _, child := range node.Childs {
+				child.MatchFirstItemsPart(parts[0], parts[1:], minMatched)
 			}
 		}
 	}
@@ -198,6 +251,7 @@ func (node *NodeItem) Merge(inners []InnerItem) {
 	}
 }
 
+// Match match root node item (recursieve with childs) for graphite path (dot-delimited, like a.b.c)
 func (node *NodeItem) Match(path string, matched *[]string) {
 	for _, node := range node.Childs {
 		part, nextParts, _ := strings.Cut(path, ".")
@@ -206,6 +260,23 @@ func (node *NodeItem) Match(path string, matched *[]string) {
 	}
 }
 
+func (node *NodeItem) MatchIndexed(path string, matched *[]int) {
+	for _, node := range node.Childs {
+		part, nextParts, _ := strings.Cut(path, ".")
+		// match first node
+		node.MatchIndexedItems(part, nextParts, matched)
+	}
+}
+
+func (node *NodeItem) MatchFirst(path string, minMatched *int) {
+	for _, node := range node.Childs {
+		part, nextParts, _ := strings.Cut(path, ".")
+		// match first node
+		node.MatchFirstItems(part, nextParts, minMatched)
+	}
+}
+
+// Match match root node item (recursieve with childs) for splitted path parts
 func (node *NodeItem) MatchByParts(parts []string, matched *[]string) {
 	for _, node := range node.Childs {
 		// match first node
@@ -213,7 +284,22 @@ func (node *NodeItem) MatchByParts(parts []string, matched *[]string) {
 	}
 }
 
-func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, err error) {
+func (node *NodeItem) MatchIndexedByParts(parts []string, matched *[]int) {
+	for _, node := range node.Childs {
+		// match first node
+		node.MatchIndexedItemsPart(parts[0], parts[1:], matched)
+	}
+}
+
+func (node *NodeItem) MatchFirstByParts(parts []string, minMatched *int) {
+	for _, node := range node.Childs {
+		// match first node
+		node.MatchFirstItemsPart(parts[0], parts[1:], minMatched)
+	}
+}
+
+// Parse add glob for graphite path (dot-delimited, like a.b*.[a-c].{wait,idle}
+func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode *NodeItem, err error) {
 	var (
 		i    int
 		part string
@@ -237,7 +323,7 @@ func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, er
 		if !found {
 			if i == last {
 				// last node, so terminate match
-				lastNode = &NodeItem{Node: part, Terminated: glob}
+				lastNode = &NodeItem{Node: part, Terminated: glob, TermIndex: termIdx}
 			} else {
 				lastNode = &NodeItem{Node: part}
 			}
@@ -317,82 +403,6 @@ func (node *NodeItem) Parse(glob string, partsCount int) (lastNode *NodeItem, er
 		err = ErrNodeNotEnd{lastNode.Node}
 	}
 	return
-}
-
-func ParseItems(root map[int]*NodeItem, glob string) (lastNode *NodeItem, err error) {
-	glob, partsCount := PathLevel(glob)
-
-	node, ok := root[partsCount]
-	if !ok {
-		node = &NodeItem{}
-		root[partsCount] = node
-	}
-	_, err = node.Parse(glob, partsCount)
-
-	return
-}
-
-// GlobMatcher is dotted-separated segment glob matcher, like a.b.[c-e]?.{f-o}*, writted for graphite project
-type GlobMatcher struct {
-	Root  map[int]*NodeItem
-	Globs map[string]bool
-}
-
-func NewGlobMatcher() *GlobMatcher {
-	return &GlobMatcher{
-		Root:  make(map[int]*NodeItem),
-		Globs: make(map[string]bool),
-	}
-}
-
-func (w *GlobMatcher) Adds(globs []string) (err error) {
-	for _, glob := range globs {
-		if err = w.Add(glob); err != nil {
-			return err
-		}
-	}
-	return
-}
-
-func (w *GlobMatcher) Add(glob string) (err error) {
-	if glob == "" {
-		return
-	}
-	if w.Globs[glob] {
-		// aleady added
-		return
-	}
-	if _, err = ParseItems(w.Root, glob); err != nil {
-		return err
-	}
-
-	w.Globs[glob] = true
-
-	return
-}
-
-func (w *GlobMatcher) Match(path string) (globs []string) {
-	if path == "" {
-		return nil
-	}
-	path, partsCount := PathLevel(path)
-	if node, ok := w.Root[partsCount]; ok {
-		globs = make([]string, 0, utils.Min(4, len(node.Childs)))
-		node.Match(path, &globs)
-	}
-
-	return globs
-}
-
-func (w *GlobMatcher) MatchP(path string, globs *[]string) {
-	*globs = (*globs)[:0]
-	if path == "" {
-		return
-	}
-	path, partsCount := PathLevel(path)
-	if node, ok := w.Root[partsCount]; ok {
-		node.Match(path, globs)
-	}
 }
 
 // NextWildcardItem extract InnerItem from glob (not regexp)

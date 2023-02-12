@@ -15,7 +15,8 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "{a,bc}", Terminated: "{a,bc}", MinSize: 1, MaxSize: 2,
+								Node: "{a,bc}", Terminated: "{a,bc}", TermIndex: -1,
+								MinSize: 1, MaxSize: 2,
 								Inners: []items.InnerItem{
 									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
 								},
@@ -23,7 +24,7 @@ func TestGlobMatcher_List(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]bool{"{a,bc}": true},
+				Globs: map[string]int{"{a,bc}": -1},
 			},
 			matchPaths: map[string][]string{"a": {"{a,bc}"}, "bc": {"{a,bc}"}},
 			missPaths:  []string{"", "b", "ab", "ba", "abc"},
@@ -35,7 +36,8 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a{a,bc}{qa,q}c", Terminated: "a{a,bc}{qa,q}c", MinSize: 4, MaxSize: 6,
+								Node: "a{a,bc}{qa,q}c", Terminated: "a{a,bc}{qa,q}c", TermIndex: -1,
+								MinSize: 4, MaxSize: 6,
 								P: "a", Suffix: "c",
 								Inners: []items.InnerItem{
 									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
@@ -45,7 +47,7 @@ func TestGlobMatcher_List(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]bool{"a{a,bc}{qa,q}c": true},
+				Globs: map[string]int{"a{a,bc}{qa,q}c": -1},
 			},
 			matchPaths: map[string][]string{"aaqac": {"a{a,bc}{qa,q}c"}, "abcqac": {"a{a,bc}{qa,q}c"}, "aaqc": {"a{a,bc}{qa,q}c"}},
 			missPaths:  []string{"", "b", "ab", "ba", "abc", "aabc", "aaqbc"},
@@ -57,7 +59,8 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a{a,bc}Z{qa,q}c", Terminated: "a{a,bc}Z{qa,q}c", MinSize: 5, MaxSize: 7,
+								Node: "a{a,bc}Z{qa,q}c", Terminated: "a{a,bc}Z{qa,q}c", TermIndex: -1,
+								MinSize: 5, MaxSize: 7,
 								P: "a", Suffix: "c",
 								Inners: []items.InnerItem{
 									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
@@ -68,7 +71,7 @@ func TestGlobMatcher_List(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]bool{"a{a,bc}Z{qa,q}c": true},
+				Globs: map[string]int{"a{a,bc}Z{qa,q}c": -1},
 			},
 			matchPaths: map[string][]string{"aaZqac": {"a{a,bc}Z{qa,q}c"}, "abcZqac": {"a{a,bc}Z{qa,q}c"}, "aaZqc": {"a{a,bc}Z{qa,q}c"}},
 			missPaths:  []string{"", "b", "ab", "ba", "abc", "aabc", "aaqbc"},
@@ -80,11 +83,11 @@ func TestGlobMatcher_List(t *testing.T) {
 				Root: map[int]*items.NodeItem{
 					1: {
 						Childs: []*items.NodeItem{
-							{Node: "{a}", Terminated: "{a}", MinSize: 1, MaxSize: 1, P: "a"},
+							{Node: "{a}", Terminated: "{a}", TermIndex: -1, MinSize: 1, MaxSize: 1, P: "a"},
 						},
 					},
 				},
-				Globs: map[string]bool{"{a}": true},
+				Globs: map[string]int{"{a}": -1},
 			},
 			matchPaths: map[string][]string{"a": {"{a}"}},
 			missPaths:  []string{"", "b", "d", "ab", "a.b"},
@@ -96,7 +99,8 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "b{a,}", Terminated: "b{a,}", MinSize: 1, MaxSize: 2, P: "b",
+								Node: "b{a,}", Terminated: "b{a,}", TermIndex: -1,
+								MinSize: 1, MaxSize: 2, P: "b",
 								Inners: []items.InnerItem{
 									&items.ItemList{Vals: []string{"", "a"}, ValsMax: 1},
 								},
@@ -104,7 +108,7 @@ func TestGlobMatcher_List(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]bool{"b{a,}": true},
+				Globs: map[string]int{"b{a,}": -1},
 			},
 			matchPaths: map[string][]string{"b": {"b{a,}"}, "ba": {"b{a,}"}},
 			missPaths:  []string{"", "bb", "bd", "ab", "bab", "ba.b"},
@@ -129,11 +133,11 @@ func TestGlobMatcher_List_Broken(t *testing.T) {
 				Root: map[int]*items.NodeItem{
 					1: {
 						Childs: []*items.NodeItem{
-							{Node: "{}a", Terminated: "{}a", MinSize: 1, MaxSize: 1, P: "a"},
+							{Node: "{}a", Terminated: "{}a", TermIndex: -1, MinSize: 1, MaxSize: 1, P: "a"},
 						},
 					},
 				},
-				Globs: map[string]bool{"{}a": true},
+				Globs: map[string]int{"{}a": -1},
 			},
 			matchPaths: map[string][]string{"a": {"{}a"}},
 			missPaths:  []string{"", "b", "ab"},

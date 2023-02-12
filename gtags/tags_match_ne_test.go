@@ -45,7 +45,7 @@ func TestTagsMatcher_Regex_Match_Ne(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{`seriesByTag('name=a', 'b!=~c(a|z)\.a')`: true},
+				Queries: map[string]int{`seriesByTag('name=a', 'b!=~c(a|z)\.a')`: -1},
 			},
 			matchPaths: map[string][]string{
 				"a?a=v1&b=ca.b":      {`seriesByTag('name=a', 'b!=~c(a|z)\.a')`},

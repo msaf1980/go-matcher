@@ -47,7 +47,7 @@ func TestTagsMatcherNe(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{"seriesByTag('name=a', 'b=c', 'c!=vc')": true},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=c', 'c!=vc')": -1},
 			},
 			matchPaths: map[string][]string{
 				"a?a=v1&b=c":           {"seriesByTag('name=a', 'b=c', 'c!=vc')"},
