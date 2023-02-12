@@ -3,6 +3,7 @@ package gglob
 import (
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -24,8 +25,7 @@ func runTestGlobMatcher(t *testing.T, tt testGlobMatcher) {
 	w := NewGlobMatcher()
 	err := w.Adds(tt.globs)
 	if (err != nil) != tt.wantErr {
-		t.Errorf("GlobMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
-		return
+		t.Fatalf("GlobMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
 	}
 	if err == nil {
 		if !reflect.DeepEqual(w, tt.wantW) {
@@ -56,6 +56,61 @@ func verifyGlobMatcher(t *testing.T, matchGlobs map[string][]string, miss []stri
 		parts := items.PathSplit(path)
 		if globs := w.MatchByParts(parts); len(globs) != 0 {
 			t.Errorf("GlobMatcher.MatchByParts(%q) != %q", path, globs)
+		}
+	}
+}
+
+// Index matcher
+
+type testGlobMatcherIndex struct {
+	name       string
+	globs      []string
+	wantW      *GlobMatcher
+	matchPaths map[string][]int
+}
+
+func runTestGlobMatcherIndex(t *testing.T, tt testGlobMatcherIndex) {
+	w := NewGlobMatcher()
+	for n, glob := range tt.globs {
+		err := w.AddIndexed(glob, n)
+		if err != nil {
+			t.Fatalf("GlobMatcher.Add() error = %v", err)
+		}
+
+	}
+	if !reflect.DeepEqual(w, tt.wantW) {
+		t.Errorf("GlobMatcher.Add() = %s", cmp.Diff(tt.wantW, w))
+	}
+	verifyGlobMatcherIndex(t, tt.matchPaths, w)
+}
+
+func verifyGlobMatcherIndex(t *testing.T, matchPaths map[string][]int, w *GlobMatcher) {
+	for path, wantN := range matchPaths {
+		sort.Ints(wantN)
+		wantFirst := -1
+		if len(wantN) > 0 {
+			wantFirst = wantN[0]
+		}
+		globsN := w.MatchIndexed(path)
+		sort.Ints(globsN)
+		if !reflect.DeepEqual(wantN, globsN) {
+			t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
+		}
+		first := -1
+		w.MatchFirst(path, &first)
+		if first != wantFirst {
+			t.Errorf("GlobMatcher.MatchFirst(%q) = want %d, got %d", path, wantFirst, first)
+		}
+
+		parts := items.PathSplit(path)
+		globsN = w.MatchIndexedByParts(parts)
+		if !reflect.DeepEqual(wantN, globsN) {
+			t.Errorf("GlobMatcher.MatchIndexedByParts(%q) = %s", path, cmp.Diff(wantN, globsN))
+		}
+		first = -1
+		w.MatchFirstByParts(parts, &first)
+		if first != wantFirst {
+			t.Errorf("GlobMatcher.MatchFirst(%q) = want %d, got %d", path, wantFirst, first)
 		}
 	}
 }

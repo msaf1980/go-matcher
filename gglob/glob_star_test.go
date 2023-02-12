@@ -16,14 +16,14 @@ func TestGlobMatcher_Star(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a******c", Terminated: "a******c", P: "a", Suffix: "c",
-								MinSize: 2, MaxSize: -1,
+								Node: "a******c", Terminated: "a******c", TermIndex: -1,
+								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
 								Inners: []items.InnerItem{items.ItemStar{}},
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a******c": true},
+				Globs: map[string]int{"a******c": -1},
 			},
 			matchPaths: map[string][]string{"ac": {"a******c"}, "abc": {"a******c"}, "abcc": {"a******c"}},
 			missPaths:  []string{"", "acb"},
@@ -35,11 +35,14 @@ func TestGlobMatcher_Star(t *testing.T) {
 				Root: map[int]*items.NodeItem{
 					1: {
 						Childs: []*items.NodeItem{
-							{Node: "*", Terminated: "*", Inners: []items.InnerItem{items.ItemStar{}}, MaxSize: -1},
+							{
+								Node: "*", Terminated: "*", TermIndex: -1,
+								Inners: []items.InnerItem{items.ItemStar{}}, MaxSize: -1,
+							},
 						},
 					},
 				},
-				Globs: map[string]bool{"*": true},
+				Globs: map[string]int{"*": -1},
 			},
 			matchPaths: map[string][]string{"a": {"*"}, "b": {"*"}, "ce": {"*"}},
 			missPaths:  []string{"", "b.c"},
@@ -51,13 +54,14 @@ func TestGlobMatcher_Star(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a*c", Terminated: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+								Node: "a*c", Terminated: "a*c", TermIndex: -1,
+								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
 								Inners: []items.InnerItem{items.ItemStar{}},
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a*c": true},
+				Globs: map[string]int{"a*c": -1},
 			},
 			matchPaths: map[string][]string{
 				"ac": {"a*c"}, "acc": {"a*c"}, "aec": {"a*c"}, "aebc": {"a*c"},
@@ -73,14 +77,14 @@ func TestGlobMatcher_Star(t *testing.T) {
 					1: {
 						Childs: []*items.NodeItem{
 							{
-								Node: "a*b?c", Terminated: "a*b?c", P: "a", Suffix: "c",
-								MinSize: 4, MaxSize: -1,
+								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1,
+								P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
 								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("b"), items.ItemOne{}},
 							},
 						},
 					},
 				},
-				Globs: map[string]bool{"a*b?c": true},
+				Globs: map[string]int{"a*b?c": -1},
 			},
 			matchPaths: map[string][]string{
 				// "abec": {"a*b?c"}, // skip *

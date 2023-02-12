@@ -56,14 +56,14 @@ func TestTagsMatcherEqual(t *testing.T) {
 			name: "empty #1", queries: []string{},
 			wantW: &TagsMatcher{
 				Root:    &TaggedItem{Childs: []*TaggedItem{}},
-				Queries: map[string]bool{},
+				Queries: map[string]int{},
 			},
 		},
 		{
 			name: "empty #2", queries: []string{""},
 			wantW: &TagsMatcher{
 				Root:    &TaggedItem{Childs: []*TaggedItem{}},
-				Queries: map[string]bool{},
+				Queries: map[string]int{},
 			},
 		},
 		// empty
@@ -88,7 +88,7 @@ func TestTagsMatcherEqual(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{"seriesByTag('name=a', 'b=c')": true},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=c')": -1},
 			},
 			matchPaths: map[string][]string{
 				"a?a=v1&b=c":      {"seriesByTag('name=a', 'b=c')"},
@@ -124,8 +124,8 @@ func TestTagsMatcherEqual(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{
-					"seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')": true,
+				Queries: map[string]int{
+					"seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')": -1,
 				},
 			},
 			matchPaths: map[string][]string{
@@ -166,9 +166,9 @@ func TestTagsMatcherEqual(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]bool{
-					"seriesByTag('b=c','name=a', 'name=c')":  true,
-					"seriesByTag('name=a', 'b=c', 'name=c')": true,
+				Queries: map[string]int{
+					"seriesByTag('b=c','name=a', 'name=c')":  -1,
+					"seriesByTag('name=a', 'b=c', 'name=c')": -1,
 				},
 			},
 			matchPaths: map[string][]string{},
