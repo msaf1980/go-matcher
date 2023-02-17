@@ -17,7 +17,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 							{
 								Node: "[a-c]", Terminated: "[a-c]", TermIndex: -1, MinSize: 1, MaxSize: 1,
 								Inners: []items.InnerItem{
-									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}),
+									items.ItemRuneRanges{{'a', 'c'}},
 								},
 							},
 						},
@@ -38,7 +38,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 								Node: "[a-c]z", Terminated: "[a-c]z", TermIndex: -1,
 								MinSize: 2, MaxSize: 2, Suffix: "z",
 								Inners: []items.InnerItem{
-									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}),
+									items.ItemRuneRanges{{'a', 'c'}},
 								},
 							},
 						},
@@ -58,7 +58,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 							{
 								Node: "[a-c]*", Terminated: "[a-c]*", TermIndex: -1, MinSize: 1, MaxSize: -1,
 								Inners: []items.InnerItem{
-									items.ItemRune(map[int32]struct{}{'a': {}, 'b': {}, 'c': {}}), items.ItemStar{},
+									items.ItemRuneRanges{{'a', 'c'}}, items.ItemStar{},
 								},
 							},
 						},
@@ -163,5 +163,147 @@ func TestGlobMatcher_Rune_Broken(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			runTestGlobMatcher(t, tt)
 		})
+	}
+}
+
+var (
+	targetRune = "{a-bd-ef-kq-zA-QZ}"
+	pathRune   = "Z"
+)
+
+// becnmark for suffix optimization
+func BenchmarkRune(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(targetRune)
+		if err != nil {
+			b.Fatal(err)
+		}
+		globs := w.Match(pathRune)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRune_Regex(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := buildGlobRegexp(targetRune)
+		if w.MatchString(pathRune) {
+			b.Fatal(pathRune)
+		}
+	}
+}
+
+func BenchmarkRune_Precompiled(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetRune)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(pathRune)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRune_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetRune)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs = globs[:0]
+		w.MatchB(pathRune, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRune_Precompiled_Regex(b *testing.B) {
+	w := buildGlobRegexp(targetRune)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathRune) {
+			b.Fatal(pathRune)
+		}
+	}
+}
+
+var (
+	targetRuneStarMiss = "sy*abcdertg*[A-Z]*cabcdertg*[I-Q]*abcdertg*[A-Z]*babcdertg*cabcdertMISSg*tem"
+	pathRuneStarMiss   = "sysabcdertgebaZbcdecabcdertglsIysabcdertgZebabcdertgicabcdertgltem"
+)
+
+// becnmark for suffix optimization
+func BenchmarkRuneStarMiss(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(targetRuneStarMiss)
+		if err != nil {
+			b.Fatal(err)
+		}
+		globs := w.Match(pathRuneStarMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Regex(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := buildGlobRegexp(targetRuneStarMiss)
+		if w.MatchString(pathRuneStarMiss) {
+			b.Fatal(pathRuneStarMiss)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Precompiled(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetRuneStarMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(pathRuneStarMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetRuneStarMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs = globs[:0]
+		w.MatchB(pathRuneStarMiss, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkRuneStarMiss_Precompiled_Regex(b *testing.B) {
+	w := buildGlobRegexp(targetRuneStarMiss)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathRuneStarMiss) {
+			b.Fatal(pathRuneStarMiss)
+		}
 	}
 }

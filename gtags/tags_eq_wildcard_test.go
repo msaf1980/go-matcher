@@ -15,7 +15,10 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
-					Glob: &WildcardItems{MinSize: 1, MaxSize: -1, P: "c", Inners: []items.InnerItem{items.ItemStar{}}},
+					Glob: &WildcardItems{
+						MinSize: 1, MaxSize: -1, P: "c",
+						Inners: []items.InnerItem{items.ItemStar{}},
+					},
 				},
 			},
 			matchPaths: []string{"a?a=v1&b=ca", "a?b=c", "a?a=v1&b=c&e=v3", "a?a=v1&b=ca&e=v3"},

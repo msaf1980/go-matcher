@@ -1,15 +1,22 @@
 package items
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 type ItemString string
 
-// func (ItemString) Type() NodeType {
-// 	return NodeString
-// }
+func (item ItemString) IsRune() (rune, bool) {
+	return utf8.RuneError, false
+}
 
 func (item ItemString) IsString() (string, bool) {
 	return string(item), true
+}
+
+func (ItemString) CanString() bool {
+	return true
 }
 
 func (item ItemString) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {

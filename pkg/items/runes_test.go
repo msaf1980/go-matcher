@@ -10,29 +10,32 @@ import (
 
 func Test_runesExpand(t *testing.T) {
 	tests := []struct {
-		runes      string
-		wantM      map[rune]struct{}
+		s          string
+		want       ItemRuneRanges
 		wantFailed bool
 	}{
-		{runes: "[-q]", wantM: map[rune]struct{}{'q': {}}, wantFailed: false},
-		{runes: "[a-c]", wantM: map[rune]struct{}{'a': {}, 'b': {}, 'c': {}}, wantFailed: false},
-		{runes: "[a-cf]", wantM: map[rune]struct{}{'a': {}, 'b': {}, 'c': {}, 'f': {}}, wantFailed: false},
-		{runes: "[za-c]", wantM: map[rune]struct{}{'a': {}, 'b': {}, 'c': {}, 'z': {}}, wantFailed: false},
-		{runes: "[a-czA-C]", wantM: map[rune]struct{}{'a': {}, 'b': {}, 'c': {}, 'z': {}, 'A': {}, 'B': {}, 'C': {}}, wantFailed: false},
+		{s: "[-q]", want: ItemRuneRanges{{'q', 'q'}}, wantFailed: false},
+		{s: "[a-c]", want: ItemRuneRanges{{'a', 'c'}}, wantFailed: false},
+		{s: "[a-cf]", want: ItemRuneRanges{{'a', 'c'}, {'f', 'f'}}, wantFailed: false},
+		{s: "[za-c]", want: ItemRuneRanges{{'a', 'c'}, {'z', 'z'}}, wantFailed: false},
+		{s: "[a-czA-C]", want: ItemRuneRanges{{'A', 'C'}, {'a', 'c'}, {'z', 'z'}}, wantFailed: false},
 		// partially broken
-		{runes: "[-]", wantM: map[rune]struct{}{}, wantFailed: false},
-		{runes: "[a-]", wantM: map[rune]struct{}{'a': {}}, wantFailed: false},
-		{runes: "[-a-c]", wantM: map[rune]struct{}{'a': {}, 'b': {}, 'c': {}}, wantFailed: false},
+		{s: "[-]", want: ItemRuneRanges{}, wantFailed: false},
+		{s: "[a-]", want: ItemRuneRanges{{'a', 'a'}}, wantFailed: false},
+		{s: "[-a-c]", want: ItemRuneRanges{{'a', 'c'}}, wantFailed: false},
+		// duplicated ranges
+		{s: "[a-cb-ld-fa-c]", want: ItemRuneRanges{{'a', 'l'}}, wantFailed: false},
+		{s: "[1-32-45-76-78-95789]", want: ItemRuneRanges{{'1', '9'}}, wantFailed: false},
 		// broken
-		{runes: "", wantFailed: true},
-		{runes: "[a", wantFailed: true},
-		{runes: "a]", wantFailed: true},
+		{s: "", wantFailed: true},
+		{s: "[a", wantFailed: true},
+		{s: "a]", wantFailed: true},
 	}
 	for _, tt := range tests {
-		t.Run(tt.runes, func(t *testing.T) {
-			gotM, gotSuccess := RunesExpand([]rune(tt.runes))
-			if !reflect.DeepEqual(gotM, tt.wantM) {
-				t.Errorf("runesExpand(%s) = %s", tt.runes, cmp.Diff(tt.wantM, gotM))
+		t.Run(tt.s, func(t *testing.T) {
+			got, gotSuccess := RunesExpand(tt.s)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("runesExpand(%s) = %s", tt.s, cmp.Diff(tt.want, got))
 			}
 			assert.Equal(t, tt.wantFailed, gotSuccess)
 		})

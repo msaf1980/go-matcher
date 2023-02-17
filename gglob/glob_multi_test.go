@@ -23,12 +23,12 @@ func TestGlobMatcher_Multi(t *testing.T) {
 							{
 								Node: "a*c*", Terminated: "a*c*", TermIndex: -1, P: "a",
 								MinSize: 2, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("c"), items.ItemStar{}},
+								Inners: []items.InnerItem{items.ItemStar{}, items.ItemRune('c'), items.ItemStar{}},
 							},
 							{
 								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1, P: "a", Suffix: "c",
 								MinSize: 4, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("b"), items.ItemOne{}},
+								Inners: []items.InnerItem{items.ItemStar{}, items.ItemRune('b'), items.ItemOne{}},
 							},
 						},
 					},

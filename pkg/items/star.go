@@ -1,9 +1,19 @@
 package items
 
+import "unicode/utf8"
+
 type ItemStar struct{}
+
+func (item ItemStar) IsRune() (rune, bool) {
+	return utf8.RuneError, false
+}
 
 func (item ItemStar) IsString() (string, bool) {
 	return "", false
+}
+
+func (ItemStar) CanString() bool {
+	return false
 }
 
 func (item ItemStar) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -22,6 +32,16 @@ LOOP:
 			switch v := nextItem.(type) {
 			// gready string skip scan, speedup NodeString find
 			case ItemString:
+				var idx int
+				if idx, found = v.Locate(part); !found {
+					break LOOP
+				} else {
+					nextOffset += idx
+					part = part[idx:]
+					nextItems = nextItems[1:]
+					found = true
+				}
+			case ItemRune:
 				var idx int
 				if idx, found = v.Locate(part); !found {
 					break LOOP

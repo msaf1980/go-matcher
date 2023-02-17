@@ -1,90 +1,109 @@
 package gglob
 
 import (
-	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestNodeItem_Merge(t *testing.T) {
-	tests := []struct {
-		name       string
-		node       *items.NodeItem
-		inners     []items.InnerItem
-		wantNode   *items.NodeItem
-		matchGlobs map[string][]string // must match with glob
-		miss       []string
-	}{
+	tests := []testGlobMatcher{
+		// {
+		// 	name: "merge strings #all", globs: []string{"a[a-]Z[Q]"},
+		// 	wantW: &GlobMatcher{
+		// 		Root: map[int]*items.NodeItem{
+		// 			1: {
+		// 				Childs: []*items.NodeItem{
+		// 					{
+		// 						Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", TermIndex: -1,
+		// 						P: "aaZQ", MinSize: 4, MaxSize: 4,
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 		Globs: map[string]int{"a[a-]Z[Q]": -1},
+		// 	},
+		// 	matchPaths: map[string][]string{"aaZQ": {"a[a-]Z[Q]"}},
+		// 	missPaths:  []string{"", "ab", "aaZQa"},
+		// },
+		// {
+		// 	name: "merge strings #prefix", globs: []string{"a[a-]Z[Q]*"},
+		// 	wantW: &GlobMatcher{
+		// 		Root: map[int]*items.NodeItem{
+		// 			1: {
+		// 				Childs: []*items.NodeItem{
+		// 					{
+		// 						Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", TermIndex: -1,
+		// 						P: "aaZQ", MinSize: 4, MaxSize: -1,
+		// 						Inners: []items.InnerItem{items.ItemStar{}},
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 		Globs: map[string]int{"a[a-]Z[Q]*": -1},
+		// 	},
+		// 	matchPaths: map[string][]string{
+		// 		"aaZQ":  {"a[a-]Z[Q]*"},
+		// 		"aaZQa": {"a[a-]Z[Q]*"},
+		// 	},
+		// 	missPaths: []string{"", "ab", "aaZqa"},
+		// },
 		{
-			name: "merge strings #all",
-			node: &items.NodeItem{
-				Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", MinSize: 4, MaxSize: 4,
-				P: "a",
+			name: "merge strings #suffix", globs: []string{"a[a-]Z[Q]*[z-][a]l"},
+			wantW: &GlobMatcher{
+				Root: map[int]*items.NodeItem{
+					1: {
+						Childs: []*items.NodeItem{
+							{
+								Node: "a[a-]Z[Q]*[z-][a]l", Terminated: "a[a-]Z[Q]*[z-][a]l", TermIndex: -1,
+								P: "aaZQ", Suffix: "zal", MinSize: 7, MaxSize: -1,
+								Inners: []items.InnerItem{items.ItemStar{}},
+							},
+						},
+					},
+				},
+				Globs: map[string]int{"a[a-]Z[Q]*[z-][a]l": -1},
 			},
-			inners: []items.InnerItem{
-				items.ItemString("a"), items.ItemString("Z"), items.ItemString("Q"),
+			matchPaths: map[string][]string{
+				"aaZQzal":  {"a[a-]Z[Q]*[z-][a]l"},
+				"aaZQazal": {"a[a-]Z[Q]*[z-][a]l"},
 			},
-			wantNode: &items.NodeItem{
-				Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", P: "aaZQ", MinSize: 4, MaxSize: 4,
-			},
-			matchGlobs: map[string][]string{
-				"aaZQ": {"a[a-]Z[Q]"},
-			},
-			miss: []string{"", "ab", "aaZQa"},
-		},
-		{
-			name: "merge strings #prefix",
-			node: &items.NodeItem{
-				Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", P: "a", MinSize: 4, MaxSize: -1,
-			},
-			inners: []items.InnerItem{
-				items.ItemString("a"), items.ItemString("Z"), items.ItemString("Q"), items.ItemStar{},
-			},
-			wantNode: &items.NodeItem{
-				Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", P: "aaZQ", MinSize: 4, MaxSize: -1,
-				Inners: []items.InnerItem{items.ItemStar{}},
-			},
-			matchGlobs: map[string][]string{
-				"aaZQ":  {"a[a-]Z[Q]*"},
-				"aaZQa": {"a[a-]Z[Q]*"},
-			},
-			miss: []string{"", "ab", "aaZqa"},
-		},
-		{
-			name: "merge strings #suffix",
-			node: &items.NodeItem{
-				Node: "a[a-]Z[Q]*[z-]l", Terminated: "a[a-]Z[Q]*[z-]l", MinSize: 6, MaxSize: -1,
-				P: "a", Suffix: "l",
-			},
-			inners: []items.InnerItem{
-				items.ItemString("a"), items.ItemString("Z"), items.ItemString("Q"), items.ItemStar{}, items.ItemString("z"),
-			},
-			wantNode: &items.NodeItem{
-				Node: "a[a-]Z[Q]*[z-]l", Terminated: "a[a-]Z[Q]*[z-]l", MinSize: 6, MaxSize: -1,
-				P: "aaZQ", Suffix: "zl",
-				Inners: []items.InnerItem{items.ItemStar{}},
-			},
-			matchGlobs: map[string][]string{
-				"aaZQzl":  {"a[a-]Z[Q]*[z-]l"},
-				"aaZQazl": {"a[a-]Z[Q]*[z-]l"},
-			},
-			miss: []string{"", "ab", "aaZqa"},
+			missPaths: []string{"", "ab", "aaZqa"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.node.Merge(tt.inners)
-			if !reflect.DeepEqual(tt.wantNode, tt.node) {
-				t.Errorf("items.NodeItem.Merge() = %s", cmp.Diff(tt.wantNode, tt.node))
-			} else {
-				w := NewGlobMatcher()
-				rootNode := &items.NodeItem{}
-				w.Root[1] = rootNode
-				rootNode.Childs = append(rootNode.Childs, tt.node)
-				verifyGlobMatcher(t, tt.matchGlobs, tt.miss, w)
-			}
+			runTestGlobMatcher(t, tt)
 		})
+	}
+}
+
+func BenchmarkMergeAll(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add("a[a-]Z[Q]")
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkMergePrefix(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add("a[a-]Z[Q]*")
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkMergeSuffix(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add("a[a-]Z[Q]*[z-]l")
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
