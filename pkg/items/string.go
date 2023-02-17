@@ -21,19 +21,14 @@ func (ItemString) CanString() bool {
 
 func (item ItemString) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
 	s := string(item)
-	if part == s {
-		// full match
-		found = true
-		part = ""
-	} else if strings.HasPrefix(part, s) {
+	if strings.HasPrefix(part, s) {
 		// strip prefix
 		found = true
 		part = part[len(s):]
-	}
-	if found {
+
 		if part != "" && len(nextItems) > 0 {
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 {
+		} else if part != "" && len(nextItems) == 0 || part == "" && len(nextItems) > 0 {
 			found = false
 		}
 	}

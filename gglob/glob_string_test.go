@@ -53,8 +53,12 @@ func TestGlobMatcherString(t *testing.T) {
 				},
 				Globs: map[string]int{"a.bc": -1},
 			},
-			matchPaths: map[string][]string{"a.bc": {"a.bc"}},
-			missPaths:  []string{"", "b", "ab", "bc", "abc", "b.bc", "a.bce", "a.bc.e"},
+			matchPaths: map[string][]string{
+				"a.bc": {"a.bc"},
+				// last dot
+				"a.bc.": {"a.bc"},
+			},
+			missPaths: []string{"", "b", "ab", "bc", "abc", "b.bc", "a.bce", "a.bc.e"},
 		},
 	}
 	for _, tt := range tests {

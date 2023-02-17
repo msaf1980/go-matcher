@@ -44,8 +44,19 @@ func verifyGlobMatcher(t *testing.T, matchGlobs map[string][]string, miss []stri
 		if globs := w.Match(path); !reflect.DeepEqual(wantGlobs, globs) {
 			t.Errorf("GlobMatcher.Match(%q) = %s", path, cmp.Diff(wantGlobs, globs))
 		}
+		var globs []string
+		w.MatchB(path, &globs)
+		if !reflect.DeepEqual(wantGlobs, globs) {
+			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
+		}
+
 		parts := items.PathSplit(path)
 		if globs := w.MatchByParts(parts); !reflect.DeepEqual(wantGlobs, globs) {
+			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
+		}
+		globs = globs[:0]
+		w.MatchByPartsB(parts, &globs)
+		if !reflect.DeepEqual(wantGlobs, globs) {
 			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
 		}
 	}
@@ -96,6 +107,13 @@ func verifyGlobMatcherIndex(t *testing.T, matchPaths map[string][]int, w *GlobMa
 		if !reflect.DeepEqual(wantN, globsN) {
 			t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
 		}
+		globsN = globsN[:0]
+		w.MatchIndexedB(path, &globsN)
+		sort.Ints(globsN)
+		if !reflect.DeepEqual(wantN, globsN) {
+			t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
+		}
+
 		first := -1
 		w.MatchFirst(path, &first)
 		if first != wantFirst {
@@ -107,6 +125,13 @@ func verifyGlobMatcherIndex(t *testing.T, matchPaths map[string][]int, w *GlobMa
 		if !reflect.DeepEqual(wantN, globsN) {
 			t.Errorf("GlobMatcher.MatchIndexedByParts(%q) = %s", path, cmp.Diff(wantN, globsN))
 		}
+		globsN = globsN[:0]
+		w.MatchIndexedByPartsB(parts, &globsN)
+		sort.Ints(globsN)
+		if !reflect.DeepEqual(wantN, globsN) {
+			t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
+		}
+
 		first = -1
 		w.MatchFirstByParts(parts, &first)
 		if first != wantFirst {

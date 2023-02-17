@@ -71,7 +71,7 @@ LOOP:
 			if found = nextItems[0].Match(part, nextParts, nextItems[1:]); found {
 				break LOOP
 			}
-		} else if part != "" || len(nextItems) > 0 {
+		} else if part != "" || len(nextItems) > 0 || part == "" && len(nextItems) > 0 {
 			found = false
 			break LOOP
 		}

@@ -154,7 +154,7 @@ func (item ItemRuneMap) Match(part string, nextParts string, nextItems []InnerIt
 	if found {
 		if part != "" && len(nextItems) > 0 {
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 {
+		} else if part != "" && len(nextItems) == 0 || part == "" && len(nextItems) > 0 {
 			found = false
 		}
 	}

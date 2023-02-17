@@ -115,11 +115,7 @@ func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem
 LOOP:
 	for _, s := range item.Vals {
 		part := part
-		if part == s {
-			// full match
-			found = true
-			part = ""
-		} else if strings.HasPrefix(part, s) {
+		if strings.HasPrefix(part, s) {
 			// strip prefix
 			found = true
 			part = part[len(s):]
@@ -130,7 +126,7 @@ LOOP:
 		if found {
 			if part != "" && len(nextItems) > 0 {
 				found = nextItems[0].Match(part, nextParts, nextItems[1:])
-			} else if part != "" || len(nextItems) > 0 {
+			} else if part != "" || len(nextItems) > 0 || part == "" && len(nextItems) > 0 {
 				found = false
 			}
 			if found {
@@ -145,8 +141,8 @@ LOOP:
 func (item *ItemList) LocateFirst(part string) (offset int) {
 	offset = -1
 	for i, c := range part {
-		if _, ok := item.FirstRunes[c]; !ok {
-			offset += i
+		if _, ok := item.FirstRunes[c]; ok {
+			offset = i
 			return
 		}
 	}
@@ -173,10 +169,11 @@ func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
 			minLen = l
 		}
 	}
+
+	// for gready skip scan, only if no empty string in list
 	var firstsRunes map[rune]struct{}
 	if minLen > 0 {
-		// if no empty string in list
-		var firstsRunes = make(map[rune]struct{})
+		firstsRunes = make(map[rune]struct{})
 		last := utf8.RuneError
 		for _, v := range vals {
 			c, _ := utf8.DecodeRuneInString(v)

@@ -41,6 +41,33 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 			},
 			missPaths: []string{"a?b=c.a", "a.b?b=da", "a.b?b=ca", "a.b?b=ca.b", "a.b?b=v1", "a.b?c=v1", "b?a=v1"},
 		},
+		{
+			query: "seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')",
+			want: TaggedTermList{
+				{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
+				{
+					Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{qa,q}c.a", HasWildcard: true,
+					Glob: &WildcardItems{
+						P: "a", Suffix: "c.a", MinSize: 7, MaxSize: 9,
+						Inners: []items.InnerItem{
+							&items.ItemList{
+								Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+								FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
+							},
+							items.ItemRune('Z'),
+							&items.ItemList{
+								Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+								FirstRunes: map[int32]struct{}{'q': {}},
+							},
+						},
+					},
+				},
+			},
+			matchPaths: []string{
+				"a.b?a=v1&b=aaZqc.a", "a.b?a=v1&b=abcZqac.a",
+			},
+			missPaths: []string{"a?b=c.a", "a.b?b=da", "a.b?b=ca", "a.b?b=ca.b", "a.b?b=v1", "a.b?c=v1", "b?a=v1"},
+		},
 		// compaction
 		{
 			query: "seriesByTag('name=a', 'b=c[a]')",
@@ -123,6 +150,48 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 				"a.b?a=v1&b=c.a&e=v3":  {"seriesByTag('name=a.b', 'b=c*.a')"},
 				"a.b?a=v1&b=ca.a&e=v3": {"seriesByTag('name=a.b', 'b=c*.a')"},
 				"a.b?a=v1&b=cb.a&e=v3": {"seriesByTag('name=a.b', 'b=c*.a')"},
+			},
+			missPaths: []string{"a?b=c.a", "a.b?b=da", "a.b?b=ca", "a.b?b=ca.b", "a.b?b=v1", "a.b?c=v1", "b?a=v1"},
+		},
+		{
+			name:    `{"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"}`,
+			queries: []string{"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
+			wantW: &TagsMatcher{
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{qa,q}c.a",
+										HasWildcard: true,
+										Glob: &WildcardItems{
+											MinSize: 7, MaxSize: 9, P: "a", Suffix: "c.a",
+											Inners: []items.InnerItem{
+												&items.ItemList{
+													Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+													FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
+												},
+												items.ItemRune('Z'),
+												&items.ItemList{
+													Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+													FirstRunes: map[int32]struct{}{'q': {}},
+												},
+											},
+										},
+									},
+									Terminated: []string{"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
+								},
+							},
+						},
+					},
+				},
+				Queries: map[string]int{"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')": -1},
+			},
+			matchPaths: map[string][]string{
+				"a.b?a=v1&b=aaZqc.a":   {"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
+				"a.b?a=v1&b=abcZqac.a": {"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
 			},
 			missPaths: []string{"a?b=c.a", "a.b?b=da", "a.b?b=ca", "a.b?b=ca.b", "a.b?b=v1", "a.b?c=v1", "b?a=v1"},
 		},

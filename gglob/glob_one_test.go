@@ -64,6 +64,29 @@ func TestGlobMatcher_One(t *testing.T) {
 			matchPaths: map[string][]string{"acc": {"a?c"}, "aec": {"a?c"}},
 			missPaths:  []string{"", "ab", "ac", "ace", "a.c"},
 		},
+		{
+			name: `{"a?[c]?d"}`, globs: []string{"a?[c]?d"},
+			wantW: &GlobMatcher{
+				Root: map[int]*items.NodeItem{
+					1: {
+						Childs: []*items.NodeItem{
+							{
+								Node: "a?[c]?d", Terminated: "a?[c]?d", TermIndex: -1, P: "a", Suffix: "d",
+								Inners: []items.InnerItem{
+									items.ItemOne{},
+									items.ItemRune('c'),
+									items.ItemOne{},
+								},
+								MinSize: 5, MaxSize: 5,
+							},
+						},
+					},
+				},
+				Globs: map[string]int{"a?[c]?d": -1},
+			},
+			matchPaths: map[string][]string{"aZccd": {"a?[c]?d"}, "aZcAd": {"a?[c]?d"}},
+			missPaths:  []string{"", "ab", "ac", "ace", "aZDAd", "a.c"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

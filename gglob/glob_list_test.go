@@ -18,7 +18,10 @@ func TestGlobMatcher_List(t *testing.T) {
 								Node: "{a,bc}", Terminated: "{a,bc}", TermIndex: -1,
 								MinSize: 1, MaxSize: 2,
 								Inners: []items.InnerItem{
-									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+									&items.ItemList{
+										Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
+									},
 								},
 							},
 						},
@@ -40,8 +43,14 @@ func TestGlobMatcher_List(t *testing.T) {
 								MinSize: 4, MaxSize: 6,
 								P: "a", Suffix: "c",
 								Inners: []items.InnerItem{
-									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
-									&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
+									&items.ItemList{
+										Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
+									},
+									&items.ItemList{
+										Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+										FirstRunes: map[int32]struct{}{'q': {}},
+									},
 								},
 							},
 						},
@@ -63,9 +72,15 @@ func TestGlobMatcher_List(t *testing.T) {
 								MinSize: 5, MaxSize: 7,
 								P: "a", Suffix: "c",
 								Inners: []items.InnerItem{
-									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+									&items.ItemList{
+										Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
+									},
 									items.ItemRune('Z'),
-									&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
+									&items.ItemList{
+										Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+										FirstRunes: map[int32]struct{}{'q': {}},
+									},
 								},
 							},
 						},
