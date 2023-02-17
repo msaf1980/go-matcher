@@ -152,6 +152,70 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 			},
 			missPaths: []string{"a?b=c", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
+		{
+			name: `{"seriesByTag('name=a', 'b=c[a][Z-]*')"}`, queries: []string{"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+			wantW: &TagsMatcher{
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermEq, Value: "c[a][Z-]*", HasWildcard: true,
+										Glob: &WildcardItems{
+											MinSize: 3, MaxSize: -1, P: "caZ",
+											Inners: []items.InnerItem{items.ItemStar{}},
+										},
+									},
+									Terminated: []string{"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+								},
+							},
+						},
+					},
+				},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=c[a][Z-]*')": -1},
+			},
+			matchPaths: map[string][]string{
+				"a?a=v1&b=caZ":       {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+				"a?b=caZb":           {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+				"a?a=v1&b=caZ&e=v3":  {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+				"a?a=v1&b=caZd&e=v3": {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+			},
+			missPaths: []string{"a?b=c", "a?b=ca", "a?b=caz", "a?b=v1", "a?c=v1", "b?a=v1"},
+		},
+		{
+			name: `{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"}`, queries: []string{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+			wantW: &TagsMatcher{
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermEq, Value: "c[a][Z-]*[Q]l", HasWildcard: true,
+										Glob: &WildcardItems{
+											MinSize: 5, MaxSize: -1, P: "caZ", Suffix: "Ql",
+											Inners: []items.InnerItem{items.ItemStar{}},
+										},
+									},
+									Terminated: []string{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+								},
+							},
+						},
+					},
+				},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')": -1},
+			},
+			matchPaths: map[string][]string{
+				"a?a=v1&b=caZQl":       {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+				"a?b=caZbQl":           {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+				"a?a=v1&b=caZQl&e=v3":  {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+				"a?a=v1&b=caZdQl&e=v3": {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+			},
+			missPaths: []string{"a?b=c", "a?b=ca", "a?b=caz", "a?b=cazQl", "a?b=v1", "a?c=v1", "b?a=v1"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

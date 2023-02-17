@@ -222,12 +222,12 @@ func (node *NodeItem) MatchFirstByParts(parts []string, minMatched *int) {
 	}
 }
 
-type itemType int8
+type ItemType int8
 
 const (
-	itemOther itemType = iota
-	itemString
-	itemChar
+	ItemTypeOther ItemType = iota
+	ItemTypeString
+	ItemTypeChar
 )
 
 // Parse add glob for graphite path (dot-delimited, like a.b*.[a-c].{wait,idle}
@@ -300,7 +300,7 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 					innerCount := WildcardCount(part)
 					inners := make([]InnerItem, 0, innerCount)
 					var (
-						prev  itemType
+						prev  ItemType
 						prevS string
 						prevC rune
 					)
@@ -324,10 +324,10 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 						// try to in-palce merge
 						if s, ok := inner.IsString(); ok {
 							switch prev {
-							case itemString:
+							case ItemTypeString:
 								prevS += s
 								inners[len(inners)-1] = ItemString(prevS)
-							case itemChar:
+							case ItemTypeChar:
 								prevS = string(prevC) + s
 								inners[len(inners)-1] = ItemString(prevS)
 							default:
@@ -338,27 +338,27 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 										lastNode.P += s
 									}
 								} else {
-									prev = itemString
+									prev = ItemTypeString
 									prevS = s
 									inners = append(inners, inner)
 								}
 							}
 						} else if c, ok := inner.IsRune(); ok {
 							switch prev {
-							case itemString:
+							case ItemTypeString:
 								var sb strings.Builder
 								sb.Grow(len(prevS) + 1)
 								sb.WriteString(prevS)
 								sb.WriteRune(c)
-								prev = itemString
+								prev = ItemTypeString
 								prevS = sb.String()
 								inners[len(inners)-1] = ItemString(prevS)
-							case itemChar:
+							case ItemTypeChar:
 								var sb strings.Builder
 								sb.Grow(2)
 								sb.WriteRune(prevC)
 								sb.WriteRune(c)
-								prev = itemString
+								prev = ItemTypeString
 								prevS = sb.String()
 								inners[len(inners)-1] = ItemString(prevS)
 							default:
@@ -373,7 +373,7 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 										lastNode.P = sb.String()
 									}
 								} else {
-									prev = itemChar
+									prev = ItemTypeChar
 									prevC = c
 									inners = append(inners, inner)
 								}
