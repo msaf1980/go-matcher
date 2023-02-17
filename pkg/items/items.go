@@ -57,7 +57,8 @@ type NodeItem struct {
 	Suffix string // suffix
 
 	Inners []InnerItem // inner segments
-	Childs []*NodeItem // next possible parts tree
+	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
+	Childs []*NodeItem // next possible parts slice
 }
 
 func (node *NodeItem) MatchNode(part string) (matched bool) {

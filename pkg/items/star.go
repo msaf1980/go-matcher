@@ -41,6 +41,16 @@ LOOP:
 					nextItems = nextItems[1:]
 					found = true
 				}
+			case ItemRune:
+				var idx int
+				if idx, found = v.Locate(part); !found {
+					break LOOP
+				} else {
+					nextOffset += idx
+					part = part[idx:]
+					nextItems = nextItems[1:]
+					found = true
+				}
 			case *ItemList:
 				if v.ValsMin > 0 {
 					// gready list skip scan, speedup find any first rune

@@ -1,6 +1,9 @@
 package items
 
-import "unicode/utf8"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 type ItemRune rune
 
@@ -29,6 +32,15 @@ func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem)
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
+	}
+	return
+}
+
+func (item ItemRune) Locate(part string) (offset int, found bool) {
+	c := rune(item)
+	if offset = strings.IndexRune(part, c); offset != -1 {
+		offset += 1
+		found = true
 	}
 	return
 }

@@ -74,7 +74,7 @@ func BenchmarkGready_StringMiss_Precompiled_Regex(b *testing.B) {
 }
 
 var (
-	targetGready_RuneMiss = "sys*{A-E}*ltem"
+	targetGready_RuneMiss = "sys*A*ltem"
 	pathGready_RuneMiss   = "sysSKIPSKIPSKIPSKIP_tgicabcdert_SKIPSKIPSKIPSKIPSKIP_tgicabcdeRt_gltem"
 )
 
@@ -140,6 +140,77 @@ func BenchmarkGready_RuneMiss_Precompiled_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if w.MatchString(pathGready_RuneMiss) {
 			b.Fatal(pathGready_RuneMiss)
+		}
+	}
+}
+
+var (
+	targetGready_RuneRangesMiss = "sys*{A-E}*ltem"
+	pathGready_RuneRangesMiss   = "sysSKIPSKIPSKIPSKIP_tgicabcdert_SKIPSKIPSKIPSKIPSKIP_tgicabcdeRt_gltem"
+)
+
+// becnmark for suffix optimization
+func BenchmarkGready_RuneRangesMiss(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(targetGready_RuneRangesMiss)
+		if err != nil {
+			b.Fatal(err)
+		}
+		globs := w.Match(pathGready_RuneRangesMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkGready_RuneRangesMiss_Regex(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := buildGlobRegexp(targetGready_RuneRangesMiss)
+		if w.MatchString(pathGready_RuneRangesMiss) {
+			b.Fatal(pathGready_RuneRangesMiss)
+		}
+	}
+}
+
+func BenchmarkGready_RuneRangesMiss_Precompiled(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetGready_RuneRangesMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(pathGready_RuneRangesMiss)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkGready_RuneRangesMiss_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetGready_RuneRangesMiss)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs = globs[:0]
+		w.MatchB(pathGready_RuneRangesMiss, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkGready_RuneRangesMiss_Precompiled_Regex(b *testing.B) {
+	w := buildGlobRegexp(targetGready_RuneRangesMiss)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathGready_RuneRangesMiss) {
+			b.Fatal(pathGready_RuneRangesMiss)
 		}
 	}
 }
