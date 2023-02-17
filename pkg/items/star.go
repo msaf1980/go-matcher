@@ -1,9 +1,19 @@
 package items
 
+import "unicode/utf8"
+
 type ItemStar struct{}
+
+func (item ItemStar) IsRune() (rune, bool) {
+	return utf8.RuneError, false
+}
 
 func (item ItemStar) IsString() (string, bool) {
 	return "", false
+}
+
+func (ItemStar) CanString() bool {
+	return false
 }
 
 func (item ItemStar) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {

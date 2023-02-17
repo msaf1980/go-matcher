@@ -64,7 +64,7 @@ func TestGlobMatcher_List(t *testing.T) {
 								P: "a", Suffix: "c",
 								Inners: []items.InnerItem{
 									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
-									items.ItemString("Z"),
+									items.ItemRune('Z'),
 									&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
 								},
 							},

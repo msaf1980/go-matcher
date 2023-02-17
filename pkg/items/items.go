@@ -7,14 +7,24 @@ import (
 )
 
 type InnerItem interface {
+	CanString() bool
+	IsRune() (c rune, ok bool)
 	IsString() (s string, ok bool)
 	Match(part string, nextParts string, nextItems []InnerItem) (found bool)
 }
 
 type ItemOne struct{}
 
+func (item ItemOne) IsRune() (rune, bool) {
+	return utf8.RuneError, false
+}
+
 func (item ItemOne) IsString() (string, bool) {
 	return "", false
+}
+
+func (ItemOne) CanString() bool {
+	return false
 }
 
 func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -164,93 +174,6 @@ func (node *NodeItem) MatchItemsPart(part string, parts []string, matched *[]str
 	}
 }
 
-// Merge is trying to merge inners
-func (node *NodeItem) Merge(inners []InnerItem) {
-	if len(inners) == 0 {
-		if node.P != "" && node.Suffix != "" {
-			node.P += node.Suffix
-			node.Suffix = ""
-		} else if node.Suffix != "" {
-			node.P = node.Suffix
-			node.Suffix = ""
-		}
-		return
-	}
-	if len(inners) == 1 {
-		// merge
-		switch v := inners[0].(type) {
-		case ItemString:
-			if node.P != "" || node.Suffix != "" {
-				node.P = node.P + string(v) + node.Suffix
-				node.Suffix = ""
-			} else {
-				node.P = string(v)
-			}
-		default:
-			node.Inners = inners
-		}
-		return
-	} else {
-		switch v := inners[0].(type) {
-		case ItemString:
-			var sb strings.Builder
-			// merge strings from prefix
-			s := string(v)
-			sb.Grow(len(node.P) + len(node.Suffix) + len(s))
-			sb.WriteString(node.P)
-			sb.WriteString(s)
-			i := 1
-			for i < len(inners) {
-				if s, ok := inners[i].IsString(); ok {
-					sb.WriteString(s)
-					i++
-				} else {
-					break
-				}
-			}
-
-			if i == len(inners) {
-				// merge all strings from start to last string
-				sb.WriteString(node.Suffix)
-				node.P = sb.String()
-				node.Suffix = ""
-				return
-			} else {
-				node.P = sb.String()
-				inners = inners[i:]
-			}
-		}
-
-		last := len(inners) - 1
-		switch v := inners[last].(type) {
-		case ItemString:
-			//merge to suffix
-			size := len(node.Suffix) + len(v)
-			i := last - 1
-			for i > 0 {
-				if s, ok := inners[i].IsString(); ok {
-					size += len(s)
-					i--
-				} else {
-					break
-				}
-			}
-			i++
-			last = i
-			var sb strings.Builder
-			sb.Grow(size)
-			for ; i < len(inners); i++ {
-				sb.WriteString(string(inners[i].(ItemString)))
-			}
-			sb.WriteString(node.Suffix)
-			node.Suffix = sb.String()
-			inners = inners[:last]
-		}
-
-		node.Inners = inners
-	}
-}
-
 // Match match root node item (recursieve with childs) for graphite path (dot-delimited, like a.b.c)
 func (node *NodeItem) Match(path string, matched *[]string) {
 	for _, node := range node.Childs {
@@ -297,6 +220,14 @@ func (node *NodeItem) MatchFirstByParts(parts []string, minMatched *int) {
 		node.MatchFirstItemsPart(parts[0], parts[1:], minMatched)
 	}
 }
+
+type itemType int8
+
+const (
+	itemOther itemType = iota
+	itemString
+	itemChar
+)
 
 // Parse add glob for graphite path (dot-delimited, like a.b*.[a-c].{wait,idle}
 func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode *NodeItem, err error) {
@@ -367,6 +298,11 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 					)
 					innerCount := WildcardCount(part)
 					inners := make([]InnerItem, 0, innerCount)
+					var (
+						prev  itemType
+						prevS string
+						prevC rune
+					)
 
 					for part != "" {
 						inner, part, min, max, err = NextWildcardItem(part)
@@ -384,9 +320,98 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 								lastNode.MaxSize += max
 							}
 						}
-						inners = append(inners, inner)
+						// try to in-palce merge
+						if s, ok := inner.IsString(); ok {
+							switch prev {
+							case itemString:
+								prevS += s
+								inners[len(inners)-1] = ItemString(prevS)
+							case itemChar:
+								prevS = string(prevC) + s
+								inners[len(inners)-1] = ItemString(prevS)
+							default:
+								if len(inners) == 0 {
+									if lastNode.P == "" {
+										lastNode.P = s
+									} else {
+										lastNode.P += s
+									}
+								} else {
+									prev = itemString
+									prevS = s
+									inners = append(inners, inner)
+								}
+							}
+						} else if c, ok := inner.IsRune(); ok {
+							switch prev {
+							case itemString:
+								var sb strings.Builder
+								sb.Grow(len(prevS) + 1)
+								sb.WriteString(prevS)
+								sb.WriteRune(c)
+								prev = itemString
+								prevS = sb.String()
+								inners[len(inners)-1] = ItemString(prevS)
+							case itemChar:
+								var sb strings.Builder
+								sb.Grow(2)
+								sb.WriteRune(prevC)
+								sb.WriteRune(c)
+								prev = itemString
+								prevS = sb.String()
+								inners[len(inners)-1] = ItemString(prevS)
+							default:
+								if len(inners) == 0 {
+									if lastNode.P == "" {
+										lastNode.P = string(c)
+									} else {
+										var sb strings.Builder
+										sb.Grow(len(lastNode.P) + 1)
+										sb.WriteString(lastNode.P)
+										sb.WriteRune(c)
+										lastNode.P = sb.String()
+									}
+								} else {
+									prev = itemChar
+									prevC = c
+									inners = append(inners, inner)
+								}
+							}
+						} else {
+							inners = append(inners, inner)
+						}
 					}
-					lastNode.Merge(inners)
+					if len(inners) > 1 {
+						last := len(inners) - 1
+						// var size int
+						if s, ok := inners[last].IsString(); ok {
+							if lastNode.Suffix == "" {
+								lastNode.Suffix = s
+							} else {
+								lastNode.Suffix = s + lastNode.Suffix
+							}
+							inners = inners[:last]
+						} else if c, ok := inners[last].IsRune(); ok {
+							var sb strings.Builder
+							sb.Grow(len(lastNode.Suffix) + 1)
+							sb.WriteRune(c)
+							sb.WriteString(lastNode.Suffix)
+							lastNode.Suffix = sb.String()
+							inners = inners[:last]
+						}
+					}
+					if len(inners) == 0 {
+						if lastNode.Suffix != "" {
+							if lastNode.P == "" {
+								lastNode.P = lastNode.Suffix
+							} else {
+								lastNode.P += lastNode.Suffix
+							}
+							lastNode.Suffix = ""
+						}
+					} else {
+						lastNode.Inners = inners
+					}
 				}
 			}
 			node.Childs = append(node.Childs, lastNode)
@@ -417,7 +442,7 @@ func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen
 			next = s[idx:]
 			s = s[:idx]
 		}
-		runes, failed := RunesExpand([]rune(s))
+		runes, failed := RunesExpand(s)
 		if failed {
 			return nil, s, 0, 0, ErrNodeMissmatch{"rune", s}
 		}
@@ -425,14 +450,12 @@ func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen
 			return nil, next, 0, 0, nil
 		}
 		if len(runes) == 1 {
-			var v string
-			for k := range runes {
-				v = string(k)
+			if runes[0].First == runes[0].Last {
+				// one item optimization
+				return ItemRune(runes[0].First), next, 1, 1, nil
 			}
-			// one item optimization
-			return ItemString(v), next, 1, 1, nil
 		}
-		return ItemRune(runes), next, 1, 1, nil
+		return ItemRuneRanges(runes), next, 1, 1, nil
 	case '{':
 		if idx := strings.Index(s, "}"); idx != -1 {
 			idx++
@@ -463,6 +486,12 @@ func NextWildcardItem(s string) (item InnerItem, next string, minLen int, maxLen
 		// string segment
 		end := IndexWildcard(s)
 		v, next := SplitString(s, end)
+		if len(v) == 0 {
+			return nil, next, len(v), len(v), nil
+		}
+		if len(v) == 1 {
+			return ItemRune(v[0]), next, len(v), len(v), nil
+		}
 		return ItemString(v), next, len(v), len(v), nil
 	}
 }

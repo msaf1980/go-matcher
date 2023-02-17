@@ -79,7 +79,7 @@ func TestGlobMatcher_Star(t *testing.T) {
 							{
 								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1,
 								P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}, items.ItemString("b"), items.ItemOne{}},
+								Inners: []items.InnerItem{items.ItemStar{}, items.ItemRune('b'), items.ItemOne{}},
 							},
 						},
 					},

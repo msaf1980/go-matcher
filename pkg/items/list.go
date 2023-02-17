@@ -91,12 +91,16 @@ type ItemList struct {
 	ValsMax    int               // max len in vals or max rune in range
 }
 
-// func (*ItemList) Type() NodeType {
-// 	return NodeList
-// }
+func (item *ItemList) IsRune() (rune, bool) {
+	return utf8.RuneError, false
+}
 
 func (item *ItemList) IsString() (string, bool) {
 	return "", false
+}
+
+func (*ItemList) CanString() bool {
+	return false
 }
 
 func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {

@@ -67,31 +67,49 @@ func (node *WildcardItems) Merge(inners []items.InnerItem) {
 	}
 	if len(inners) == 1 {
 		// merge
-		switch v := inners[0].(type) {
-		case items.ItemString:
+		if s, ok := inners[0].IsString(); ok {
 			if node.P != "" || node.Suffix != "" {
-				node.P = node.P + string(v) + node.Suffix
+				node.P = node.P + s + node.Suffix
 				node.Suffix = ""
 			} else {
-				node.P = string(v)
+				node.P = s
 			}
-		default:
+		} else if c, ok := inners[0].IsRune(); ok {
+			if node.P != "" || node.Suffix != "" {
+				var sb strings.Builder
+				sb.Grow(len(node.P) + len(node.Suffix) + 1)
+				sb.WriteString(node.P)
+				sb.WriteRune(c)
+				sb.WriteString(node.Suffix)
+				node.P = sb.String()
+				node.Suffix = ""
+			} else {
+				node.P = string(c)
+			}
+		} else {
 			node.Inners = inners
 		}
-		return
 	} else {
-		switch v := inners[0].(type) {
-		case items.ItemString:
-			var sb strings.Builder
+		var sb strings.Builder
+		if s, ok := inners[0].IsString(); ok {
 			// merge strings from prefix
-			s := string(v)
 			sb.Grow(len(node.P) + len(node.Suffix) + len(s))
 			sb.WriteString(node.P)
 			sb.WriteString(s)
-			i := 1
+		} else if c, ok := inners[0].IsRune(); ok {
+			// merge strings from prefix
+			sb.Grow(len(node.P) + len(node.Suffix) + 1)
+			sb.WriteString(node.P)
+			sb.WriteRune(c)
+		}
+		i := 1
+		if sb.Len() > 0 {
 			for i < len(inners) {
 				if s, ok := inners[i].IsString(); ok {
 					sb.WriteString(s)
+					i++
+				} else if c, ok := inners[i].IsRune(); ok {
+					sb.WriteRune(c)
 					i++
 				} else {
 					break
@@ -111,26 +129,32 @@ func (node *WildcardItems) Merge(inners []items.InnerItem) {
 		}
 
 		last := len(inners) - 1
-		switch v := inners[last].(type) {
-		case items.ItemString:
-			//merge to suffix
-			size := len(node.Suffix) + len(v)
-			i := last - 1
-			for i > 0 {
-				if s, ok := inners[i].IsString(); ok {
-					size += len(s)
-					i--
-				} else {
-					break
-				}
+		i = last
+		var size int
+		for i > 0 {
+			if s, ok := inners[i].IsString(); ok {
+				size += len(s)
+				i--
+			} else if _, ok := inners[i].IsRune(); ok {
+				size++
+				i--
+			} else {
+				break
 			}
+		}
+		if size > 0 {
 			i++
 			last = i
 			var sb strings.Builder
 			sb.Grow(size)
 			for ; i < len(inners); i++ {
-				s, _ := inners[i].IsString()
-				sb.WriteString(s)
+				if s, ok := inners[i].IsString(); ok {
+					sb.WriteString(s)
+				} else if c, ok := inners[i].IsRune(); ok {
+					sb.WriteRune(c)
+				} else {
+					panic("unreacheable in merge")
+				}
 			}
 			sb.WriteString(node.Suffix)
 			node.Suffix = sb.String()
