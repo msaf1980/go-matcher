@@ -2,6 +2,7 @@ package gtags
 
 import (
 	"regexp"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -102,21 +103,39 @@ func runTestTagsMatcherIndex(t *testing.T, tt testTagsMatcherIndex) {
 }
 
 func verifyTagsMatcherIndex(t *testing.T, matchTags map[string][]int, w *TagsMatcher) {
-	for path, wantTags := range matchTags {
+	for path, wantN := range matchTags {
+		sort.Ints(wantN)
+		wantFirst := -1
+		if len(wantN) > 0 {
+			wantFirst = wantN[0]
+		}
+
 		tags, err := PathTags(path)
 		if err != nil {
 			t.Errorf("PathTags(%q) err = %q", path, err.Error())
 		}
-		if queries := w.MatchIndexedByTags(tags); !cmp.Equal(wantTags, queries) {
-			t.Errorf("TagsMatcher.MatchIndexedByTags(%q) = %s", path, cmp.Diff(wantTags, queries))
+		if queries := w.MatchIndexedByTags(tags); !cmp.Equal(wantN, queries) {
+			t.Errorf("TagsMatcher.MatchIndexedByTags(%q) = %s", path, cmp.Diff(wantN, queries))
 		}
+		first := -1
+		w.MatchFirstByTags(tags, &first)
+		if first != wantFirst {
+			t.Errorf("TagsMatcher.MatchFirstByTags(%q) = want %d, got %d", path, wantFirst, first)
+		}
+
 		tagsMap, err := PathTagsMap(path)
 		if err != nil {
 			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
 		}
-		if queries := w.MatchIndexedByTagsMap(tagsMap); !cmp.Equal(wantTags, queries) {
-			t.Errorf("TagsMatcher.MatchIndexedByTagsMap(%q) = %s", path, cmp.Diff(wantTags, queries))
+		if queries := w.MatchIndexedByTagsMap(tagsMap); !cmp.Equal(wantN, queries) {
+			t.Errorf("TagsMatcher.MatchIndexedByTagsMap(%q) = %s", path, cmp.Diff(wantN, queries))
 		}
+		first = -1
+		w.MatchFirstByTagsMap(tagsMap, &first)
+		if first != wantFirst {
+			t.Errorf("TagsMatcher.MatchFirstByTagsMap(%q) = want %d, got %d", path, wantFirst, first)
+		}
+
 	}
 }
 

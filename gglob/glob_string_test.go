@@ -3,7 +3,7 @@ package gglob
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcherString(t *testing.T) {
@@ -11,14 +11,14 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: "empty #1", globs: []string{},
 			wantW: &GlobMatcher{
-				Root:  map[int]*items.NodeItem{},
+				Root:  map[int]*NodeItem{},
 				Globs: map[string]int{},
 			},
 		},
 		{
 			name: "empty #2", globs: []string{""},
 			wantW: &GlobMatcher{
-				Root:  map[int]*items.NodeItem{},
+				Root:  map[int]*NodeItem{},
 				Globs: map[string]int{},
 			},
 		},
@@ -26,9 +26,14 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: `{"a"}`, globs: []string{"a"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{{Node: "a", Terminated: "a", TermIndex: -1, P: "a"}},
+						Childs: []*NodeItem{
+							{
+								Node: "a", Terminated: "a", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{P: "a"},
+							},
+						},
 					},
 				},
 				Globs: map[string]int{"a": -1},
@@ -39,13 +44,17 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: `{"a.bc"}`, globs: []string{"a.bc"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					2: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
-								Node: "a", P: "a",
-								Childs: []*items.NodeItem{
-									{Node: "bc", Terminated: "a.bc", TermIndex: -1, P: "bc"},
+								Node:          "a",
+								WildcardItems: wildcards.WildcardItems{P: "a"},
+								Childs: []*NodeItem{
+									{
+										Node: "bc", Terminated: "a.bc", TermIndex: -1,
+										WildcardItems: wildcards.WildcardItems{P: "bc"},
+									},
 								},
 							},
 						},
@@ -53,8 +62,12 @@ func TestGlobMatcherString(t *testing.T) {
 				},
 				Globs: map[string]int{"a.bc": -1},
 			},
-			matchPaths: map[string][]string{"a.bc": {"a.bc"}},
-			missPaths:  []string{"", "b", "ab", "bc", "abc", "b.bc", "a.bce", "a.bc.e"},
+			matchPaths: map[string][]string{
+				"a.bc": {"a.bc"},
+				// last dot
+				"a.bc.": {"a.bc"},
+			},
+			missPaths: []string{"", "b", "ab", "bc", "abc", "b.bc", "a.bce", "a.bc.e"},
 		},
 	}
 	for _, tt := range tests {

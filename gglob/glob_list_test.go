@@ -3,7 +3,7 @@ package gglob
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcher_List(t *testing.T) {
@@ -11,14 +11,18 @@ func TestGlobMatcher_List(t *testing.T) {
 		{
 			name: `{"{a,bc}"}`, globs: []string{"{a,bc}"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "{a,bc}", Terminated: "{a,bc}", TermIndex: -1,
-								MinSize: 1, MaxSize: 2,
-								Inners: []items.InnerItem{
-									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 1, MaxSize: 2,
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{
+											Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										},
+									},
 								},
 							},
 						},
@@ -32,16 +36,22 @@ func TestGlobMatcher_List(t *testing.T) {
 		{
 			name: `{"a{a,bc}{qa,q}c"}`, globs: []string{"a{a,bc}{qa,q}c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a{a,bc}{qa,q}c", Terminated: "a{a,bc}{qa,q}c", TermIndex: -1,
-								MinSize: 4, MaxSize: 6,
-								P: "a", Suffix: "c",
-								Inners: []items.InnerItem{
-									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
-									&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 4, MaxSize: 6,
+									P: "a", Suffix: "c",
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{
+											Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										},
+										&wildcards.ItemList{
+											Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+										},
+									},
 								},
 							},
 						},
@@ -55,17 +65,23 @@ func TestGlobMatcher_List(t *testing.T) {
 		{
 			name: `{"a{a,bc}Z{qa,q}c"}`, globs: []string{"a{a,bc}Z{qa,q}c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a{a,bc}Z{qa,q}c", Terminated: "a{a,bc}Z{qa,q}c", TermIndex: -1,
-								MinSize: 5, MaxSize: 7,
-								P: "a", Suffix: "c",
-								Inners: []items.InnerItem{
-									&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
-									items.ItemRune('Z'),
-									&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 5, MaxSize: 7,
+									P: "a", Suffix: "c",
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{
+											Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										},
+										wildcards.ItemRune('Z'),
+										&wildcards.ItemList{
+											Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+										},
+									},
 								},
 							},
 						},
@@ -80,10 +96,13 @@ func TestGlobMatcher_List(t *testing.T) {
 		{
 			name: `{"{a}"}`, globs: []string{"{a}"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
-							{Node: "{a}", Terminated: "{a}", TermIndex: -1, MinSize: 1, MaxSize: 1, P: "a"},
+						Childs: []*NodeItem{
+							{
+								Node: "{a}", Terminated: "{a}", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{MinSize: 1, MaxSize: 1, P: "a"},
+							},
 						},
 					},
 				},
@@ -95,14 +114,16 @@ func TestGlobMatcher_List(t *testing.T) {
 		{
 			name: `{"b{a,}"}`, globs: []string{"b{a,}"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "b{a,}", Terminated: "b{a,}", TermIndex: -1,
-								MinSize: 1, MaxSize: 2, P: "b",
-								Inners: []items.InnerItem{
-									&items.ItemList{Vals: []string{"", "a"}, ValsMax: 1},
+								WildcardItems: wildcards.WildcardItems{
+									P: "b", MinSize: 1, MaxSize: 2,
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{Vals: []string{"", "a"}, ValsMax: 1},
+									},
 								},
 							},
 						},
@@ -130,10 +151,13 @@ func TestGlobMatcher_List_Broken(t *testing.T) {
 		{
 			name: `{"{}a"}`, globs: []string{"{}a"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
-							{Node: "{}a", Terminated: "{}a", TermIndex: -1, MinSize: 1, MaxSize: 1, P: "a"},
+						Childs: []*NodeItem{
+							{
+								Node: "{}a", Terminated: "{}a", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{MinSize: 1, MaxSize: 1, P: "a"},
+							},
 						},
 					},
 				},
@@ -201,7 +225,7 @@ func BenchmarkList_ByParts(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		parts := items.PathSplit(pathsBatchList[0])
+		parts := wildcards.PathSplit(pathsBatchList[0])
 		globs := w.MatchByParts(parts)
 		if len(globs) != 1 {
 			b.Fatal(globs)
@@ -259,7 +283,7 @@ func BenchmarkList_Prealloc_ByParts(b *testing.B) {
 	globs := make([]string, 0, 4)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		parts := items.PathSplit(pathsBatchList[0])
+		parts := wildcards.PathSplit(pathsBatchList[0])
 		globs = globs[:0]
 		w.MatchByPartsB(parts, &globs)
 		if len(globs) != 1 {
@@ -269,7 +293,7 @@ func BenchmarkList_Prealloc_ByParts(b *testing.B) {
 }
 
 func BenchmarkList_Prealloc_ByParts2(b *testing.B) {
-	parts := items.PathSplit(pathsBatchList[0])
+	parts := wildcards.PathSplit(pathsBatchList[0])
 	w := NewGlobMatcher()
 	err := w.Add(targetsBatchList[0])
 	if err != nil {
@@ -319,7 +343,7 @@ func BenchmarkList_Batch_ByParts(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, path := range pathsBatchList {
-			parts := items.PathSplit(path)
+			parts := wildcards.PathSplit(path)
 			_ = w.MatchByParts(parts)
 		}
 	}
@@ -351,7 +375,7 @@ func BenchmarkList_Batch_Prealloc_ByParts(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, path := range pathsBatchList {
-			parts := items.PathSplit(path)
+			parts := wildcards.PathSplit(path)
 			globs = globs[:0]
 			w.MatchByPartsB(parts, &globs)
 		}
@@ -366,7 +390,7 @@ func BenchmarkList_Batch_Prealloc_ByParts2(b *testing.B) {
 	}
 	partsBatchList := make([][]string, len(pathsBatchList))
 	for i, path := range pathsBatchList {
-		partsBatchList[i] = items.PathSplit(path)
+		partsBatchList[i] = wildcards.PathSplit(path)
 	}
 	globs := make([]string, 0, 4)
 	b.ResetTimer()

@@ -1,4 +1,4 @@
-package items
+package wildcards
 
 import (
 	"strings"
@@ -7,16 +7,21 @@ import (
 
 type ItemRune rune
 
-func (item ItemRune) IsString() (string, bool) {
-	return "", false
+func (item ItemRune) Type() (typ ItemType, s string, c rune) {
+	return ItemTypeRune, "", rune(item)
 }
 
-func (item ItemRune) IsRune() (rune, bool) {
-	return rune(item), true
+func (item ItemRune) Strings() []string {
+	return nil
 }
 
-func (ItemRune) CanString() bool {
-	return true
+func (item ItemRune) Locate(part string) (offset int, found bool) {
+	c := rune(item)
+	if offset = strings.IndexRune(part, c); offset != -1 {
+		offset += 1
+		found = true
+	}
+	return
 }
 
 func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -27,20 +32,11 @@ func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem)
 		}
 	}
 	if found {
-		if part != "" && len(nextItems) > 0 {
+		if len(nextItems) > 0 {
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
-	}
-	return
-}
-
-func (item ItemRune) Locate(part string) (offset int, found bool) {
-	c := rune(item)
-	if offset = strings.IndexRune(part, c); offset != -1 {
-		offset += 1
-		found = true
 	}
 	return
 }

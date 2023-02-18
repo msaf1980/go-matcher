@@ -83,7 +83,7 @@ func (item *TaggedItem) MatchIndexedByTagsMap(tags map[string]string, queries *[
 	}
 }
 
-func (item *TaggedItem) MatchFirstIndexByTagsMap(tags map[string]string, queryIndex *int) {
+func (item *TaggedItem) MatchFirstByTagsMap(tags map[string]string, queryIndex *int) {
 	for _, child := range item.Childs {
 		if v, ok := tags[child.Term.Key]; !ok {
 			if child.Term.Op == TaggedTermEq || child.Term.Op == TaggedTermMatch {
@@ -96,12 +96,12 @@ func (item *TaggedItem) MatchFirstIndexByTagsMap(tags map[string]string, queryIn
 			}
 		}
 		if len(child.TermIndex) > 0 {
-			if *queryIndex != -1 || *queryIndex > child.TermIndex[0] {
+			if *queryIndex == -1 || *queryIndex > child.TermIndex[0] {
 				*queryIndex = child.TermIndex[0]
 			}
 		}
 		if len(tags) > 0 {
-			child.MatchFirstIndexByTagsMap(tags, queryIndex)
+			child.MatchFirstByTagsMap(tags, queryIndex)
 		}
 	}
 }
@@ -174,7 +174,7 @@ func (item *TaggedItem) MatchIndexedByTags(tags []Tag, queries *[]int) {
 	}
 }
 
-func (item *TaggedItem) MatchFirstIndexByTags(tags []Tag, queryIndex *int) {
+func (item *TaggedItem) MatchFirstByTags(tags []Tag, queryIndex *int) {
 	for _, child := range item.Childs {
 		var i int
 		tags := tags
@@ -200,12 +200,12 @@ func (item *TaggedItem) MatchFirstIndexByTags(tags []Tag, queryIndex *int) {
 			}
 		}
 		if len(child.TermIndex) > 0 {
-			if *queryIndex != -1 || *queryIndex > child.TermIndex[0] {
+			if *queryIndex == -1 || *queryIndex > child.TermIndex[0] {
 				*queryIndex = child.TermIndex[0]
 			}
 		}
 		if len(tags) > 0 {
-			child.MatchFirstIndexByTags(tags, queryIndex)
+			child.MatchFirstByTags(tags, queryIndex)
 		}
 	}
 }

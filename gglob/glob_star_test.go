@@ -3,7 +3,7 @@ package gglob
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcher_Star(t *testing.T) {
@@ -12,13 +12,15 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"a******c"}`, globs: []string{"a******c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a******c", Terminated: "a******c", TermIndex: -1,
-								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}},
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								},
 							},
 						},
 					},
@@ -32,12 +34,14 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"*"}`, globs: []string{"*"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "*", Terminated: "*", TermIndex: -1,
-								Inners: []items.InnerItem{items.ItemStar{}}, MaxSize: -1,
+								WildcardItems: wildcards.WildcardItems{
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}}, MaxSize: -1,
+								},
 							},
 						},
 					},
@@ -50,13 +54,15 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"a*c"}`, globs: []string{"a*c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a*c", Terminated: "a*c", TermIndex: -1,
-								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}},
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								},
 							},
 						},
 					},
@@ -73,13 +79,17 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"a*b?c"}`, globs: []string{"a*b?c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1,
-								P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}, items.ItemRune('b'), items.ItemOne{}},
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemRune('b'), wildcards.ItemOne{},
+									},
+								},
 							},
 						},
 					},
@@ -87,12 +97,12 @@ func TestGlobMatcher_Star(t *testing.T) {
 				Globs: map[string]int{"a*b?c": -1},
 			},
 			matchPaths: map[string][]string{
-				// "abec": {"a*b?c"}, // skip *
-				// "abbec": {"a*b?c"}, /// shift first b
-				// "acbbc":  {"a*b?c"},
+				"abec":   {"a*b?c"}, // skip *
+				"abbec":  {"a*b?c"}, /// shift first b
+				"acbbc":  {"a*b?c"},
 				"aecbec": {"a*b?c"},
 			},
-			// missPaths: []string{"", "ab", "c", "ace", "a.c", "abbece"},
+			missPaths: []string{"", "ab", "c", "ace", "a.c", "abbece"},
 		},
 	}
 	for _, tt := range tests {

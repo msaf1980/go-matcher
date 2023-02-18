@@ -1,4 +1,4 @@
-package items
+package wildcards
 
 import (
 	"math"
@@ -85,22 +85,21 @@ func ListExpand(s string) (list []string, failed bool) {
 
 type ItemList struct {
 	// nodeList
-	FirstRunes map[rune]struct{} // for gready skip scan, if no empty string in list
-	Vals       []string          // strings
-	ValsMin    int               // min len in vals or min rune in range
-	ValsMax    int               // max len in vals or max rune in range
+	Vals    []string // strings
+	ValsMin int      // min len in vals or min rune in range
+	ValsMax int      // max len in vals or max rune in range
 }
 
-func (item *ItemList) IsRune() (rune, bool) {
-	return utf8.RuneError, false
+func (item *ItemList) Type() (typ ItemType, s string, c rune) {
+	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item *ItemList) IsString() (string, bool) {
-	return "", false
+func (item *ItemList) Strings() []string {
+	return item.Vals
 }
 
-func (*ItemList) CanString() bool {
-	return false
+func (item *ItemList) Locate(part string) (offset int, support bool) {
+	return -1, false
 }
 
 func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -115,39 +114,19 @@ func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem
 LOOP:
 	for _, s := range item.Vals {
 		part := part
-		if part == s {
-			// full match
-			found = true
-			part = ""
-		} else if strings.HasPrefix(part, s) {
+		if strings.HasPrefix(part, s) {
 			// strip prefix
 			found = true
 			part = part[len(s):]
-		} else {
-			// try to next
-			continue
-		}
-		if found {
-			if part != "" && len(nextItems) > 0 {
+
+			if len(nextItems) > 0 {
 				found = nextItems[0].Match(part, nextParts, nextItems[1:])
-			} else if part != "" || len(nextItems) > 0 {
+			} else if part != "" && len(nextItems) == 0 {
 				found = false
 			}
 			if found {
 				break LOOP
 			}
-		}
-	}
-	return
-}
-
-// LocateFirst find any of first runes pos (call only if ValsMin > 0)
-func (item *ItemList) LocateFirst(part string) (offset int) {
-	offset = -1
-	for i, c := range part {
-		if _, ok := item.FirstRunes[c]; !ok {
-			offset += i
-			return
 		}
 	}
 	return
@@ -173,21 +152,8 @@ func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
 			minLen = l
 		}
 	}
-	var firstsRunes map[rune]struct{}
-	if minLen > 0 {
-		// if no empty string in list
-		var firstsRunes = make(map[rune]struct{})
-		last := utf8.RuneError
-		for _, v := range vals {
-			c, _ := utf8.DecodeRuneInString(v)
-			if c != last {
-				firstsRunes[c] = struct{}{}
-				last = c
-			}
-		}
-	}
 
-	item = &ItemList{Vals: vals, FirstRunes: firstsRunes, ValsMin: minLen, ValsMax: maxLen}
+	item = &ItemList{Vals: vals, ValsMin: minLen, ValsMax: maxLen}
 
 	return
 }

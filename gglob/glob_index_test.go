@@ -3,7 +3,7 @@ package gglob
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcher_Index(t *testing.T) {
@@ -15,41 +15,61 @@ func TestGlobMatcher_Index(t *testing.T) {
 				"a*c", "a*c*", "a*b?c", "a*c.b", "a.b?d",
 			},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
-								Node: "a*c", Terminated: "a*c", TermIndex: 0, P: "a", Suffix: "c",
-								Inners:  []items.InnerItem{items.ItemStar{}},
-								MinSize: 2, MaxSize: -1,
+								Node: "a*c", Terminated: "a*c", TermIndex: 0,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c",
+									Inners:  []wildcards.InnerItem{wildcards.ItemStar{}},
+									MinSize: 2, MaxSize: -1,
+								},
 							},
 							{
-								Node: "a*c*", Terminated: "a*c*", TermIndex: 1, P: "a",
-								MinSize: 2, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}, items.ItemRune('c'), items.ItemStar{}},
+								Node: "a*c*", Terminated: "a*c*", TermIndex: 1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemRune('c'), wildcards.ItemStar{},
+									},
+								},
 							},
 							{
-								Node: "a*b?c", Terminated: "a*b?c", TermIndex: 2, P: "a", Suffix: "c",
-								MinSize: 4, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}, items.ItemRune('b'), items.ItemOne{}},
+								Node: "a*b?c", Terminated: "a*b?c", TermIndex: 2,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemRune('b'), wildcards.ItemOne{},
+									},
+								},
 							},
 						},
 					},
 					2: {
-						Childs: []*items.NodeItem{
+						Childs: []*NodeItem{
 							{
-								Node: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-								Inners: []items.InnerItem{items.ItemStar{}},
-								Childs: []*items.NodeItem{
-									{Node: "b", Terminated: "a*c.b", TermIndex: 3, P: "b", MinSize: 0, MaxSize: 0},
+								Node: "a*c",
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								},
+								Childs: []*NodeItem{
+									{
+										Node: "b", Terminated: "a*c.b", TermIndex: 3,
+										WildcardItems: wildcards.WildcardItems{P: "b", MinSize: 0, MaxSize: 0},
+									},
 								},
 							},
 							{
-								Node: "a", P: "a",
-								Childs: []*items.NodeItem{
+								Node: "a", WildcardItems: wildcards.WildcardItems{P: "a"},
+								Childs: []*NodeItem{
 									{
-										Node: "b?d", Terminated: "a.b?d", TermIndex: 4, P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
-										Inners: []items.InnerItem{items.ItemOne{}},
+										Node: "b?d", Terminated: "a.b?d", TermIndex: 4,
+										WildcardItems: wildcards.WildcardItems{
+											P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
+											Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+										},
 									},
 								},
 							},
