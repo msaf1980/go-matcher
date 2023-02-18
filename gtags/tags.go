@@ -117,12 +117,12 @@ func (w *TagsMatcher) MatchIndexedByTagsMapB(tags map[string]string, queries *[]
 	w.Root.MatchIndexedByTagsMap(tags, queries)
 }
 
-func (w *TagsMatcher) MatchFirstIndexByTagsMapB(tags map[string]string, queryIndex *int) {
+func (w *TagsMatcher) MatchFirstByTagsMap(tags map[string]string, queryIndex *int) {
 	// *queries = (*queries)[:0]
 	if len(tags) == 0 {
 		return
 	}
-	w.Root.MatchFirstIndexByTagsMap(tags, queryIndex)
+	w.Root.MatchFirstByTagsMap(tags, queryIndex)
 }
 
 func (w *TagsMatcher) MatchByTags(tags []Tag) (queries []string) {
@@ -161,10 +161,10 @@ func (w *TagsMatcher) MatchIndexedByTagsB(tags []Tag, queries *[]int) {
 	w.Root.MatchIndexedByTags(tags, queries)
 }
 
-func (w *TagsMatcher) MatchFirstIndexByTagsB(tags []Tag, queryIndex *int) {
+func (w *TagsMatcher) MatchFirstByTags(tags []Tag, queryIndex *int) {
 	// *queries = (*queries)[:0]
 	if len(tags) == 0 {
 		return
 	}
-	w.Root.MatchFirstIndexByTags(tags, queryIndex)
+	w.Root.MatchFirstByTags(tags, queryIndex)
 }
