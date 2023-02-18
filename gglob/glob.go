@@ -15,7 +15,7 @@ func ParseItems(root map[int]*NodeItem, glob string, termIdx int) (lastNode *Nod
 		node = &NodeItem{}
 		root[partsCount] = node
 	}
-	_, err = node.Parse(glob, partsCount, termIdx)
+	_, err = node.ParseNode(glob, partsCount, termIdx)
 
 	return
 }

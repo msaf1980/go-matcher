@@ -16,10 +16,12 @@ func TestGlobMatcher_List(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "{a,bc}", Terminated: "{a,bc}", TermIndex: -1,
-								MinSize: 1, MaxSize: 2,
-								Inners: []wildcards.InnerItem{
-									&wildcards.ItemList{
-										Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 1, MaxSize: 2,
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{
+											Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										},
 									},
 								},
 							},
@@ -39,14 +41,16 @@ func TestGlobMatcher_List(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a{a,bc}{qa,q}c", Terminated: "a{a,bc}{qa,q}c", TermIndex: -1,
-								MinSize: 4, MaxSize: 6,
-								P: "a", Suffix: "c",
-								Inners: []wildcards.InnerItem{
-									&wildcards.ItemList{
-										Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
-									},
-									&wildcards.ItemList{
-										Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 4, MaxSize: 6,
+									P: "a", Suffix: "c",
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{
+											Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										},
+										&wildcards.ItemList{
+											Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+										},
 									},
 								},
 							},
@@ -66,15 +70,17 @@ func TestGlobMatcher_List(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a{a,bc}Z{qa,q}c", Terminated: "a{a,bc}Z{qa,q}c", TermIndex: -1,
-								MinSize: 5, MaxSize: 7,
-								P: "a", Suffix: "c",
-								Inners: []wildcards.InnerItem{
-									&wildcards.ItemList{
-										Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
-									},
-									wildcards.ItemRune('Z'),
-									&wildcards.ItemList{
-										Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 5, MaxSize: 7,
+									P: "a", Suffix: "c",
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{
+											Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+										},
+										wildcards.ItemRune('Z'),
+										&wildcards.ItemList{
+											Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
+										},
 									},
 								},
 							},
@@ -93,7 +99,10 @@ func TestGlobMatcher_List(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						Childs: []*NodeItem{
-							{Node: "{a}", Terminated: "{a}", TermIndex: -1, MinSize: 1, MaxSize: 1, P: "a"},
+							{
+								Node: "{a}", Terminated: "{a}", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{MinSize: 1, MaxSize: 1, P: "a"},
+							},
 						},
 					},
 				},
@@ -110,9 +119,11 @@ func TestGlobMatcher_List(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "b{a,}", Terminated: "b{a,}", TermIndex: -1,
-								MinSize: 1, MaxSize: 2, P: "b",
-								Inners: []wildcards.InnerItem{
-									&wildcards.ItemList{Vals: []string{"", "a"}, ValsMax: 1},
+								WildcardItems: wildcards.WildcardItems{
+									P: "b", MinSize: 1, MaxSize: 2,
+									Inners: []wildcards.InnerItem{
+										&wildcards.ItemList{Vals: []string{"", "a"}, ValsMax: 1},
+									},
 								},
 							},
 						},
@@ -143,7 +154,10 @@ func TestGlobMatcher_List_Broken(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						Childs: []*NodeItem{
-							{Node: "{}a", Terminated: "{}a", TermIndex: -1, MinSize: 1, MaxSize: 1, P: "a"},
+							{
+								Node: "{}a", Terminated: "{}a", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{MinSize: 1, MaxSize: 1, P: "a"},
+							},
 						},
 					},
 				},

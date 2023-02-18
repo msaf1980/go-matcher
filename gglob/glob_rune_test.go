@@ -15,9 +15,12 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "[a-c]", Terminated: "[a-c]", TermIndex: -1, MinSize: 1, MaxSize: 1,
-								Inners: []wildcards.InnerItem{
-									wildcards.ItemRuneRanges{{'a', 'c'}},
+								Node: "[a-c]", Terminated: "[a-c]", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 1, MaxSize: 1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemRuneRanges{{'a', 'c'}},
+									},
 								},
 							},
 						},
@@ -36,9 +39,11 @@ func TestGlobMatcher_Rune(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "[a-c]z", Terminated: "[a-c]z", TermIndex: -1,
-								MinSize: 2, MaxSize: 2, Suffix: "z",
-								Inners: []wildcards.InnerItem{
-									wildcards.ItemRuneRanges{{'a', 'c'}},
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 2, MaxSize: 2, Suffix: "z",
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemRuneRanges{{'a', 'c'}},
+									},
 								},
 							},
 						},
@@ -56,9 +61,12 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "[a-c]*", Terminated: "[a-c]*", TermIndex: -1, MinSize: 1, MaxSize: -1,
-								Inners: []wildcards.InnerItem{
-									wildcards.ItemRuneRanges{{'a', 'c'}}, wildcards.ItemStar{},
+								Node: "[a-c]*", Terminated: "[a-c]*", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 1, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemRuneRanges{{'a', 'c'}}, wildcards.ItemStar{},
+									},
 								},
 							},
 						},
@@ -81,7 +89,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "[a-]", Terminated: "[a-]", TermIndex: -1,
-								P: "a", MinSize: 1, MaxSize: 1,
+								WildcardItems: wildcards.WildcardItems{P: "a", MinSize: 1, MaxSize: 1},
 							},
 						},
 					},
@@ -99,7 +107,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a[a-]Z", Terminated: "a[a-]Z", TermIndex: -1,
-								P: "aaZ", MinSize: 3, MaxSize: 3,
+								WildcardItems: wildcards.WildcardItems{P: "aaZ", MinSize: 3, MaxSize: 3},
 							},
 						},
 					},
@@ -117,7 +125,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", TermIndex: -1,
-								P: "aaZQ", MinSize: 4, MaxSize: 4,
+								WildcardItems: wildcards.WildcardItems{P: "aaZQ", MinSize: 4, MaxSize: 4},
 							},
 						},
 					},
@@ -149,7 +157,10 @@ func TestGlobMatcher_Rune_Broken(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						Childs: []*NodeItem{
-							{Node: "[]a", Terminated: "[]a", TermIndex: -1, P: "a", MinSize: 1, MaxSize: 1},
+							{
+								Node: "[]a", Terminated: "[]a", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{P: "a", MinSize: 1, MaxSize: 1},
+							},
 						},
 					},
 				},

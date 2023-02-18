@@ -17,52 +17,80 @@ func TestGlobMatcher_Multi(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a*c", Terminated: "a*c", TermIndex: -1, P: "a", Suffix: "c",
-								Inners:  []wildcards.InnerItem{wildcards.ItemStar{}},
-								MinSize: 2, MaxSize: -1,
+								Node: "a*c", Terminated: "a*c", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c",
+									Inners:  []wildcards.InnerItem{wildcards.ItemStar{}},
+									MinSize: 2, MaxSize: -1,
+								},
 							},
 							{
-								Node: "a*c*", Terminated: "a*c*", TermIndex: -1, P: "a",
-								MinSize: 2, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}, wildcards.ItemRune('c'), wildcards.ItemStar{}},
+								Node: "a*c*", Terminated: "a*c*", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P:       "a",
+									MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemRune('c'), wildcards.ItemStar{},
+									},
+								},
 							},
 							{
-								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1, P: "a", Suffix: "c",
-								MinSize: 4, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}, wildcards.ItemRune('b'), wildcards.ItemOne{}},
+								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c",
+									MinSize: 4, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemRune('b'), wildcards.ItemOne{},
+									},
+								},
 							},
 							{
-								Node: "a*bd?c", Terminated: "a*bd?c", TermIndex: -1, P: "a", Suffix: "c",
-								MinSize: 5, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}, wildcards.ItemString("bd"), wildcards.ItemOne{}},
+								Node: "a*bd?c", Terminated: "a*bd?c", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c",
+									MinSize: 5, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemString("bd"), wildcards.ItemOne{},
+									},
+								},
 							},
 							{
 								Node: "a*{Z,Q}bd?c", Terminated: "a*{Z,Q}bd?c", TermIndex: -1,
-								MinSize: 6, MaxSize: -1, P: "a", Suffix: "c",
-								Inners: []wildcards.InnerItem{
-									wildcards.ItemStar{},
-									&wildcards.ItemList{Vals: []string{"Q", "Z"}, ValsMin: 1, ValsMax: 1},
-									wildcards.ItemString("bd"), wildcards.ItemOne{}},
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 6, MaxSize: -1, P: "a", Suffix: "c",
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{},
+										&wildcards.ItemList{Vals: []string{"Q", "Z"}, ValsMin: 1, ValsMax: 1},
+										wildcards.ItemString("bd"), wildcards.ItemOne{},
+									},
+								},
 							},
 						},
 					},
 					2: {
 						Childs: []*NodeItem{
 							{
-								Node: "a", P: "a",
+								Node: "a", WildcardItems: wildcards.WildcardItems{P: "a"},
 								Childs: []*NodeItem{
 									{
 										Node: "b?d", Terminated: "a.b?d", TermIndex: -1,
-										P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
-										Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+										WildcardItems: wildcards.WildcardItems{
+											P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
+											Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+										},
 									},
 								},
 							},
 							{
-								Node: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								Node: "a*c", WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								},
 								Childs: []*NodeItem{
-									{Node: "b", Terminated: "a*c.b", TermIndex: -1, P: "b"},
+									{
+										Node: "b", Terminated: "a*c.b", TermIndex: -1,
+										WildcardItems: wildcards.WildcardItems{P: "b"},
+									},
 								},
 							},
 						},

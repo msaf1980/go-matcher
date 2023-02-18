@@ -2,6 +2,8 @@ package gglob
 
 import (
 	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcherTerminated(t *testing.T) {
@@ -12,22 +14,34 @@ func TestGlobMatcherTerminated(t *testing.T) {
 				Root: map[int]*NodeItem{
 					1: {
 						Childs: []*NodeItem{
-							{Node: "a", Terminated: "a", TermIndex: -1, P: "a"},
+							{
+								Node: "a", Terminated: "a", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{P: "a"},
+							},
 						},
 					},
 					2: {
 						Childs: []*NodeItem{
 							{
-								Node: "a", P: "a",
+								Node: "a", WildcardItems: wildcards.WildcardItems{P: "a"},
 								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "a.bc", TermIndex: -1, P: "bc"},
-									{Node: "dc", Terminated: "a.dc", TermIndex: -1, P: "dc"},
+									{
+										Node: "bc", Terminated: "a.bc", TermIndex: -1,
+										WildcardItems: wildcards.WildcardItems{P: "bc"},
+									},
+									{
+										Node: "dc", Terminated: "a.dc", TermIndex: -1,
+										WildcardItems: wildcards.WildcardItems{P: "dc"},
+									},
 								},
 							},
 							{
-								Node: "b", P: "b",
+								Node: "b", WildcardItems: wildcards.WildcardItems{P: "b"},
 								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "b.bc", TermIndex: -1, P: "bc"},
+									{
+										Node: "bc", Terminated: "b.bc", TermIndex: -1,
+										WildcardItems: wildcards.WildcardItems{P: "bc"},
+									},
 								},
 							},
 						},

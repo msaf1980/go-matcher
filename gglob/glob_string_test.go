@@ -2,6 +2,8 @@ package gglob
 
 import (
 	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcherString(t *testing.T) {
@@ -26,7 +28,12 @@ func TestGlobMatcherString(t *testing.T) {
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*NodeItem{{Node: "a", Terminated: "a", TermIndex: -1, P: "a"}},
+						Childs: []*NodeItem{
+							{
+								Node: "a", Terminated: "a", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{P: "a"},
+							},
+						},
 					},
 				},
 				Globs: map[string]int{"a": -1},
@@ -41,9 +48,13 @@ func TestGlobMatcherString(t *testing.T) {
 					2: {
 						Childs: []*NodeItem{
 							{
-								Node: "a", P: "a",
+								Node:          "a",
+								WildcardItems: wildcards.WildcardItems{P: "a"},
 								Childs: []*NodeItem{
-									{Node: "bc", Terminated: "a.bc", TermIndex: -1, P: "bc"},
+									{
+										Node: "bc", Terminated: "a.bc", TermIndex: -1,
+										WildcardItems: wildcards.WildcardItems{P: "bc"},
+									},
 								},
 							},
 						},

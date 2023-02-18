@@ -25,12 +25,12 @@ test:
 
 # deep coverage (require Golang 1.20 or later)
 coverage: FORCE
-	${GO} test -coverprofile cover_gglob.out -coverpkg=./gglob,./pkg/items,./pkg/escape ./gglob
+	${GO} test -coverprofile cover_gglob.out -coverpkg=./gglob,./pkg/wildcards,./pkg/escape ./gglob
 	${GO} tool cover -html=cover_gglob.out -o cover_gglob.html
-	${GO} test -coverprofile cover_gtags.out -coverpkg=./gtags,./pkg/items,./pkg/escape ./gtags
+	${GO} test -coverprofile cover_gtags.out -coverpkg=./gtags,./pkg/wildcards,./pkg/escape ./gtags
 	${GO} tool cover -html=cover_gtags.out -o cover_gtags.html
 	# gocovmerge cover_items.out cover_escape.out cover_utils.out cover_gglob.out cover_gtags.out > cover.out
-	${GO} test -coverprofile cover.out -coverpkg=./gtags,./pkg/items,./pkg/escape ./...
+	${GO} test -coverprofile cover.out -coverpkg=./gglob,./gtags,./pkg/wildcards,./pkg/escape ./...
 	${GO} tool cover -html=cover.out -o cover.html
 
 lint:

@@ -16,8 +16,11 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "?", Terminated: "?", TermIndex: -1, MinSize: 1, MaxSize: 1,
-								Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+								Node: "?", Terminated: "?", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 1, MaxSize: 1,
+									Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+								},
 							},
 						},
 					},
@@ -34,8 +37,11 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a?", Terminated: "a?", TermIndex: -1, MinSize: 2, MaxSize: 2,
-								P: "a", Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+								Node: "a?", Terminated: "a?", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", MinSize: 2, MaxSize: 2,
+									Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+								},
 							},
 						},
 					},
@@ -52,9 +58,11 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a?c", Terminated: "a?c", TermIndex: -1, P: "a",
-								Inners: []wildcards.InnerItem{wildcards.ItemOne{}}, Suffix: "c",
-								MinSize: 3, MaxSize: 3,
+								Node: "a?c", Terminated: "a?c", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", MinSize: 3, MaxSize: 3,
+									Inners: []wildcards.InnerItem{wildcards.ItemOne{}}, Suffix: "c",
+								},
 							},
 						},
 					},
@@ -71,13 +79,15 @@ func TestGlobMatcher_One(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a?[c]?d", Terminated: "a?[c]?d", TermIndex: -1, P: "a", Suffix: "d",
-								Inners: []wildcards.InnerItem{
-									wildcards.ItemOne{},
-									wildcards.ItemRune('c'),
-									wildcards.ItemOne{},
+								Node: "a?[c]?d", Terminated: "a?[c]?d", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "d", MinSize: 5, MaxSize: 5,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemOne{},
+										wildcards.ItemRune('c'),
+										wildcards.ItemOne{},
+									},
 								},
-								MinSize: 5, MaxSize: 5,
 							},
 						},
 					},

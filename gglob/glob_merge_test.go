@@ -16,7 +16,7 @@ func TestNodeItem_Merge(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", TermIndex: -1,
-								P: "aaZQ", MinSize: 4, MaxSize: 4,
+								WildcardItems: wildcards.WildcardItems{P: "aaZQ", MinSize: 4, MaxSize: 4},
 							},
 						},
 					},
@@ -34,8 +34,10 @@ func TestNodeItem_Merge(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", TermIndex: -1,
-								P: "aaZQ", MinSize: 4, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								WildcardItems: wildcards.WildcardItems{
+									P: "aaZQ", MinSize: 4, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								},
 							},
 						},
 					},
@@ -57,10 +59,12 @@ func TestNodeItem_Merge(t *testing.T) {
 							{
 								Node:       "a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l",
 								Terminated: "a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l",
-								TermIndex:  -1,
-								P:          "aaZQstLT", Suffix: "zaSTltl", MinSize: 18, MaxSize: -1,
-								Inners: []wildcards.InnerItem{
-									wildcards.ItemStar{}, wildcards.ItemString("INN"), wildcards.ItemStar{},
+								TermIndex:  -1, WildcardItems: wildcards.WildcardItems{
+									P: "aaZQstLT", Suffix: "zaSTltl", MinSize: 18, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemString("INN"),
+										wildcards.ItemStar{},
+									},
 								},
 							},
 						},

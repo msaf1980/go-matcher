@@ -17,8 +17,10 @@ func TestGlobMatcher_Star(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a******c", Terminated: "a******c", TermIndex: -1,
-								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								},
 							},
 						},
 					},
@@ -37,7 +39,9 @@ func TestGlobMatcher_Star(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "*", Terminated: "*", TermIndex: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}}, MaxSize: -1,
+								WildcardItems: wildcards.WildcardItems{
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}}, MaxSize: -1,
+								},
 							},
 						},
 					},
@@ -55,8 +59,10 @@ func TestGlobMatcher_Star(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a*c", Terminated: "a*c", TermIndex: -1,
-								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+								},
 							},
 						},
 					},
@@ -78,8 +84,12 @@ func TestGlobMatcher_Star(t *testing.T) {
 						Childs: []*NodeItem{
 							{
 								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1,
-								P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
-								Inners: []wildcards.InnerItem{wildcards.ItemStar{}, wildcards.ItemRune('b'), wildcards.ItemOne{}},
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemRune('b'), wildcards.ItemOne{},
+									},
+								},
 							},
 						},
 					},
