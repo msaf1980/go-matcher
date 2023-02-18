@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestTaggedTermListEqual_Wildcard(t *testing.T) {
@@ -17,7 +17,7 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 					Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
 					Glob: &WildcardItems{
 						MinSize: 1, MaxSize: -1, P: "c",
-						Inners: []items.InnerItem{items.ItemStar{}},
+						Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 					},
 				},
 			},
@@ -32,7 +32,7 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 					Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
 					Glob: &WildcardItems{
 						MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
-						Inners: []items.InnerItem{items.ItemStar{}},
+						Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 					},
 				},
 			},
@@ -49,13 +49,13 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 					Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{qa,q}c.a", HasWildcard: true,
 					Glob: &WildcardItems{
 						P: "a", Suffix: "c.a", MinSize: 7, MaxSize: 9,
-						Inners: []items.InnerItem{
-							&items.ItemList{
+						Inners: []wildcards.InnerItem{
+							&wildcards.ItemList{
 								Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
 								FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
 							},
-							items.ItemRune('Z'),
-							&items.ItemList{
+							wildcards.ItemRune('Z'),
+							&wildcards.ItemList{
 								Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
 								FirstRunes: map[int32]struct{}{'q': {}},
 							},
@@ -101,7 +101,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
 										Glob: &WildcardItems{
-											MinSize: 1, MaxSize: -1, P: "c", Inners: []items.InnerItem{items.ItemStar{}},
+											MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
 									Terminated: []string{"seriesByTag('name=a', 'b=c*')"},
@@ -133,7 +133,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 										Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
 										Glob: &WildcardItems{
 											MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
-											Inners: []items.InnerItem{items.ItemStar{}},
+											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
 									Terminated: []string{"seriesByTag('name=a.b', 'b=c*.a')"},
@@ -168,13 +168,13 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 										HasWildcard: true,
 										Glob: &WildcardItems{
 											MinSize: 7, MaxSize: 9, P: "a", Suffix: "c.a",
-											Inners: []items.InnerItem{
-												&items.ItemList{
+											Inners: []wildcards.InnerItem{
+												&wildcards.ItemList{
 													Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
 													FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
 												},
-												items.ItemRune('Z'),
-												&items.ItemList{
+												wildcards.ItemRune('Z'),
+												&wildcards.ItemList{
 													Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
 													FirstRunes: map[int32]struct{}{'q': {}},
 												},
@@ -234,7 +234,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 										Key: "b", Op: TaggedTermEq, Value: "c[a][Z-]*", HasWildcard: true,
 										Glob: &WildcardItems{
 											MinSize: 3, MaxSize: -1, P: "caZ",
-											Inners: []items.InnerItem{items.ItemStar{}},
+											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
 									Terminated: []string{"seriesByTag('name=a', 'b=c[a][Z-]*')"},
@@ -266,7 +266,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 										Key: "b", Op: TaggedTermEq, Value: "c[a][Z-]*[Q]l", HasWildcard: true,
 										Glob: &WildcardItems{
 											MinSize: 5, MaxSize: -1, P: "caZ", Suffix: "Ql",
-											Inners: []items.InnerItem{items.ItemStar{}},
+											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
 									Terminated: []string{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},

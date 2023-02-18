@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/msaf1980/go-matcher/pkg/items"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 type testGlobMatcher struct {
@@ -50,7 +51,7 @@ func verifyGlobMatcher(t *testing.T, matchGlobs map[string][]string, miss []stri
 			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
 		}
 
-		parts := items.PathSplit(path)
+		parts := wildcards.PathSplit(path)
 		if globs := w.MatchByParts(parts); !reflect.DeepEqual(wantGlobs, globs) {
 			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
 		}
@@ -64,7 +65,7 @@ func verifyGlobMatcher(t *testing.T, matchGlobs map[string][]string, miss []stri
 		if globs := w.Match(path); len(globs) != 0 {
 			t.Errorf("GlobMatcher.Match(%q) != %q", path, globs)
 		}
-		parts := items.PathSplit(path)
+		parts := wildcards.PathSplit(path)
 		if globs := w.MatchByParts(parts); len(globs) != 0 {
 			t.Errorf("GlobMatcher.MatchByParts(%q) != %q", path, globs)
 		}
@@ -120,7 +121,7 @@ func verifyGlobMatcherIndex(t *testing.T, matchPaths map[string][]int, w *GlobMa
 			t.Errorf("GlobMatcher.MatchFirst(%q) = want %d, got %d", path, wantFirst, first)
 		}
 
-		parts := items.PathSplit(path)
+		parts := wildcards.PathSplit(path)
 		globsN = w.MatchIndexedByParts(parts)
 		if !reflect.DeepEqual(wantN, globsN) {
 			t.Errorf("GlobMatcher.MatchIndexedByParts(%q) = %s", path, cmp.Diff(wantN, globsN))

@@ -1,4 +1,4 @@
-package items
+package wildcards
 
 import (
 	"sort"
@@ -89,6 +89,10 @@ type RuneRange struct {
 
 type ItemRuneRanges []RuneRange
 
+func (ItemRuneRanges) CanEmpty() bool {
+	return false
+}
+
 func (item ItemRuneRanges) IsRune() (rune, bool) {
 	return utf8.RuneError, false
 }
@@ -121,7 +125,7 @@ func (item ItemRuneRanges) Match(part string, nextParts string, nextItems []Inne
 		}
 	}
 	if found {
-		if part != "" && len(nextItems) > 0 {
+		if len(nextItems) > 0 {
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
@@ -131,6 +135,10 @@ func (item ItemRuneRanges) Match(part string, nextParts string, nextItems []Inne
 }
 
 type ItemRuneMap map[rune]struct{}
+
+func (ItemRuneMap) CanEmpty() bool {
+	return false
+}
 
 func (item ItemRuneMap) IsRune() (rune, bool) {
 	return utf8.RuneError, false
@@ -152,9 +160,9 @@ func (item ItemRuneMap) Match(part string, nextParts string, nextItems []InnerIt
 		}
 	}
 	if found {
-		if part != "" && len(nextItems) > 0 {
+		if len(nextItems) > 0 {
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 || part == "" && len(nextItems) > 0 {
+		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
 	}

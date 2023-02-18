@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/msaf1980/go-matcher/pkg/escape"
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 // Based on github.com/go-graphite/graphite-clickhouse/finder/tagged.go
@@ -267,7 +267,7 @@ func ParseTaggedConditions(conditions []string) (TaggedTermList, error) {
 		}
 		switch terms[i].Op {
 		case TaggedTermEq, TaggedTermNe:
-			if items.HasWildcard(terms[i].Value) {
+			if wildcards.HasWildcard(terms[i].Value) {
 				terms[i].HasWildcard = true
 				// terms[i].Glob = new(WildcardItems)
 				// if err := terms[i].Glob.Parse(terms[i].Value); err != nil {

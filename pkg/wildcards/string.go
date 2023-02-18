@@ -1,4 +1,4 @@
-package items
+package wildcards
 
 import (
 	"strings"
@@ -6,6 +6,10 @@ import (
 )
 
 type ItemString string
+
+func (ItemString) CanEmpty() bool {
+	return false
+}
 
 func (item ItemString) IsRune() (rune, bool) {
 	return utf8.RuneError, false
@@ -26,9 +30,9 @@ func (item ItemString) Match(part string, nextParts string, nextItems []InnerIte
 		found = true
 		part = part[len(s):]
 
-		if part != "" && len(nextItems) > 0 {
+		if len(nextItems) > 0 {
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 || part == "" && len(nextItems) > 0 {
+		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
 	}

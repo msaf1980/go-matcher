@@ -3,7 +3,7 @@ package gtags
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestTagsMatcherIndex(t *testing.T) {
@@ -24,7 +24,7 @@ func TestTagsMatcherIndex(t *testing.T) {
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
 										Glob: &WildcardItems{
-											MinSize: 1, MaxSize: -1, P: "c", Inners: []items.InnerItem{items.ItemStar{}},
+											MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
 									Terminated: []string{"seriesByTag('name=a', 'b=c*')"},
@@ -35,7 +35,7 @@ func TestTagsMatcherIndex(t *testing.T) {
 										Key: "b", Op: TaggedTermEq, Value: "*a", HasWildcard: true,
 										Glob: &WildcardItems{
 											MinSize: 1, MaxSize: -1, Suffix: "a",
-											Inners: []items.InnerItem{items.ItemStar{}},
+											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
 									Terminated: []string{"seriesByTag('name=a', 'b=*a')"},

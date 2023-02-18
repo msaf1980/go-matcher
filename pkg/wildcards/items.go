@@ -1,4 +1,4 @@
-package items
+package wildcards
 
 import (
 	"io"
@@ -7,13 +7,19 @@ import (
 )
 
 type InnerItem interface {
+	CanEmpty() bool // can be empty or not
 	CanString() bool
 	IsRune() (c rune, ok bool)
 	IsString() (s string, ok bool)
 	Match(part string, nextParts string, nextItems []InnerItem) (found bool)
+	// MatchGready(part string, nextParts string, nextItems []InnerItem) (found bool) // can skip any symbols before match
 }
 
 type ItemOne struct{}
+
+func (ItemOne) CanEmpty() bool {
+	return false
+}
 
 func (item ItemOne) IsRune() (rune, bool) {
 	return utf8.RuneError, false
@@ -328,7 +334,12 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 								prevS += s
 								inners[len(inners)-1] = ItemString(prevS)
 							case ItemTypeChar:
-								prevS = string(prevC) + s
+								var sb strings.Builder
+								prev = ItemTypeString
+								sb.Grow(len(s) + 1)
+								sb.WriteRune(prevC)
+								sb.WriteString(s)
+								prevS = sb.String()
 								inners[len(inners)-1] = ItemString(prevS)
 							default:
 								if len(inners) == 0 {
@@ -350,7 +361,6 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 								sb.Grow(len(prevS) + 1)
 								sb.WriteString(prevS)
 								sb.WriteRune(c)
-								prev = ItemTypeString
 								prevS = sb.String()
 								inners[len(inners)-1] = ItemString(prevS)
 							case ItemTypeChar:
@@ -379,6 +389,7 @@ func (node *NodeItem) Parse(glob string, partsCount int, termIdx int) (lastNode 
 								}
 							}
 						} else {
+							prev = ItemTypeOther
 							inners = append(inners, inner)
 						}
 					}

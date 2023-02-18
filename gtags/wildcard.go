@@ -3,7 +3,7 @@ package gtags
 import (
 	"strings"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 // WildcardItems contains pattern node item
@@ -15,7 +15,7 @@ type WildcardItems struct {
 	P      string // prefix or full string if len(inners) == 0
 	Suffix string // suffix
 
-	Inners []items.InnerItem // inner segments
+	Inners []wildcards.InnerItem // inner segments
 }
 
 func (node *WildcardItems) Match(part string) (matched bool) {
@@ -54,7 +54,7 @@ func (node *WildcardItems) Match(part string) (matched bool) {
 }
 
 func (node *WildcardItems) Parse(glob string) (err error) {
-	pos := items.IndexWildcard(glob)
+	pos := wildcards.IndexWildcard(glob)
 	if pos == -1 {
 		node.P = glob
 	} else {
@@ -64,9 +64,9 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 			node.MinSize = len(node.P)
 			node.MaxSize = len(node.P)
 		}
-		end := items.IndexLastWildcard(glob)
+		end := wildcards.IndexLastWildcard(glob)
 		if end == 0 && glob[0] != '?' && glob[0] != '*' {
-			err = items.ErrNodeUnclosed{glob}
+			err = wildcards.ErrNodeUnclosed{glob}
 			return
 		}
 		if end < len(glob)-1 {
@@ -79,29 +79,29 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 
 		switch glob {
 		case "*":
-			node.Inners = []items.InnerItem{items.ItemStar{}}
+			node.Inners = []wildcards.InnerItem{wildcards.ItemStar{}}
 			node.MaxSize = -1 // unlimited
 		case "?":
-			node.Inners = []items.InnerItem{items.ItemOne{}}
+			node.Inners = []wildcards.InnerItem{wildcards.ItemOne{}}
 			node.MinSize++
 			if node.MaxSize != -1 {
 				node.MaxSize++
 			}
 		default:
 			var (
-				inner    items.InnerItem
+				inner    wildcards.InnerItem
 				min, max int
 			)
-			innerCount := items.WildcardCount(glob)
-			inners := make([]items.InnerItem, 0, innerCount)
+			innerCount := wildcards.WildcardCount(glob)
+			inners := make([]wildcards.InnerItem, 0, innerCount)
 			var (
-				prev  items.ItemType
+				prev  wildcards.ItemType
 				prevS string
 				prevC rune
 			)
 
 			for glob != "" {
-				inner, glob, min, max, err = items.NextWildcardItem(glob)
+				inner, glob, min, max, err = wildcards.NextWildcardItem(glob)
 				if err != nil {
 					return
 				}
@@ -119,12 +119,12 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 				// try to in-palce merge
 				if s, ok := inner.IsString(); ok {
 					switch prev {
-					case items.ItemTypeString:
+					case wildcards.ItemTypeString:
 						prevS += s
-						inners[len(inners)-1] = items.ItemString(prevS)
-					case items.ItemTypeChar:
+						inners[len(inners)-1] = wildcards.ItemString(prevS)
+					case wildcards.ItemTypeChar:
 						prevS = string(prevC) + s
-						inners[len(inners)-1] = items.ItemString(prevS)
+						inners[len(inners)-1] = wildcards.ItemString(prevS)
 					default:
 						if len(inners) == 0 {
 							if node.P == "" {
@@ -133,29 +133,29 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 								node.P += s
 							}
 						} else {
-							prev = items.ItemTypeString
+							prev = wildcards.ItemTypeString
 							prevS = s
 							inners = append(inners, inner)
 						}
 					}
 				} else if c, ok := inner.IsRune(); ok {
 					switch prev {
-					case items.ItemTypeString:
+					case wildcards.ItemTypeString:
 						var sb strings.Builder
 						sb.Grow(len(prevS) + 1)
 						sb.WriteString(prevS)
 						sb.WriteRune(c)
-						prev = items.ItemTypeString
+						prev = wildcards.ItemTypeString
 						prevS = sb.String()
-						inners[len(inners)-1] = items.ItemString(prevS)
-					case items.ItemTypeChar:
+						inners[len(inners)-1] = wildcards.ItemString(prevS)
+					case wildcards.ItemTypeChar:
 						var sb strings.Builder
 						sb.Grow(2)
 						sb.WriteRune(prevC)
 						sb.WriteRune(c)
-						prev = items.ItemTypeString
+						prev = wildcards.ItemTypeString
 						prevS = sb.String()
-						inners[len(inners)-1] = items.ItemString(prevS)
+						inners[len(inners)-1] = wildcards.ItemString(prevS)
 					default:
 						if len(inners) == 0 {
 							if node.P == "" {
@@ -168,7 +168,7 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 								node.P = sb.String()
 							}
 						} else {
-							prev = items.ItemTypeChar
+							prev = wildcards.ItemTypeChar
 							prevC = c
 							inners = append(inners, inner)
 						}

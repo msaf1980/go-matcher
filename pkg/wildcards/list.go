@@ -1,4 +1,4 @@
-package items
+package wildcards
 
 import (
 	"math"
@@ -91,6 +91,10 @@ type ItemList struct {
 	ValsMax    int               // max len in vals or max rune in range
 }
 
+func (*ItemList) CanEmpty() bool {
+	return false
+}
+
 func (item *ItemList) IsRune() (rune, bool) {
 	return utf8.RuneError, false
 }
@@ -124,9 +128,9 @@ LOOP:
 			continue
 		}
 		if found {
-			if part != "" && len(nextItems) > 0 {
+			if len(nextItems) > 0 {
 				found = nextItems[0].Match(part, nextParts, nextItems[1:])
-			} else if part != "" || len(nextItems) > 0 || part == "" && len(nextItems) > 0 {
+			} else if part != "" && len(nextItems) == 0 {
 				found = false
 			}
 			if found {
@@ -142,6 +146,18 @@ func (item *ItemList) LocateFirst(part string) (offset int) {
 	offset = -1
 	for i, c := range part {
 		if _, ok := item.FirstRunes[c]; ok {
+			// part = part[i:]
+			// for _, s := range item.Vals {
+			// 	if idx := strings.Index(part, s); idx != -1 {
+			// 		if offset == -1 || offset > idx {
+			// 			offset = idx
+			// 			first = s
+			// 		}
+			// 	}
+			// }
+			// if offset != -1 {
+			// 	offset += i
+			// }
 			offset = i
 			return
 		}

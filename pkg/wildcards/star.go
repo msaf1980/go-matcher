@@ -1,10 +1,14 @@
-package items
+package wildcards
 
 import "unicode/utf8"
 
 type ItemStar struct{}
 
-func (item ItemStar) IsRune() (rune, bool) {
+func (ItemStar) CanEmpty() bool {
+	return true
+}
+
+func (ItemStar) IsRune() (rune, bool) {
 	return utf8.RuneError, false
 }
 
@@ -36,7 +40,7 @@ LOOP:
 				if idx, found = v.Locate(part); !found {
 					break LOOP
 				} else {
-					nextOffset += idx
+					nextOffset = idx
 					part = part[idx:]
 					nextItems = nextItems[1:]
 					found = true
@@ -46,7 +50,7 @@ LOOP:
 				if idx, found = v.Locate(part); !found {
 					break LOOP
 				} else {
-					nextOffset += idx
+					nextOffset = idx
 					part = part[idx:]
 					nextItems = nextItems[1:]
 					found = true
@@ -67,15 +71,11 @@ LOOP:
 			found = true
 			break LOOP
 		}
-		if part != "" && len(nextItems) > 0 {
+		if len(nextItems) > 0 {
 			if found = nextItems[0].Match(part, nextParts, nextItems[1:]); found {
 				break LOOP
 			}
-		} else if part != "" || len(nextItems) > 0 || part == "" && len(nextItems) > 0 {
-			found = false
-			break LOOP
 		}
-
 	}
 	return
 }

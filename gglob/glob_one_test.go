@@ -3,7 +3,7 @@ package gglob
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcher_One(t *testing.T) {
@@ -12,12 +12,12 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"?"}`, globs: []string{"?"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*wildcards.NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*wildcards.NodeItem{
 							{
 								Node: "?", Terminated: "?", TermIndex: -1, MinSize: 1, MaxSize: 1,
-								Inners: []items.InnerItem{items.ItemOne{}},
+								Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
 							},
 						},
 					},
@@ -30,12 +30,12 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"a?"}`, globs: []string{"a?"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*wildcards.NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*wildcards.NodeItem{
 							{
 								Node: "a?", Terminated: "a?", TermIndex: -1, MinSize: 2, MaxSize: 2,
-								P: "a", Inners: []items.InnerItem{items.ItemOne{}},
+								P: "a", Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
 							},
 						},
 					},
@@ -48,12 +48,12 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"a?c"}`, globs: []string{"a?c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*wildcards.NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*wildcards.NodeItem{
 							{
 								Node: "a?c", Terminated: "a?c", TermIndex: -1, P: "a",
-								Inners: []items.InnerItem{items.ItemOne{}}, Suffix: "c",
+								Inners: []wildcards.InnerItem{wildcards.ItemOne{}}, Suffix: "c",
 								MinSize: 3, MaxSize: 3,
 							},
 						},
@@ -67,15 +67,15 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"a?[c]?d"}`, globs: []string{"a?[c]?d"},
 			wantW: &GlobMatcher{
-				Root: map[int]*items.NodeItem{
+				Root: map[int]*wildcards.NodeItem{
 					1: {
-						Childs: []*items.NodeItem{
+						Childs: []*wildcards.NodeItem{
 							{
 								Node: "a?[c]?d", Terminated: "a?[c]?d", TermIndex: -1, P: "a", Suffix: "d",
-								Inners: []items.InnerItem{
-									items.ItemOne{},
-									items.ItemRune('c'),
-									items.ItemOne{},
+								Inners: []wildcards.InnerItem{
+									wildcards.ItemOne{},
+									wildcards.ItemRune('c'),
+									wildcards.ItemOne{},
 								},
 								MinSize: 5, MaxSize: 5,
 							},
