@@ -7,20 +7,21 @@ import (
 
 type ItemString string
 
-func (ItemString) CanEmpty() bool {
-	return false
+func (item ItemString) Type() (typ ItemType, s string, c rune) {
+	return ItemTypeString, string(item), utf8.RuneError
 }
 
-func (item ItemString) IsRune() (rune, bool) {
-	return utf8.RuneError, false
+func (item ItemString) Strings() []string {
+	return nil
 }
 
-func (item ItemString) IsString() (string, bool) {
-	return string(item), true
-}
-
-func (ItemString) CanString() bool {
-	return true
+func (item ItemString) Locate(part string) (offset int, support bool) {
+	s := string(item)
+	support = true
+	if offset = strings.Index(part, s); offset != -1 {
+		offset += len(s)
+	}
+	return
 }
 
 func (item ItemString) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -35,15 +36,6 @@ func (item ItemString) Match(part string, nextParts string, nextItems []InnerIte
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
-	}
-	return
-}
-
-func (item ItemString) Locate(part string) (offset int, found bool) {
-	s := string(item)
-	if offset = strings.Index(part, s); offset != -1 {
-		offset += len(s)
-		found = true
 	}
 	return
 }

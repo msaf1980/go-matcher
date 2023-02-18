@@ -23,7 +23,7 @@ func TestTagsMatcherIndex(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
-										Glob: &WildcardItems{
+										Glob: &wildcards.WildcardItems{
 											MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
@@ -33,7 +33,7 @@ func TestTagsMatcherIndex(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "*a", HasWildcard: true,
-										Glob: &WildcardItems{
+										Glob: &wildcards.WildcardItems{
 											MinSize: 1, MaxSize: -1, Suffix: "a",
 											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},

@@ -2,8 +2,6 @@ package gglob
 
 import (
 	"testing"
-
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 func TestGlobMatcherString(t *testing.T) {
@@ -11,14 +9,14 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: "empty #1", globs: []string{},
 			wantW: &GlobMatcher{
-				Root:  map[int]*wildcards.NodeItem{},
+				Root:  map[int]*NodeItem{},
 				Globs: map[string]int{},
 			},
 		},
 		{
 			name: "empty #2", globs: []string{""},
 			wantW: &GlobMatcher{
-				Root:  map[int]*wildcards.NodeItem{},
+				Root:  map[int]*NodeItem{},
 				Globs: map[string]int{},
 			},
 		},
@@ -26,9 +24,9 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: `{"a"}`, globs: []string{"a"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{{Node: "a", Terminated: "a", TermIndex: -1, P: "a"}},
+						Childs: []*NodeItem{{Node: "a", Terminated: "a", TermIndex: -1, P: "a"}},
 					},
 				},
 				Globs: map[string]int{"a": -1},
@@ -39,12 +37,12 @@ func TestGlobMatcherString(t *testing.T) {
 		{
 			name: `{"a.bc"}`, globs: []string{"a.bc"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					2: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a", P: "a",
-								Childs: []*wildcards.NodeItem{
+								Childs: []*NodeItem{
 									{Node: "bc", Terminated: "a.bc", TermIndex: -1, P: "bc"},
 								},
 							},

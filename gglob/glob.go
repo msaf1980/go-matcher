@@ -7,12 +7,12 @@ import (
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
-func ParseItems(root map[int]*wildcards.NodeItem, glob string, termIdx int) (lastNode *wildcards.NodeItem, err error) {
+func ParseItems(root map[int]*NodeItem, glob string, termIdx int) (lastNode *NodeItem, err error) {
 	glob, partsCount := wildcards.PathLevel(glob)
 
 	node, ok := root[partsCount]
 	if !ok {
-		node = &wildcards.NodeItem{}
+		node = &NodeItem{}
 		root[partsCount] = node
 	}
 	_, err = node.Parse(glob, partsCount, termIdx)
@@ -22,13 +22,13 @@ func ParseItems(root map[int]*wildcards.NodeItem, glob string, termIdx int) (las
 
 // GlobMatcher is dotted-separated segment glob matcher, like a.b.[c-e]?.{f-o}*, writted for graphite project
 type GlobMatcher struct {
-	Root  map[int]*wildcards.NodeItem
+	Root  map[int]*NodeItem
 	Globs map[string]int
 }
 
 func NewGlobMatcher() *GlobMatcher {
 	return &GlobMatcher{
-		Root:  make(map[int]*wildcards.NodeItem),
+		Root:  make(map[int]*NodeItem),
 		Globs: make(map[string]int),
 	}
 }

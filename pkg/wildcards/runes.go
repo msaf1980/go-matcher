@@ -89,38 +89,52 @@ type RuneRange struct {
 
 type ItemRuneRanges []RuneRange
 
-func (ItemRuneRanges) CanEmpty() bool {
-	return false
+func (item ItemRuneRanges) Type() (typ ItemType, s string, c rune) {
+	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item ItemRuneRanges) IsRune() (rune, bool) {
-	return utf8.RuneError, false
+func (item ItemRuneRanges) Strings() []string {
+	return nil
 }
 
-func (item ItemRuneRanges) IsString() (string, bool) {
-	return "", false
+func (item ItemRuneRanges) Locate(part string) (offset int, support bool) {
+	support = true
+	for i, c := range part {
+		if item.matchRune(c) {
+			offset = i + 1
+			return
+		}
+	}
+	offset = -1
+	return
 }
 
-func (ItemRuneRanges) CanString() bool {
+func (item ItemRuneRanges) matchRune(c rune) bool {
+	if c >= item[0].First && c <= item[len(item)-1].Last {
+		for i := range item {
+			// TODO: may be binary search for many ranges set ?
+			if len(item) == 1 {
+				if c >= item[0].First && c <= item[0].Last {
+					return true
+				}
+			} else if c >= item[i].First && c <= item[i].Last {
+				return true
+			}
+		}
+	}
 	return false
 }
 
 func (item ItemRuneRanges) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
-		if c >= item[0].First && c <= item[len(item)-1].Last {
-			for i := range item {
-				// TODO: may be binary search for many ranges set ?
-				if len(item) == 1 {
-					if c >= item[0].First && c <= item[0].Last {
-						found = true
-						part = part[n:]
-						break
-					}
-				} else if c >= item[i].First && c <= item[i].Last {
-					found = true
-					part = part[n:]
-					break
-				}
+		if item.matchRune(c) {
+			found = true
+			part = part[n:]
+
+			if len(nextItems) > 0 {
+				found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			} else if part != "" && len(nextItems) == 0 {
+				found = false
 			}
 		}
 	}
@@ -136,20 +150,24 @@ func (item ItemRuneRanges) Match(part string, nextParts string, nextItems []Inne
 
 type ItemRuneMap map[rune]struct{}
 
-func (ItemRuneMap) CanEmpty() bool {
-	return false
+func (item ItemRuneMap) Type() (typ ItemType, s string, c rune) {
+	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item ItemRuneMap) IsRune() (rune, bool) {
-	return utf8.RuneError, false
+func (item ItemRuneMap) Strings() []string {
+	return nil
 }
 
-func (item ItemRuneMap) IsString() (string, bool) {
-	return "", false
-}
-
-func (ItemRuneMap) CanString() bool {
-	return false
+func (item ItemRuneMap) Locate(part string) (offset int, support bool) {
+	support = true
+	for i, c := range part {
+		if _, ok := item[c]; ok {
+			offset = i + 1
+			return
+		}
+	}
+	offset = -1
+	return
 }
 
 func (item ItemRuneMap) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {

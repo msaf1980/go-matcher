@@ -85,26 +85,21 @@ func ListExpand(s string) (list []string, failed bool) {
 
 type ItemList struct {
 	// nodeList
-	FirstRunes map[rune]struct{} // for gready skip scan, if no empty string in list
-	Vals       []string          // strings
-	ValsMin    int               // min len in vals or min rune in range
-	ValsMax    int               // max len in vals or max rune in range
+	Vals    []string // strings
+	ValsMin int      // min len in vals or min rune in range
+	ValsMax int      // max len in vals or max rune in range
 }
 
-func (*ItemList) CanEmpty() bool {
-	return false
+func (item *ItemList) Type() (typ ItemType, s string, c rune) {
+	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item *ItemList) IsRune() (rune, bool) {
-	return utf8.RuneError, false
+func (item *ItemList) Strings() []string {
+	return item.Vals
 }
 
-func (item *ItemList) IsString() (string, bool) {
-	return "", false
-}
-
-func (*ItemList) CanString() bool {
-	return false
+func (item *ItemList) Locate(part string) (offset int, support bool) {
+	return -1, false
 }
 
 func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -141,30 +136,6 @@ LOOP:
 	return
 }
 
-// LocateFirst find any of first runes pos (call only if ValsMin > 0)
-func (item *ItemList) LocateFirst(part string) (offset int) {
-	offset = -1
-	for i, c := range part {
-		if _, ok := item.FirstRunes[c]; ok {
-			// part = part[i:]
-			// for _, s := range item.Vals {
-			// 	if idx := strings.Index(part, s); idx != -1 {
-			// 		if offset == -1 || offset > idx {
-			// 			offset = idx
-			// 			first = s
-			// 		}
-			// 	}
-			// }
-			// if offset != -1 {
-			// 	offset += i
-			// }
-			offset = i
-			return
-		}
-	}
-	return
-}
-
 // func NewItemList return optimized version of InnerItem
 func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
 	if len(vals) == 0 {
@@ -186,21 +157,7 @@ func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
 		}
 	}
 
-	// for gready skip scan, only if no empty string in list
-	var firstsRunes map[rune]struct{}
-	if minLen > 0 {
-		firstsRunes = make(map[rune]struct{})
-		last := utf8.RuneError
-		for _, v := range vals {
-			c, _ := utf8.DecodeRuneInString(v)
-			if c != last {
-				firstsRunes[c] = struct{}{}
-				last = c
-			}
-		}
-	}
-
-	item = &ItemList{Vals: vals, FirstRunes: firstsRunes, ValsMin: minLen, ValsMax: maxLen}
+	item = &ItemList{Vals: vals, ValsMin: minLen, ValsMax: maxLen}
 
 	return
 }

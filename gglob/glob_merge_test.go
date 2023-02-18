@@ -11,9 +11,9 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #all", globs: []string{"a[a-]Z[Q]"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", TermIndex: -1,
 								P: "aaZQ", MinSize: 4, MaxSize: 4,
@@ -29,9 +29,9 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #prefix", globs: []string{"a[a-]Z[Q]*"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a[a-]Z[Q]*", Terminated: "a[a-]Z[Q]*", TermIndex: -1,
 								P: "aaZQ", MinSize: 4, MaxSize: -1,
@@ -51,9 +51,9 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #suffix", globs: []string{"a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node:       "a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l",
 								Terminated: "a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l",

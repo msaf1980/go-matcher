@@ -15,9 +15,9 @@ func TestGlobMatcher_Index(t *testing.T) {
 				"a*c", "a*c*", "a*b?c", "a*c.b", "a.b?d",
 			},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a*c", Terminated: "a*c", TermIndex: 0, P: "a", Suffix: "c",
 								Inners:  []wildcards.InnerItem{wildcards.ItemStar{}},
@@ -36,11 +36,11 @@ func TestGlobMatcher_Index(t *testing.T) {
 						},
 					},
 					2: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
 								Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
-								Childs: []*wildcards.NodeItem{
+								Childs: []*NodeItem{
 									{
 										Node: "b", Terminated: "a*c.b", TermIndex: 3, P: "b",
 										MinSize: 0, MaxSize: 0,
@@ -49,7 +49,7 @@ func TestGlobMatcher_Index(t *testing.T) {
 							},
 							{
 								Node: "a", P: "a",
-								Childs: []*wildcards.NodeItem{
+								Childs: []*NodeItem{
 									{
 										Node: "b?d", Terminated: "a.b?d", TermIndex: 4, P: "b", Suffix: "d",
 										MinSize: 3, MaxSize: 3, Inners: []wildcards.InnerItem{wildcards.ItemOne{}},

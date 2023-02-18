@@ -33,15 +33,15 @@ type TaggedTerm struct {
 	Key         string
 	Op          TaggedTermOp
 	Value       string
-	HasWildcard bool           // only for TaggedTermEq
-	Glob        *WildcardItems // glob macher if HasWildcard
-	Re          *regexp.Regexp // regexp
+	HasWildcard bool                     // only for TaggedTermEq
+	Glob        *wildcards.WildcardItems // glob macher if HasWildcard
+	Re          *regexp.Regexp           // regexp
 }
 
 // Build compile regexp/glob
 func (term *TaggedTerm) Build() (err error) {
 	if term.HasWildcard {
-		term.Glob = new(WildcardItems)
+		term.Glob = new(wildcards.WildcardItems)
 		if err = term.Glob.Parse(term.Value); err != nil {
 			return
 		}
@@ -269,7 +269,7 @@ func ParseTaggedConditions(conditions []string) (TaggedTermList, error) {
 		case TaggedTermEq, TaggedTermNe:
 			if wildcards.HasWildcard(terms[i].Value) {
 				terms[i].HasWildcard = true
-				// terms[i].Glob = new(WildcardItems)
+				// terms[i].Glob = new(wildcards.WildcardItems)
 				// if err := terms[i].Glob.Parse(terms[i].Value); err != nil {
 				// 	return nil, err
 				// }

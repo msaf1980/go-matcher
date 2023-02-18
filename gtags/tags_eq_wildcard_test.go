@@ -15,7 +15,7 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
-					Glob: &WildcardItems{
+					Glob: &wildcards.WildcardItems{
 						MinSize: 1, MaxSize: -1, P: "c",
 						Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 					},
@@ -30,7 +30,7 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
-					Glob: &WildcardItems{
+					Glob: &wildcards.WildcardItems{
 						MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
 						Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 					},
@@ -47,18 +47,12 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{qa,q}c.a", HasWildcard: true,
-					Glob: &WildcardItems{
+					Glob: &wildcards.WildcardItems{
 						P: "a", Suffix: "c.a", MinSize: 7, MaxSize: 9,
 						Inners: []wildcards.InnerItem{
-							&wildcards.ItemList{
-								Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
-								FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
-							},
+							&wildcards.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
 							wildcards.ItemRune('Z'),
-							&wildcards.ItemList{
-								Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
-								FirstRunes: map[int32]struct{}{'q': {}},
-							},
+							&wildcards.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
 						},
 					},
 				},
@@ -100,8 +94,9 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
-										Glob: &WildcardItems{
-											MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+										Glob: &wildcards.WildcardItems{
+											MinSize: 1, MaxSize: -1, P: "c",
+											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
 									Terminated: []string{"seriesByTag('name=a', 'b=c*')"},
@@ -131,7 +126,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
-										Glob: &WildcardItems{
+										Glob: &wildcards.WildcardItems{
 											MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
 											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
@@ -166,17 +161,15 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{qa,q}c.a",
 										HasWildcard: true,
-										Glob: &WildcardItems{
+										Glob: &wildcards.WildcardItems{
 											MinSize: 7, MaxSize: 9, P: "a", Suffix: "c.a",
 											Inners: []wildcards.InnerItem{
 												&wildcards.ItemList{
 													Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
-													FirstRunes: map[int32]struct{}{'a': {}, 'b': {}},
 												},
 												wildcards.ItemRune('Z'),
 												&wildcards.ItemList{
 													Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
-													FirstRunes: map[int32]struct{}{'q': {}},
 												},
 											},
 										},
@@ -232,7 +225,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c[a][Z-]*", HasWildcard: true,
-										Glob: &WildcardItems{
+										Glob: &wildcards.WildcardItems{
 											MinSize: 3, MaxSize: -1, P: "caZ",
 											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
@@ -254,7 +247,8 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 			missPaths: []string{"a?b=c", "a?b=ca", "a?b=caz", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
 		{
-			name: `{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"}`, queries: []string{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+			name:    `{"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"}`,
+			queries: []string{"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
 			wantW: &TagsMatcher{
 				Root: &TaggedItem{
 					Childs: []*TaggedItem{
@@ -263,27 +257,34 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 							Childs: []*TaggedItem{
 								{
 									Term: &TaggedTerm{
-										Key: "b", Op: TaggedTermEq, Value: "c[a][Z-]*[Q]l", HasWildcard: true,
-										Glob: &WildcardItems{
-											MinSize: 5, MaxSize: -1, P: "caZ", Suffix: "Ql",
-											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+										Key: "b", Op: TaggedTermEq, Value: "a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l",
+										HasWildcard: true, Glob: &wildcards.WildcardItems{
+											P: "aaZQstLT", Suffix: "zaSTltl", MinSize: 18, MaxSize: -1,
+											Inners: []wildcards.InnerItem{
+												wildcards.ItemStar{}, wildcards.ItemString("INN"), wildcards.ItemStar{},
+											},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+									Terminated: []string{"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')": -1},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')": -1},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=caZQl":       {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
-				"a?b=caZbQl":           {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
-				"a?a=v1&b=caZQl&e=v3":  {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
-				"a?a=v1&b=caZdQl&e=v3": {"seriesByTag('name=a', 'b=c[a][Z-]*[Q]l')"},
+				"a?a=v1&b=aaZQstLTINNzaSTltl":               {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
+				"a?b=aaZQstLTINN_zaSTltl":                   {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
+				"a?a=v1&b=aaZQstLT_INN_SKIP_zaSTltl&e=v3":   {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
+				"a?a=v1&b=aaZQstLT_SKIP_INN___zaSTltl&e=v3": {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
 			},
-			missPaths: []string{"a?b=c", "a?b=ca", "a?b=caz", "a?b=cazQl", "a?b=v1", "a?c=v1", "b?a=v1"},
+			missPaths: []string{
+				"a?b=c", "a?b=ca", "a?b=caz", "a?b=cazQl", "a?b=v1",
+				"a?b=aaZQstLT_IN_zaSTltl",
+				"a?b=aaZQstLT_INN_zSTltl",
+				"a?c=v1", "b?a=v1",
+			},
 		},
 	}
 	for _, tt := range tests {

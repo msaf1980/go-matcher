@@ -13,9 +13,9 @@ func TestGlobMatcher_Multi(t *testing.T) {
 			name:  `{"a*c", "a*c*", "a*b?c", "a*bd?c", "a*{Z,Q}bd?c", "a.b?d", "a*c.b"}`,
 			globs: []string{"a*c", "a*c*", "a*b?c", "a*bd?c", "a*{Z,Q}bd?c", "a.b?d", "a*c.b"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a*c", Terminated: "a*c", TermIndex: -1, P: "a", Suffix: "c",
 								Inners:  []wildcards.InnerItem{wildcards.ItemStar{}},
@@ -41,21 +41,19 @@ func TestGlobMatcher_Multi(t *testing.T) {
 								MinSize: 6, MaxSize: -1, P: "a", Suffix: "c",
 								Inners: []wildcards.InnerItem{
 									wildcards.ItemStar{},
-									&wildcards.ItemList{
-										Vals: []string{"Q", "Z"}, ValsMin: 1, ValsMax: 1,
-										FirstRunes: map[int32]struct{}{'Q': {}, 'Z': {}},
-									},
+									&wildcards.ItemList{Vals: []string{"Q", "Z"}, ValsMin: 1, ValsMax: 1},
 									wildcards.ItemString("bd"), wildcards.ItemOne{}},
 							},
 						},
 					},
 					2: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a", P: "a",
-								Childs: []*wildcards.NodeItem{
+								Childs: []*NodeItem{
 									{
-										Node: "b?d", Terminated: "a.b?d", TermIndex: -1, P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
+										Node: "b?d", Terminated: "a.b?d", TermIndex: -1,
+										P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
 										Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
 									},
 								},
@@ -63,7 +61,7 @@ func TestGlobMatcher_Multi(t *testing.T) {
 							{
 								Node: "a*c", P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
 								Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
-								Childs: []*wildcards.NodeItem{
+								Childs: []*NodeItem{
 									{Node: "b", Terminated: "a*c.b", TermIndex: -1, P: "b"},
 								},
 							},

@@ -12,9 +12,9 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"a******c"}`, globs: []string{"a******c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a******c", Terminated: "a******c", TermIndex: -1,
 								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
@@ -32,9 +32,9 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"*"}`, globs: []string{"*"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "*", Terminated: "*", TermIndex: -1,
 								Inners: []wildcards.InnerItem{wildcards.ItemStar{}}, MaxSize: -1,
@@ -50,9 +50,9 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"a*c"}`, globs: []string{"a*c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a*c", Terminated: "a*c", TermIndex: -1,
 								P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
@@ -73,9 +73,9 @@ func TestGlobMatcher_Star(t *testing.T) {
 		{
 			name: `{"a*b?c"}`, globs: []string{"a*b?c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*wildcards.NodeItem{
+				Root: map[int]*NodeItem{
 					1: {
-						Childs: []*wildcards.NodeItem{
+						Childs: []*NodeItem{
 							{
 								Node: "a*b?c", Terminated: "a*b?c", TermIndex: -1,
 								P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,

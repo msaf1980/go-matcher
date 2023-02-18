@@ -4,20 +4,16 @@ import "unicode/utf8"
 
 type ItemStar struct{}
 
-func (ItemStar) CanEmpty() bool {
-	return true
+func (item ItemStar) Strings() []string {
+	return nil
 }
 
-func (ItemStar) IsRune() (rune, bool) {
-	return utf8.RuneError, false
+func (item ItemStar) Type() (typ ItemType, s string, c rune) {
+	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item ItemStar) IsString() (string, bool) {
-	return "", false
-}
-
-func (ItemStar) CanString() bool {
-	return false
+func (item ItemStar) Locate(part string) (offset int, support bool) {
+	return -1, false
 }
 
 func (item ItemStar) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -33,38 +29,18 @@ LOOP:
 		nextOffset = 1
 		if len(nextItems) > 0 {
 			nextItem := nextItems[0]
-			switch v := nextItem.(type) {
-			// gready string skip scan, speedup NodeString find
-			case ItemString:
-				var idx int
-				if idx, found = v.Locate(part); !found {
+			// typ, _, _, vals := nextItem.Type()
+			// gready skip scan, speedup find
+			if idx, support := nextItem.Locate(part); support {
+				if idx == -1 {
 					break LOOP
-				} else {
-					nextOffset = idx
-					part = part[idx:]
-					nextItems = nextItems[1:]
-					found = true
 				}
-			case ItemRune:
-				var idx int
-				if idx, found = v.Locate(part); !found {
-					break LOOP
-				} else {
-					nextOffset = idx
-					part = part[idx:]
-					nextItems = nextItems[1:]
-					found = true
-				}
-			case *ItemList:
-				if v.ValsMin > 0 {
-					// gready list skip scan, speedup find any first rune
-					if idx := v.LocateFirst(part); idx == -1 {
-						break LOOP
-					} else {
-						nextOffset += idx
-						part = part[idx:]
-					}
-				}
+				nextOffset = idx
+				part = part[idx:]
+				nextItems = nextItems[1:]
+				found = true
+			} else if vals := nextItem.Strings(); len(vals) > 0 {
+
 			}
 		} else {
 			// all of string matched to *
