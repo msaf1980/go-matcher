@@ -118,11 +118,7 @@ LOOP:
 			// strip prefix
 			found = true
 			part = part[len(s):]
-		} else {
-			// try to next
-			continue
-		}
-		if found {
+
 			if len(nextItems) > 0 {
 				found = nextItems[0].Match(part, nextParts, nextItems[1:])
 			} else if part != "" && len(nextItems) == 0 {

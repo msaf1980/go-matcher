@@ -10,8 +10,8 @@ func TestGlobMatcher_Multi(t *testing.T) {
 	tests := []testGlobMatcher{
 		// composite
 		{
-			name:  `{"a*c", "a*c*", "a*b?c", "a*bd?c", "a*{Z,Q}bd?c", "a.b?d", "a*c.b"}`,
-			globs: []string{"a*c", "a*c*", "a*b?c", "a*bd?c", "a*{Z,Q}bd?c", "a.b?d", "a*c.b"},
+			name:  `{"a*c", "a*c*", "a*b?c", "a*bd?c", "a*{Z,Q}bd?c", "a.b?d", "a*c.b", "a*[b-e].b"}`,
+			globs: []string{"a*c", "a*c*", "a*b?c", "a*bd?c", "a*{Z,Q}bd?c", "a.b?d", "a*c.b", "a*[b-e].b"},
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
@@ -93,11 +93,31 @@ func TestGlobMatcher_Multi(t *testing.T) {
 									},
 								},
 							},
+							{
+								Node: "a*[b-e]",
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 2,
+									MaxSize: -1,
+									P:       "a",
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{},
+										wildcards.ItemRuneRanges{{'b', 'e'}},
+									},
+								},
+								Childs: []*NodeItem{
+									{
+										Node:          "b",
+										Terminated:    "a*[b-e].b",
+										TermIndex:     -1,
+										WildcardItems: wildcards.WildcardItems{P: "b"},
+									},
+								},
+							},
 						},
 					},
 				},
 				Globs: map[string]int{
-					"a*c": -1, "a*c*": -1, "a*b?c": -1, "a*bd?c": -1, "a*{Z,Q}bd?c": -1,
+					"a*c": -1, "a*c*": -1, "a*b?c": -1, "a*bd?c": -1, "a*{Z,Q}bd?c": -1, "a*[b-e].b": -1,
 					"a*c.b": -1, "a.b?d": -1,
 				},
 			},
@@ -108,8 +128,11 @@ func TestGlobMatcher_Multi(t *testing.T) {
 				"acZbdc":  {"a*c", "a*c*", "a*b?c"},
 				"acZbdIc": {"a*c", "a*c*", "a*bd?c", "a*{Z,Q}bd?c"},
 				"a.bfd":   {"a.b?d"},
+				"ac.b":    {"a*c.b", "a*[b-e].b"},
+				"ae.b":    {"a*[b-e].b"},
+				"aSTc.b":  {"a*c.b", "a*[b-e].b"},
 			},
-			missPaths: []string{"", "ab", "c", "a.b", "a.bd"},
+			missPaths: []string{"", "ab", "c", "a.b", "a.bd", "aa.b", "af.b"},
 		},
 	}
 	for _, tt := range tests {

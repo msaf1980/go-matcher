@@ -1,6 +1,9 @@
 package wildcards
 
-import "unicode/utf8"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 type ItemStar struct{}
 
@@ -40,7 +43,25 @@ LOOP:
 				nextItems = nextItems[1:]
 				found = true
 			} else if vals := nextItem.Strings(); len(vals) > 0 {
-
+				for _, v := range vals {
+					part := part // avoid overwrite outer loop
+				LOOP_LIST:
+					for part != "" {
+						if pos := strings.Index(part, v); pos == -1 {
+							break LOOP_LIST
+						} else {
+							part = part[pos+len(v):]
+							if len(nextItems) > 0 {
+								if found = nextItems[1].Match(part, nextParts, nextItems[2:]); found {
+									break LOOP_LIST
+								}
+							} else if part != "" {
+								break LOOP_LIST
+							}
+						}
+					}
+				}
+				return
 			}
 		} else {
 			// all of string matched to *
