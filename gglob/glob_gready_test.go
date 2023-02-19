@@ -356,3 +356,74 @@ func BenchmarkGready_ListSkip_Precompiled_Regex(b *testing.B) {
 		}
 	}
 }
+
+var (
+	targetGready_OneSkip = "DB*?web*_Status"
+	pathGready_OneSkip   = "DBCassandraSalesSKIPSKIPSKIPSKIPSKIPSKIPSKIPSKIPSKIPSKIPSKIPSKIP_we_Status"
+)
+
+// becnmark for suffix optimization
+func BenchmarkGready_OneSkip(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := NewGlobMatcher()
+		err := w.Add(targetGready_OneSkip)
+		if err != nil {
+			b.Fatal(err)
+		}
+		globs := w.Match(pathGready_OneSkip)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkGready_OneSkip_Regex(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		w := buildGlobRegexp(targetGready_OneSkip)
+		if w.MatchString(pathGready_OneSkip) {
+			b.Fatal(pathGready_OneSkip)
+		}
+	}
+}
+
+func BenchmarkGready_OneSkip_Precompiled(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetGready_OneSkip)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs := w.Match(pathGready_OneSkip)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkGready_OneSkip_Prealloc(b *testing.B) {
+	w := NewGlobMatcher()
+	err := w.Add(targetGready_OneSkip)
+	if err != nil {
+		b.Fatal(err)
+	}
+	globs := make([]string, 0, 4)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		globs = globs[:0]
+		w.MatchB(pathGready_OneSkip, &globs)
+		if len(globs) > 0 {
+			b.Fatal(globs)
+		}
+	}
+}
+
+func BenchmarkGready_OneSkip_Precompiled_Regex(b *testing.B) {
+	w := buildGlobRegexp(targetGready_OneSkip)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if w.MatchString(pathGready_OneSkip) {
+			b.Fatal(pathGready_OneSkip)
+		}
+	}
+}

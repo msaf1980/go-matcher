@@ -20,9 +20,8 @@ func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem) 
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		found = true
 		part = part[n:]
-	}
-	if found {
-		if part != "" && len(nextItems) > 0 {
+
+		if len(nextItems) > 0 {
 			found = nextItems[0].Match(part, nextParts, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
