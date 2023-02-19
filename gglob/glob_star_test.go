@@ -104,6 +104,36 @@ func TestGlobMatcher_Star(t *testing.T) {
 			},
 			missPaths: []string{"", "ab", "c", "ace", "a.c", "abbece"},
 		},
+		{
+			name: `{"a*?_FIND*st"}`, globs: []string{"a*?_FIND*_st"},
+			wantW: &GlobMatcher{
+				Root: map[int]*NodeItem{
+					1: {
+						Childs: []*NodeItem{
+							{
+								Node: "a*?_FIND*_st", Terminated: "a*?_FIND*_st", TermIndex: -1,
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "_st", MinSize: 10, MaxSize: -1,
+									Inners: []wildcards.InnerItem{
+										wildcards.ItemStar{}, wildcards.ItemOne{},
+										wildcards.ItemString("_FIND"), wildcards.ItemStar{},
+									},
+								},
+							},
+						},
+					},
+				},
+				Globs: map[string]int{"a*?_FIND*_st": -1},
+			},
+			matchPaths: map[string][]string{
+				"ab_FIND_st":        {"a*?_FIND*_st"},
+				"aLc_FIND_st":       {"a*?_FIND*_st"},
+				"aLBc_FIND_st":      {"a*?_FIND*_st"},
+				"aLBc_FIND_STAR_st": {"a*?_FIND*_st"},
+				"aLBc_FINDB_st":     {"a*?_FIND*_st"},
+			},
+			missPaths: []string{"a_FIND_st", "a_FINDB_st"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

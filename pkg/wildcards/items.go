@@ -17,7 +17,7 @@ type InnerItem interface {
 	Type() (typ ItemType, s string, c rune) // return type, and string or rune value (if contain)
 	Strings() []string                      // return nil or string values (if contain)
 	Match(part string, nextParts string, nextItems []InnerItem) (found bool)
-	Locate(part string) (offset int, support bool)
+	Locate(part string, nextItems []InnerItem) (offset int, support bool, skipItems int)
 }
 
 // NextWildcardItem extract InnerItem from glob (not regexp)

@@ -97,7 +97,7 @@ func (item ItemRuneRanges) Strings() []string {
 	return nil
 }
 
-func (item ItemRuneRanges) Locate(part string) (offset int, support bool) {
+func (item ItemRuneRanges) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
 	support = true
 	for i, c := range part {
 		if item.matchRune(c) {
@@ -158,7 +158,7 @@ func (item ItemRuneMap) Strings() []string {
 	return nil
 }
 
-func (item ItemRuneMap) Locate(part string) (offset int, support bool) {
+func (item ItemRuneMap) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
 	support = true
 	for i, c := range part {
 		if _, ok := item[c]; ok {

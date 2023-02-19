@@ -15,7 +15,7 @@ func (item ItemString) Strings() []string {
 	return nil
 }
 
-func (item ItemString) Locate(part string) (offset int, support bool) {
+func (item ItemString) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
 	s := string(item)
 	support = true
 	if offset = strings.Index(part, s); offset != -1 {

@@ -15,8 +15,8 @@ func (item ItemStar) Type() (typ ItemType, s string, c rune) {
 	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item ItemStar) Locate(part string) (offset int, support bool) {
-	return -1, false
+func (item ItemStar) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+	return -1, false, 0
 }
 
 func (item ItemStar) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
@@ -34,13 +34,13 @@ LOOP:
 			nextItem := nextItems[0]
 			// typ, _, _, vals := nextItem.Type()
 			// gready skip scan, speedup find
-			if idx, support := nextItem.Locate(part); support {
+			if idx, support, skip := nextItem.Locate(part, nextItems[1:]); support {
 				if idx == -1 {
 					break LOOP
 				}
 				nextOffset = idx
 				part = part[idx:]
-				nextItems = nextItems[1:]
+				nextItems = nextItems[1+skip:]
 				found = true
 			} else if vals := nextItem.Strings(); len(vals) > 0 {
 				for _, v := range vals {
