@@ -15,11 +15,11 @@ func (item ItemRune) Strings() []string {
 	return nil
 }
 
-func (item ItemRune) Locate(part string) (offset int, found bool) {
+func (item ItemRune) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+	support = true
 	c := rune(item)
 	if offset = strings.IndexRune(part, c); offset != -1 {
 		offset += 1
-		found = true
 	}
 	return
 }

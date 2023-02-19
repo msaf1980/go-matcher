@@ -98,8 +98,8 @@ func (item *ItemList) Strings() []string {
 	return item.Vals
 }
 
-func (item *ItemList) Locate(part string) (offset int, support bool) {
-	return -1, false
+func (item *ItemList) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+	return -1, false, 0
 }
 
 func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
