@@ -1,6 +1,7 @@
 package gglob
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"sort"
@@ -24,51 +25,58 @@ type testGlobMatcher struct {
 
 func runTestGlobMatcher(t *testing.T, tt testGlobMatcher) {
 	w := NewGlobMatcher()
-	err := w.Adds(tt.globs)
+	var err error
+	t.Run(tt.name, func(t *testing.T) {
+		err = w.Adds(tt.globs)
+	})
 	if (err != nil) != tt.wantErr {
 		t.Fatalf("GlobMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
-	}
-	if err == nil {
-		if !reflect.DeepEqual(w, tt.wantW) {
-			t.Errorf("GlobMatcher.Add() = %s", cmp.Diff(tt.wantW, w))
-		}
-		verifyGlobMatcher(t, tt.matchPaths, tt.missPaths, w)
 	}
 	if tt.wantErr {
 		assert.Equal(t, 0, len(tt.matchPaths), "can't check on error")
 		assert.Equal(t, 0, len(tt.missPaths), "can't check on error")
 	}
+	if err == nil {
+		if !reflect.DeepEqual(w, tt.wantW) {
+			t.Fatalf("GlobMatcher.Add() = %s", cmp.Diff(tt.wantW, w))
+		}
+		verifyGlobMatcher(t, tt.name, tt.matchPaths, tt.missPaths, w)
+	}
 }
 
-func verifyGlobMatcher(t *testing.T, matchGlobs map[string][]string, miss []string, w *GlobMatcher) {
+func verifyGlobMatcher(t *testing.T, name string, matchGlobs map[string][]string, miss []string, w *GlobMatcher) {
 	for path, wantGlobs := range matchGlobs {
-		if globs := w.Match(path); !reflect.DeepEqual(wantGlobs, globs) {
-			t.Errorf("GlobMatcher.Match(%q) = %s", path, cmp.Diff(wantGlobs, globs))
-		}
-		var globs []string
-		w.MatchB(path, &globs)
-		if !reflect.DeepEqual(wantGlobs, globs) {
-			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
-		}
+		t.Run(name+" path="+path, func(t *testing.T) {
+			if globs := w.Match(path); !reflect.DeepEqual(wantGlobs, globs) {
+				t.Errorf("GlobMatcher.Match(%q) = %s", path, cmp.Diff(wantGlobs, globs))
+			}
+			var globs []string
+			w.MatchB(path, &globs)
+			if !reflect.DeepEqual(wantGlobs, globs) {
+				t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
+			}
 
-		parts := wildcards.PathSplit(path)
-		if globs := w.MatchByParts(parts); !reflect.DeepEqual(wantGlobs, globs) {
-			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
-		}
-		globs = globs[:0]
-		w.MatchByPartsB(parts, &globs)
-		if !reflect.DeepEqual(wantGlobs, globs) {
-			t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
-		}
+			parts := wildcards.PathSplit(path)
+			if globs := w.MatchByParts(parts); !reflect.DeepEqual(wantGlobs, globs) {
+				t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
+			}
+			globs = globs[:0]
+			w.MatchByPartsB(parts, &globs)
+			if !reflect.DeepEqual(wantGlobs, globs) {
+				t.Errorf("GlobMatcher.MatchByParts(%q) = %s", path, cmp.Diff(wantGlobs, globs))
+			}
+		})
 	}
 	for _, path := range miss {
-		if globs := w.Match(path); len(globs) != 0 {
-			t.Errorf("GlobMatcher.Match(%q) != %q", path, globs)
-		}
-		parts := wildcards.PathSplit(path)
-		if globs := w.MatchByParts(parts); len(globs) != 0 {
-			t.Errorf("GlobMatcher.MatchByParts(%q) != %q", path, globs)
-		}
+		t.Run("GlobMatcher.Add("+name+") path="+path, func(t *testing.T) {
+			if globs := w.Match(path); len(globs) != 0 {
+				t.Errorf("GlobMatcher.Match(%q) != %q", path, globs)
+			}
+			parts := wildcards.PathSplit(path)
+			if globs := w.MatchByParts(parts); len(globs) != 0 {
+				t.Errorf("GlobMatcher.MatchByParts(%q) != %q", path, globs)
+			}
+		})
 	}
 }
 
@@ -83,61 +91,70 @@ type testGlobMatcherIndex struct {
 
 func runTestGlobMatcherIndex(t *testing.T, tt testGlobMatcherIndex) {
 	w := NewGlobMatcher()
-	for n, glob := range tt.globs {
-		err := w.AddIndexed(glob, n)
-		if err != nil {
-			t.Fatalf("GlobMatcher.Add() error = %v", err)
+	var err error
+	t.Run(tt.name, func(t *testing.T) {
+		for n, glob := range tt.globs {
+			err = w.AddIndexed(glob, n)
+			if err != nil {
+				err = fmt.Errorf("GlobMatcher.AddIndexed(%q) error = %v", glob, err)
+				return
+			}
 		}
+		if !reflect.DeepEqual(w, tt.wantW) {
+			err = fmt.Errorf("GlobMatcher.AddIndexed() = %s", cmp.Diff(tt.wantW, w))
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	}
-	if !reflect.DeepEqual(w, tt.wantW) {
-		t.Errorf("GlobMatcher.Add() = %s", cmp.Diff(tt.wantW, w))
-	}
-	verifyGlobMatcherIndex(t, tt.matchPaths, w)
+	verifyGlobMatcherIndex(t, tt.name, tt.matchPaths, w)
 }
 
-func verifyGlobMatcherIndex(t *testing.T, matchPaths map[string][]int, w *GlobMatcher) {
+func verifyGlobMatcherIndex(t *testing.T, name string, matchPaths map[string][]int, w *GlobMatcher) {
 	for path, wantN := range matchPaths {
-		sort.Ints(wantN)
-		wantFirst := -1
-		if len(wantN) > 0 {
-			wantFirst = wantN[0]
-		}
-		globsN := w.MatchIndexed(path)
-		sort.Ints(globsN)
-		if !reflect.DeepEqual(wantN, globsN) {
-			t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
-		}
-		globsN = globsN[:0]
-		w.MatchIndexedB(path, &globsN)
-		sort.Ints(globsN)
-		if !reflect.DeepEqual(wantN, globsN) {
-			t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
-		}
+		t.Run(name+" path="+path, func(t *testing.T) {
+			sort.Ints(wantN)
+			wantFirst := -1
+			if len(wantN) > 0 {
+				wantFirst = wantN[0]
+			}
+			globsN := w.MatchIndexed(path)
+			sort.Ints(globsN)
+			if !reflect.DeepEqual(wantN, globsN) {
+				t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
+			}
+			globsN = globsN[:0]
+			w.MatchIndexedB(path, &globsN)
+			sort.Ints(globsN)
+			if !reflect.DeepEqual(wantN, globsN) {
+				t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
+			}
 
-		first := -1
-		w.MatchFirst(path, &first)
-		if first != wantFirst {
-			t.Errorf("GlobMatcher.MatchFirst(%q) = want %d, got %d", path, wantFirst, first)
-		}
+			first := -1
+			w.MatchFirst(path, &first)
+			if first != wantFirst {
+				t.Errorf("GlobMatcher.MatchFirst(%q) = want %d, got %d", path, wantFirst, first)
+			}
 
-		parts := wildcards.PathSplit(path)
-		globsN = w.MatchIndexedByParts(parts)
-		if !reflect.DeepEqual(wantN, globsN) {
-			t.Errorf("GlobMatcher.MatchIndexedByParts(%q) = %s", path, cmp.Diff(wantN, globsN))
-		}
-		globsN = globsN[:0]
-		w.MatchIndexedByPartsB(parts, &globsN)
-		sort.Ints(globsN)
-		if !reflect.DeepEqual(wantN, globsN) {
-			t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
-		}
+			parts := wildcards.PathSplit(path)
+			globsN = w.MatchIndexedByParts(parts)
+			if !reflect.DeepEqual(wantN, globsN) {
+				t.Errorf("GlobMatcher.MatchIndexedByParts(%q) = %s", path, cmp.Diff(wantN, globsN))
+			}
+			globsN = globsN[:0]
+			w.MatchIndexedByPartsB(parts, &globsN)
+			sort.Ints(globsN)
+			if !reflect.DeepEqual(wantN, globsN) {
+				t.Errorf("GlobMatcher.MatchIndexed(%q) = %s", path, cmp.Diff(wantN, globsN))
+			}
 
-		first = -1
-		w.MatchFirstByParts(parts, &first)
-		if first != wantFirst {
-			t.Errorf("GlobMatcher.MatchFirst(%q) = want %d, got %d", path, wantFirst, first)
-		}
+			first = -1
+			w.MatchFirstByParts(parts, &first)
+			if first != wantFirst {
+				t.Errorf("GlobMatcher.MatchFirst(%q) = want %d, got %d", path, wantFirst, first)
+			}
+		})
 	}
 }
 

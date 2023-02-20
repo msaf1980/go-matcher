@@ -29,7 +29,10 @@ type testTagsMatcher struct {
 
 func runTestTagsMatcher(t *testing.T, tt testTagsMatcher) {
 	w := NewTagsMatcher()
-	err := w.Adds(tt.queries)
+	var err error
+	t.Run(tt.name, func(t *testing.T) {
+		err = w.Adds(tt.queries)
+	})
 	if (err != nil) != tt.wantErr {
 		t.Fatalf("TagsMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
 	}
@@ -37,7 +40,7 @@ func runTestTagsMatcher(t *testing.T, tt testTagsMatcher) {
 		if !cmp.Equal(w, tt.wantW, cmpTransform) {
 			t.Errorf("TagsMatcher.Add() = %s", cmp.Diff(tt.wantW, w, cmpTransform))
 		}
-		verifyTagsMatcher(t, tt.matchPaths, tt.missPaths, w)
+		verifyTagsMatcher(t, tt.name, tt.matchPaths, tt.missPaths, w)
 	}
 	if tt.wantErr {
 		assert.Equal(t, 0, len(tt.matchPaths), "can't check on error")
@@ -45,38 +48,42 @@ func runTestTagsMatcher(t *testing.T, tt testTagsMatcher) {
 	}
 }
 
-func verifyTagsMatcher(t *testing.T, matchTags map[string][]string, miss []string, w *TagsMatcher) {
+func verifyTagsMatcher(t *testing.T, name string, matchTags map[string][]string, miss []string, w *TagsMatcher) {
 	for path, wantTags := range matchTags {
-		tags, err := PathTags(path)
-		if err != nil {
-			t.Errorf("PathTags(%q) err = %q", path, err.Error())
-		}
-		if queries := w.MatchByTags(tags); !cmp.Equal(wantTags, queries) {
-			t.Errorf("TagsMatcher.MatchByTags(%q) = %s", path, cmp.Diff(wantTags, queries))
-		}
-		tagsMap, err := PathTagsMap(path)
-		if err != nil {
-			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
-		}
-		if queries := w.MatchByTagsMap(tagsMap); !cmp.Equal(wantTags, queries) {
-			t.Errorf("TagsMatcher.MatchByTagsMap(%q) = %s", path, cmp.Diff(wantTags, queries))
-		}
+		t.Run("GlobMatcher.Add("+name+") path="+path, func(t *testing.T) {
+			tags, err := PathTags(path)
+			if err != nil {
+				t.Errorf("PathTags(%q) err = %q", path, err.Error())
+			}
+			if queries := w.MatchByTags(tags); !cmp.Equal(wantTags, queries) {
+				t.Errorf("TagsMatcher.MatchByTags(%q) = %s", path, cmp.Diff(wantTags, queries))
+			}
+			tagsMap, err := PathTagsMap(path)
+			if err != nil {
+				t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
+			}
+			if queries := w.MatchByTagsMap(tagsMap); !cmp.Equal(wantTags, queries) {
+				t.Errorf("TagsMatcher.MatchByTagsMap(%q) = %s", path, cmp.Diff(wantTags, queries))
+			}
+		})
 	}
 	for _, path := range miss {
-		tags, err := PathTags(path)
-		if err != nil {
-			t.Errorf("PathTags(%q) err = %q", path, err.Error())
-		}
-		if queries := w.MatchByTags(tags); len(queries) != 0 {
-			t.Errorf("TagsMatcher.MatchByPath(%q) != %q", path, queries)
-		}
-		tagsMap, err := PathTagsMap(path)
-		if err != nil {
-			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
-		}
-		if queries := w.MatchByTagsMap(tagsMap); len(queries) != 0 {
-			t.Errorf("TagsMatcher.MatchByPathMap(%q) != %q", path, queries)
-		}
+		t.Run("GlobMatcher.Add("+name+") path="+path, func(t *testing.T) {
+			tags, err := PathTags(path)
+			if err != nil {
+				t.Errorf("PathTags(%q) err = %q", path, err.Error())
+			}
+			if queries := w.MatchByTags(tags); len(queries) != 0 {
+				t.Errorf("TagsMatcher.MatchByPath(%q) != %q", path, queries)
+			}
+			tagsMap, err := PathTagsMap(path)
+			if err != nil {
+				t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
+			}
+			if queries := w.MatchByTagsMap(tagsMap); len(queries) != 0 {
+				t.Errorf("TagsMatcher.MatchByPathMap(%q) != %q", path, queries)
+			}
+		})
 	}
 }
 
@@ -90,52 +97,59 @@ type testTagsMatcherIndex struct {
 
 func runTestTagsMatcherIndex(t *testing.T, tt testTagsMatcherIndex) {
 	w := NewTagsMatcher()
-	for n, query := range tt.queries {
-		err := w.AddIndexed(query, n)
-		if err != nil {
-			t.Fatalf("TagsMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
+	var err error
+	t.Run(tt.name, func(t *testing.T) {
+		for n, query := range tt.queries {
+			err = w.AddIndexed(query, n)
+			if err != nil {
+				return
+			}
 		}
+	})
+	if err != nil {
+		t.Fatalf("TagsMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
 	}
 	if !cmp.Equal(w, tt.wantW, cmpTransform) {
 		t.Errorf("TagsMatcher.Add() = %s", cmp.Diff(tt.wantW, w, cmpTransform))
 	}
-	verifyTagsMatcherIndex(t, tt.matchPaths, w)
+	verifyTagsMatcherIndex(t, tt.name, tt.matchPaths, w)
 }
 
-func verifyTagsMatcherIndex(t *testing.T, matchTags map[string][]int, w *TagsMatcher) {
+func verifyTagsMatcherIndex(t *testing.T, name string, matchTags map[string][]int, w *TagsMatcher) {
 	for path, wantN := range matchTags {
-		sort.Ints(wantN)
-		wantFirst := -1
-		if len(wantN) > 0 {
-			wantFirst = wantN[0]
-		}
+		t.Run("GlobMatcher.Add("+name+") path="+path, func(t *testing.T) {
+			sort.Ints(wantN)
+			wantFirst := -1
+			if len(wantN) > 0 {
+				wantFirst = wantN[0]
+			}
 
-		tags, err := PathTags(path)
-		if err != nil {
-			t.Errorf("PathTags(%q) err = %q", path, err.Error())
-		}
-		if queries := w.MatchIndexedByTags(tags); !cmp.Equal(wantN, queries) {
-			t.Errorf("TagsMatcher.MatchIndexedByTags(%q) = %s", path, cmp.Diff(wantN, queries))
-		}
-		first := -1
-		w.MatchFirstByTags(tags, &first)
-		if first != wantFirst {
-			t.Errorf("TagsMatcher.MatchFirstByTags(%q) = want %d, got %d", path, wantFirst, first)
-		}
+			tags, err := PathTags(path)
+			if err != nil {
+				t.Errorf("PathTags(%q) err = %q", path, err.Error())
+			}
+			if queries := w.MatchIndexedByTags(tags); !cmp.Equal(wantN, queries) {
+				t.Errorf("TagsMatcher.MatchIndexedByTags(%q) = %s", path, cmp.Diff(wantN, queries))
+			}
+			first := -1
+			w.MatchFirstByTags(tags, &first)
+			if first != wantFirst {
+				t.Errorf("TagsMatcher.MatchFirstByTags(%q) = want %d, got %d", path, wantFirst, first)
+			}
 
-		tagsMap, err := PathTagsMap(path)
-		if err != nil {
-			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
-		}
-		if queries := w.MatchIndexedByTagsMap(tagsMap); !cmp.Equal(wantN, queries) {
-			t.Errorf("TagsMatcher.MatchIndexedByTagsMap(%q) = %s", path, cmp.Diff(wantN, queries))
-		}
-		first = -1
-		w.MatchFirstByTagsMap(tagsMap, &first)
-		if first != wantFirst {
-			t.Errorf("TagsMatcher.MatchFirstByTagsMap(%q) = want %d, got %d", path, wantFirst, first)
-		}
-
+			tagsMap, err := PathTagsMap(path)
+			if err != nil {
+				t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
+			}
+			if queries := w.MatchIndexedByTagsMap(tagsMap); !cmp.Equal(wantN, queries) {
+				t.Errorf("TagsMatcher.MatchIndexedByTagsMap(%q) = %s", path, cmp.Diff(wantN, queries))
+			}
+			first = -1
+			w.MatchFirstByTagsMap(tagsMap, &first)
+			if first != wantFirst {
+				t.Errorf("TagsMatcher.MatchFirstByTagsMap(%q) = want %d, got %d", path, wantFirst, first)
+			}
+		})
 	}
 }
 
