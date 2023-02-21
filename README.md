@@ -62,7 +62,7 @@ Get macthed globs index
   globs := []string{"a.b", "d.*"}
   w:= gglob.NewGlobMatcher()
   for i, glob := range globs {
-    err = w.AddIndexed(glob, i, &buf)
+    _, err = w.AddIndexed(glob, i, &buf)
     if err != nil {
       ...
     }
@@ -91,7 +91,7 @@ Get macthed globs index with splitted path parts
   globs := []string{"a.b", "d.*"}
   w:= gglob.NewGlobMatcher()
   for i, glob := range globs {
-    err = w.AddIndexed(glob, i, &buf)
+    _, err = w.AddIndexed(glob, i, &buf)
     if err != nil {
       ...
     }
@@ -145,7 +145,7 @@ Get macthed globs index
   queries := []string{`seriesByTag('__name__=a.b','b=d.*', '__name__=a.b','b=e')`}
   w:= gtags.NewTagsMatcher()
   for i, query := range queries {
-    err = w.AddIndexed(glob, i, &buf)
+    _, err = w.AddIndexed(glob, i, &buf)
     if err != nil {
       ...
     }
