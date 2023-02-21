@@ -2,6 +2,7 @@ package gtags
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,6 +12,7 @@ import (
 type testTaggedTermList struct {
 	query      string
 	want       TaggedTermList
+	wantQuery  string
 	wantErr    bool
 	matchPaths []string
 	missPaths  []string
@@ -22,14 +24,22 @@ func runTestTaggedTermList(t *testing.T, tt testTaggedTermList) {
 		t.Fatalf("ParseSeriesByTag(%q) error = %v, wantErr %v", tt.query, err, tt.wantErr)
 	}
 	if err = terms.Build(); err == nil {
+		if tt.query != "" {
+			var buf strings.Builder
+			buf.Grow(len(tt.query))
+			terms.Rewrite(&buf)
+			newQuery := buf.String()
+			assert.Equal(t, tt.wantQuery, newQuery, tt.query)
+		}
+
 		if !cmp.Equal(terms, tt.want, cmpTransform) {
 			t.Errorf("TagsMatcher.Add() = %s", cmp.Diff(tt.want, terms, cmpTransform))
 		}
 		verifyTaggedTermList(t, tt.matchPaths, tt.missPaths, terms)
 	}
 	if tt.wantErr {
-		assert.Equal(t, 0, len(tt.matchPaths), "can't check on error")
-		assert.Equal(t, 0, len(tt.missPaths), "can't check on error")
+		assert.Equal(t, 0, len(tt.matchPaths), "can't check on error", tt.query)
+		assert.Equal(t, 0, len(tt.missPaths), "can't check on error", tt.query)
 	}
 }
 

@@ -9,7 +9,8 @@ import (
 func TestTaggedTermListNe_Wildcard(t *testing.T) {
 	tests := []testTaggedTermList{
 		{
-			query: "seriesByTag('name=a', 'b!=c*')",
+			query:     "seriesByTag('name=a', 'b!=c*')",
+			wantQuery: "seriesByTag('__name__=a','b!=c*')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{
@@ -22,7 +23,8 @@ func TestTaggedTermListNe_Wildcard(t *testing.T) {
 		},
 		// compaction
 		{
-			query: "seriesByTag('name=a', 'b!=c[a]')",
+			query:     "seriesByTag('name=a', 'b!=c[a]')",
+			wantQuery: "seriesByTag('__name__=a','b!=ca')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{Key: "b", Op: TaggedTermNe, Value: "ca"},
@@ -55,19 +57,23 @@ func TestTagsMatcherNe_Wildcard(t *testing.T) {
 											MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b!=c*')"},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b!=c*')", "seriesByTag('__name__=a','b!=c*')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b!=c*')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b!=c*')": -1, "seriesByTag('__name__=a','b!=c*')": -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=ba":      {"seriesByTag('name=a', 'b!=c*')"},
-				"a?c=ca":           {"seriesByTag('name=a', 'b!=c*')"},
-				"a?a=v1&b=b&e=v3":  {"seriesByTag('name=a', 'b!=c*')"},
-				"a?a=v1&b=ba&e=v3": {"seriesByTag('name=a', 'b!=c*')"},
+				"a?a=v1&b=ba":      {"seriesByTag('name=a', 'b!=c*')", "seriesByTag('__name__=a','b!=c*')"},
+				"a?c=ca":           {"seriesByTag('name=a', 'b!=c*')", "seriesByTag('__name__=a','b!=c*')"},
+				"a?a=v1&b=b&e=v3":  {"seriesByTag('name=a', 'b!=c*')", "seriesByTag('__name__=a','b!=c*')"},
+				"a?a=v1&b=ba&e=v3": {"seriesByTag('name=a', 'b!=c*')", "seriesByTag('__name__=a','b!=c*')"},
 			},
 			missPaths: []string{"a?b=c", "a?b=ca", "b?a=v1"},
 		},
@@ -84,19 +90,21 @@ func TestTagsMatcherNe_Wildcard(t *testing.T) {
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermNe, Value: "ca",
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b!=c[a]')"},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b!=c[a]')", "seriesByTag('__name__=a','b!=ca')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b!=c[a]')": -1},
+				Queries: map[string]int{"seriesByTag('name=a', 'b!=c[a]')": -1, "seriesByTag('__name__=a','b!=ca')": -1},
 			},
 			matchPaths: map[string][]string{
-				"a?b=c":            {"seriesByTag('name=a', 'b!=c[a]')"},
-				"a?a=v1&b=ba":      {"seriesByTag('name=a', 'b!=c[a]')"},
-				"a?b=ba":           {"seriesByTag('name=a', 'b!=c[a]')"},
-				"a?a=v1&b=ba&e=v3": {"seriesByTag('name=a', 'b!=c[a]')"},
+				"a?b=c":            {"seriesByTag('name=a', 'b!=c[a]')", "seriesByTag('__name__=a','b!=ca')"},
+				"a?a=v1&b=ba":      {"seriesByTag('name=a', 'b!=c[a]')", "seriesByTag('__name__=a','b!=ca')"},
+				"a?b=ba":           {"seriesByTag('name=a', 'b!=c[a]')", "seriesByTag('__name__=a','b!=ca')"},
+				"a?a=v1&b=ba&e=v3": {"seriesByTag('name=a', 'b!=c[a]')", "seriesByTag('__name__=a','b!=ca')"},
 			},
 			missPaths: []string{"a?b=ca", "b?a=v1"},
 		},

@@ -15,6 +15,10 @@ func (item ItemRune) Strings() []string {
 	return nil
 }
 
+func (item ItemRune) WriteString(buf *strings.Builder) {
+	buf.WriteRune(rune(item))
+}
+
 func (item ItemRune) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
 	support = true
 	c := rune(item)
@@ -24,7 +28,7 @@ func (item ItemRune) Locate(part string, nextItems []InnerItem) (offset int, sup
 	return
 }
 
-func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemRune) Match(part string, nextItems []InnerItem) (found bool) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		if c == rune(item) {
 			found = true
@@ -33,7 +37,7 @@ func (item ItemRune) Match(part string, nextParts string, nextItems []InnerItem)
 	}
 	if found {
 		if len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found = nextItems[0].Match(part, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}

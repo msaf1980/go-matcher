@@ -2,6 +2,7 @@ package wildcards
 
 import (
 	"sort"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -93,6 +94,21 @@ func (item ItemRuneRanges) Type() (typ ItemType, s string, c rune) {
 	return ItemTypeOther, "", utf8.RuneError
 }
 
+func (item ItemRuneRanges) WriteString(buf *strings.Builder) {
+	buf.WriteRune('[')
+	for i, r := range item {
+		if i > 0 {
+			buf.WriteRune(',')
+		}
+		buf.WriteRune(r.First)
+		if r.First != r.Last {
+			buf.WriteRune('-')
+			buf.WriteRune(r.Last)
+		}
+	}
+	buf.WriteRune(']')
+}
+
 func (item ItemRuneRanges) Strings() []string {
 	return nil
 }
@@ -125,14 +141,14 @@ func (item ItemRuneRanges) matchRune(c rune) bool {
 	return false
 }
 
-func (item ItemRuneRanges) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemRuneRanges) Match(part string, nextItems []InnerItem) (found bool) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		if item.matchRune(c) {
 			found = true
 			part = part[n:]
 
 			if len(nextItems) > 0 {
-				found = nextItems[0].Match(part, nextParts, nextItems[1:])
+				found = nextItems[0].Match(part, nextItems[1:])
 			} else if part != "" && len(nextItems) == 0 {
 				found = false
 			}
@@ -140,7 +156,7 @@ func (item ItemRuneRanges) Match(part string, nextParts string, nextItems []Inne
 	}
 	if found {
 		if len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found = nextItems[0].Match(part, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}
@@ -179,7 +195,7 @@ func (item ItemRuneMap) Match(part string, nextParts string, nextItems []InnerIt
 	}
 	if found {
 		if len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found = nextItems[0].Match(part, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}

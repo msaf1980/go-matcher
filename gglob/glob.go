@@ -2,23 +2,11 @@ package gglob
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/msaf1980/go-matcher/pkg/utils"
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
-
-func ParseItems(root map[int]*NodeItem, glob string, termIdx int) (lastNode *NodeItem, err error) {
-	glob, partsCount := wildcards.PathLevel(glob)
-
-	node, ok := root[partsCount]
-	if !ok {
-		node = &NodeItem{}
-		root[partsCount] = node
-	}
-	_, err = node.ParseNode(glob, partsCount, termIdx)
-
-	return
-}
 
 // GlobMatcher is dotted-separated segment glob matcher, like a.b.[c-e]?.{f-o}*, writted for graphite project
 type GlobMatcher struct {
@@ -34,44 +22,54 @@ func NewGlobMatcher() *GlobMatcher {
 }
 
 func (w *GlobMatcher) Adds(globs []string) (err error) {
+	var buf strings.Builder
 	for _, glob := range globs {
-		if err = w.Add(glob); err != nil {
+		buf.Grow(len(glob))
+		if _, err = w.Add(glob, &buf); err != nil {
 			return err
 		}
 	}
 	return
 }
 
-func (w *GlobMatcher) Add(glob string) (err error) {
+func (w *GlobMatcher) Add(glob string, buf *strings.Builder) (newGlob string, err error) {
+	return w.AddIndexed(glob, -1, buf)
+}
+
+func (w *GlobMatcher) AddIndexed(glob string, termIdx int, buf *strings.Builder) (newGlob string, err error) {
 	if glob == "" {
 		return
 	}
 	if _, ok := w.Globs[glob]; ok {
 		// aleady added
+		newGlob = glob
 		return
 	}
-	if _, err = ParseItems(w.Root, glob, -1); err != nil {
-		return err
+	if newGlob, _, err = w.parseItems(glob, termIdx, buf); err != nil {
+		return
 	}
-
-	w.Globs[glob] = -1
 
 	return
 }
 
-func (w *GlobMatcher) AddIndexed(glob string, termIdx int) (err error) {
-	if glob == "" {
-		return
+func (w *GlobMatcher) parseItems(glob string, termIdx int, buf *strings.Builder) (newGlob string, lastNode *NodeItem, err error) {
+	glob, partsCount := wildcards.PathLevel(glob)
+
+	node, ok := w.Root[partsCount]
+	if !ok {
+		node = &NodeItem{}
+		w.Root[partsCount] = node
 	}
-	if _, ok := w.Globs[glob]; ok {
-		// aleady added
-		return
-	}
-	if _, err = ParseItems(w.Root, glob, termIdx); err != nil {
-		return err
-	}
+	buf.Reset()
+
+	newGlob, lastNode, err = node.ParseNode(glob, termIdx, buf)
 
 	w.Globs[glob] = termIdx
+	if glob != newGlob {
+		if _, ok := w.Globs[newGlob]; !ok {
+			w.Globs[newGlob] = termIdx // write optimized glob
+		}
+	}
 
 	return
 }

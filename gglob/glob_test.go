@@ -30,7 +30,7 @@ func runTestGlobMatcher(t *testing.T, tt testGlobMatcher) {
 		err = w.Adds(tt.globs)
 	})
 	if (err != nil) != tt.wantErr {
-		t.Fatalf("GlobMatcher.Add() error = %v, wantErr %v", err, tt.wantErr)
+		t.Fatalf("GlobMatcher.Add(%q) error = %v, wantErr %v", tt.globs, err, tt.wantErr)
 	}
 	if tt.wantErr {
 		assert.Equal(t, 0, len(tt.matchPaths), "can't check on error")
@@ -38,7 +38,7 @@ func runTestGlobMatcher(t *testing.T, tt testGlobMatcher) {
 	}
 	if err == nil {
 		if !reflect.DeepEqual(w, tt.wantW) {
-			t.Fatalf("GlobMatcher.Add() = %s", cmp.Diff(tt.wantW, w))
+			t.Fatalf("GlobMatcher.Add(%q) = %s", tt.globs, cmp.Diff(tt.wantW, w))
 		}
 		verifyGlobMatcher(t, tt.name, tt.matchPaths, tt.missPaths, w)
 	}
@@ -91,17 +91,22 @@ type testGlobMatcherIndex struct {
 
 func runTestGlobMatcherIndex(t *testing.T, tt testGlobMatcherIndex) {
 	w := NewGlobMatcher()
-	var err error
+	var (
+		err error
+		buf strings.Builder
+	)
 	t.Run(tt.name, func(t *testing.T) {
+
 		for n, glob := range tt.globs {
-			err = w.AddIndexed(glob, n)
+			buf.Grow(len(glob))
+			_, err = w.AddIndexed(glob, n, &buf)
 			if err != nil {
 				err = fmt.Errorf("GlobMatcher.AddIndexed(%q) error = %v", glob, err)
 				return
 			}
 		}
 		if !reflect.DeepEqual(w, tt.wantW) {
-			err = fmt.Errorf("GlobMatcher.AddIndexed() = %s", cmp.Diff(tt.wantW, w))
+			err = fmt.Errorf("GlobMatcher.AddIndexed(%q) = %s", tt.globs, cmp.Diff(tt.wantW, w))
 		}
 	})
 	if err != nil {
@@ -183,7 +188,9 @@ var (
 func BenchmarkSuffixMiss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetSuffixMiss)
+		var buf strings.Builder
+		buf.Grow(len(targetSuffixMiss))
+		_, err := w.Add(targetSuffixMiss, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -205,7 +212,9 @@ func BenchmarkSuffixMiss_Regex(b *testing.B) {
 
 func BenchmarkSuffixMiss_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetSuffixMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetSuffixMiss))
+	_, err := w.Add(targetSuffixMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -220,7 +229,9 @@ func BenchmarkSuffixMiss_Precompiled(b *testing.B) {
 
 func BenchmarkSuffixMiss_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetSuffixMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetSuffixMiss))
+	_, err := w.Add(targetSuffixMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -252,7 +263,9 @@ var (
 // skip by size
 func BenchmarkSizeCheck(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetSizeCheck)
+	var buf strings.Builder
+	buf.Grow(len(targetSizeCheck))
+	_, err := w.Add(targetSizeCheck, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -267,7 +280,9 @@ func BenchmarkSizeCheck(b *testing.B) {
 
 func BenchmarkSizeCheck_P(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetSizeCheck)
+	var buf strings.Builder
+	buf.Grow(len(targetSizeCheck))
+	_, err := w.Add(targetSizeCheck, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}

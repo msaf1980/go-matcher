@@ -14,7 +14,7 @@ type ErrNodeNotEnd struct {
 }
 
 func (e ErrNodeNotEnd) Error() string {
-	return "node contains no childs or terminated: " + e.Node
+	return "node contains no childs or Terminated: []string{" + e.Node
 }
 
 type ErrGlobNotExpanded struct {

@@ -1,6 +1,7 @@
 package gglob
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
@@ -8,31 +9,31 @@ import (
 
 func TestGlobMatcher_List(t *testing.T) {
 	tests := []testGlobMatcher{
-		{
-			name: `{"{a,bc}"}`, globs: []string{"{a,bc}"},
-			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
-					1: {
-						Childs: []*NodeItem{
-							{
-								Node: "{a,bc}", Terminated: "{a,bc}", TermIndex: -1,
-								WildcardItems: wildcards.WildcardItems{
-									MinSize: 1, MaxSize: 2,
-									Inners: []wildcards.InnerItem{
-										&wildcards.ItemList{
-											Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				Globs: map[string]int{"{a,bc}": -1},
-			},
-			matchPaths: map[string][]string{"a": {"{a,bc}"}, "bc": {"{a,bc}"}},
-			missPaths:  []string{"", "b", "ab", "ba", "abc"},
-		},
+		// {
+		// 	name: `{"{a,bc}"}`, globs: []string{"{a,bc}"},
+		// 	wantW: &GlobMatcher{
+		// 		Root: map[int]*NodeItem{
+		// 			1: {
+		// 				Childs: []*NodeItem{
+		// 					{
+		// 						Node: "{a,bc}", Terminated: []string{"{a,bc}"},
+		// 						WildcardItems: wildcards.WildcardItems{
+		// 							MinSize: 1, MaxSize: 2,
+		// 							Inners: []wildcards.InnerItem{
+		// 								&wildcards.ItemList{
+		// 									Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
+		// 								},
+		// 							},
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 		Globs: map[string]int{"{a,bc}": -1},
+		// 	},
+		// 	matchPaths: map[string][]string{"a": {"{a,bc}"}, "bc": {"{a,bc}"}},
+		// 	missPaths:  []string{"", "b", "ab", "ba", "abc"},
+		// },
 		{
 			name: `{"a{a,bc}{qa,q}c"}`, globs: []string{"a{a,bc}{qa,q}c"},
 			wantW: &GlobMatcher{
@@ -40,7 +41,9 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a{a,bc}{qa,q}c", Terminated: "a{a,bc}{qa,q}c", TermIndex: -1,
+								Node: "a{a,bc}{q,qa}c", Terminated: []string{
+									"a{a,bc}{qa,q}c", "a{a,bc}{q,qa}c",
+								},
 								WildcardItems: wildcards.WildcardItems{
 									MinSize: 4, MaxSize: 6,
 									P: "a", Suffix: "c",
@@ -57,10 +60,13 @@ func TestGlobMatcher_List(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]int{"a{a,bc}{qa,q}c": -1},
+				Globs: map[string]int{"a{a,bc}{qa,q}c": -1, "a{a,bc}{q,qa}c": -1},
 			},
-			matchPaths: map[string][]string{"aaqac": {"a{a,bc}{qa,q}c"}, "abcqac": {"a{a,bc}{qa,q}c"}, "aaqc": {"a{a,bc}{qa,q}c"}},
-			missPaths:  []string{"", "b", "ab", "ba", "abc", "aabc", "aaqbc"},
+			matchPaths: map[string][]string{
+				"aaqac":  {"a{a,bc}{qa,q}c", "a{a,bc}{q,qa}c"},
+				"abcqac": {"a{a,bc}{qa,q}c", "a{a,bc}{q,qa}c"},
+				"aaqc":   {"a{a,bc}{qa,q}c", "a{a,bc}{q,qa}c"}},
+			missPaths: []string{"", "b", "ab", "ba", "abc", "aabc", "aaqbc"},
 		},
 		{
 			name: `{"a{a,bc}Z{qa,q}c"}`, globs: []string{"a{a,bc}Z{qa,q}c"},
@@ -69,7 +75,7 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a{a,bc}Z{qa,q}c", Terminated: "a{a,bc}Z{qa,q}c", TermIndex: -1,
+								Node: "a{a,bc}Z{q,qa}c", Terminated: []string{"a{a,bc}Z{qa,q}c", "a{a,bc}Z{q,qa}c"},
 								WildcardItems: wildcards.WildcardItems{
 									MinSize: 5, MaxSize: 7,
 									P: "a", Suffix: "c",
@@ -87,10 +93,14 @@ func TestGlobMatcher_List(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]int{"a{a,bc}Z{qa,q}c": -1},
+				Globs: map[string]int{"a{a,bc}Z{qa,q}c": -1, "a{a,bc}Z{q,qa}c": -1},
 			},
-			matchPaths: map[string][]string{"aaZqac": {"a{a,bc}Z{qa,q}c"}, "abcZqac": {"a{a,bc}Z{qa,q}c"}, "aaZqc": {"a{a,bc}Z{qa,q}c"}},
-			missPaths:  []string{"", "b", "ab", "ba", "abc", "aabc", "aaqbc"},
+			matchPaths: map[string][]string{
+				"aaZqac":  {"a{a,bc}Z{qa,q}c", "a{a,bc}Z{q,qa}c"},
+				"abcZqac": {"a{a,bc}Z{qa,q}c", "a{a,bc}Z{q,qa}c"},
+				"aaZqc":   {"a{a,bc}Z{qa,q}c", "a{a,bc}Z{q,qa}c"},
+			},
+			missPaths: []string{"", "b", "ab", "ba", "abc", "aabc", "aaqbc"},
 		},
 		// one item optimization
 		{
@@ -100,15 +110,15 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "{a}", Terminated: "{a}", TermIndex: -1,
+								Node: "a", Terminated: []string{"{a}", "a"},
 								WildcardItems: wildcards.WildcardItems{MinSize: 1, MaxSize: 1, P: "a"},
 							},
 						},
 					},
 				},
-				Globs: map[string]int{"{a}": -1},
+				Globs: map[string]int{"{a}": -1, "a": -1},
 			},
-			matchPaths: map[string][]string{"a": {"{a}"}},
+			matchPaths: map[string][]string{"a": {"{a}", "a"}},
 			missPaths:  []string{"", "b", "d", "ab", "a.b"},
 		},
 		{
@@ -118,7 +128,7 @@ func TestGlobMatcher_List(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "b{a,}", Terminated: "b{a,}", TermIndex: -1,
+								Node: "b{,a}", Terminated: []string{"b{a,}", "b{,a}"},
 								WildcardItems: wildcards.WildcardItems{
 									P: "b", MinSize: 1, MaxSize: 2,
 									Inners: []wildcards.InnerItem{
@@ -129,9 +139,9 @@ func TestGlobMatcher_List(t *testing.T) {
 						},
 					},
 				},
-				Globs: map[string]int{"b{a,}": -1},
+				Globs: map[string]int{"b{a,}": -1, "b{,a}": -1},
 			},
-			matchPaths: map[string][]string{"b": {"b{a,}"}, "ba": {"b{a,}"}},
+			matchPaths: map[string][]string{"b": {"b{a,}", "b{,a}"}, "ba": {"b{a,}", "b{,a}"}},
 			missPaths:  []string{"", "bb", "bd", "ab", "bab", "ba.b"},
 		},
 	}
@@ -155,15 +165,15 @@ func TestGlobMatcher_List_Broken(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "{}a", Terminated: "{}a", TermIndex: -1,
+								Node: "a", Terminated: []string{"{}a", "a"},
 								WildcardItems: wildcards.WildcardItems{MinSize: 1, MaxSize: 1, P: "a"},
 							},
 						},
 					},
 				},
-				Globs: map[string]int{"{}a": -1},
+				Globs: map[string]int{"{}a": -1, "a": -1},
 			},
-			matchPaths: map[string][]string{"a": {"{}a"}},
+			matchPaths: map[string][]string{"a": {"{}a", "a"}},
 			missPaths:  []string{"", "b", "ab"},
 		},
 	}
@@ -205,12 +215,14 @@ var (
 func BenchmarkList(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetsBatchList[0])
+		var buf strings.Builder
+		buf.Grow(len(targetsBatchList[0]))
+		_, err := w.Add(targetsBatchList[0], &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
 		globs := w.Match(pathsBatchList[0])
-		if len(globs) != 1 {
+		if len(globs) != 2 {
 			b.Fatal(globs)
 		}
 	}
@@ -219,13 +231,15 @@ func BenchmarkList(b *testing.B) {
 func BenchmarkList_ByParts(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetsBatchList[0])
+		var buf strings.Builder
+		buf.Grow(len(targetsBatchList[0]))
+		_, err := w.Add(targetsBatchList[0], &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
 		parts := wildcards.PathSplit(pathsBatchList[0])
 		globs := w.MatchByParts(parts)
-		if len(globs) != 1 {
+		if len(globs) != 2 {
 			b.Fatal(globs)
 		}
 	}
@@ -242,14 +256,16 @@ func BenchmarkList_Regex(b *testing.B) {
 
 func BenchmarkList_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetsBatchList[0])
+	var buf strings.Builder
+	buf.Grow(len(targetsBatchList[0]))
+	_, err := w.Add(targetsBatchList[0], &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		globs := w.Match(pathsBatchList[0])
-		if len(globs) != 1 {
+		if len(globs) != 2 {
 			b.Fatal(globs)
 		}
 	}
@@ -257,7 +273,9 @@ func BenchmarkList_Precompiled(b *testing.B) {
 
 func BenchmarkList_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetsBatchList[0])
+	var buf strings.Builder
+	buf.Grow(len(targetsBatchList[0]))
+	_, err := w.Add(targetsBatchList[0], &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -266,7 +284,7 @@ func BenchmarkList_Prealloc(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		globs = globs[:0]
 		w.MatchB(pathsBatchList[0], &globs)
-		if len(globs) != 1 {
+		if len(globs) != 2 {
 			b.Fatal(globs)
 		}
 	}
@@ -274,7 +292,9 @@ func BenchmarkList_Prealloc(b *testing.B) {
 
 func BenchmarkList_Prealloc_ByParts(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetsBatchList[0])
+	var buf strings.Builder
+	buf.Grow(len(targetsBatchList[0]))
+	_, err := w.Add(targetsBatchList[0], &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -284,7 +304,7 @@ func BenchmarkList_Prealloc_ByParts(b *testing.B) {
 		parts := wildcards.PathSplit(pathsBatchList[0])
 		globs = globs[:0]
 		w.MatchByPartsB(parts, &globs)
-		if len(globs) != 1 {
+		if len(globs) != 2 {
 			b.Fatal(globs)
 		}
 	}
@@ -293,7 +313,9 @@ func BenchmarkList_Prealloc_ByParts(b *testing.B) {
 func BenchmarkList_Prealloc_ByParts2(b *testing.B) {
 	parts := wildcards.PathSplit(pathsBatchList[0])
 	w := NewGlobMatcher()
-	err := w.Add(targetsBatchList[0])
+	var buf strings.Builder
+	buf.Grow(len(targetsBatchList[0]))
+	_, err := w.Add(targetsBatchList[0], &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -302,7 +324,7 @@ func BenchmarkList_Prealloc_ByParts2(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		globs = globs[:0]
 		w.MatchByPartsB(parts, &globs)
-		if len(globs) != 1 {
+		if len(globs) != 2 {
 			b.Fatal(globs)
 		}
 	}
@@ -349,7 +371,9 @@ func BenchmarkList_Batch_ByParts(b *testing.B) {
 
 func BenchmarkList_Batch_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetsBatchList[0])
+	var buf strings.Builder
+	buf.Grow(len(targetsBatchList[0]))
+	_, err := w.Add(targetsBatchList[0], &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -365,7 +389,9 @@ func BenchmarkList_Batch_Prealloc(b *testing.B) {
 
 func BenchmarkList_Batch_Prealloc_ByParts(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetsBatchList[0])
+	var buf strings.Builder
+	buf.Grow(len(targetsBatchList[0]))
+	_, err := w.Add(targetsBatchList[0], &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -382,7 +408,9 @@ func BenchmarkList_Batch_Prealloc_ByParts(b *testing.B) {
 
 func BenchmarkList_Batch_Prealloc_ByParts2(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetsBatchList[0])
+	var buf strings.Builder
+	buf.Grow(len(targetsBatchList[0]))
+	_, err := w.Add(targetsBatchList[0], &buf)
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -16,8 +16,15 @@ const (
 type InnerItem interface {
 	Type() (typ ItemType, s string, c rune) // return type, and string or rune value (if contain)
 	Strings() []string                      // return nil or string values (if contain)
-	Match(part string, nextParts string, nextItems []InnerItem) (found bool)
+	Match(part string, nextItems []InnerItem) (found bool)
 	Locate(part string, nextItems []InnerItem) (offset int, support bool, skipItems int)
+	WriteString(buf *strings.Builder)
+}
+
+func WriteInnerItems(items []InnerItem, buf *strings.Builder) {
+	for _, item := range items {
+		item.WriteString(buf)
+	}
 }
 
 // NextWildcardItem extract InnerItem from glob (not regexp)

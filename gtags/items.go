@@ -25,9 +25,6 @@ func (item *TaggedItem) Parse(terms TaggedTermList) (lastItem *TaggedItem, err e
 		// not found
 		// TODO: items caching
 		lastItem = &TaggedItem{Term: &terms[0]}
-		if err = lastItem.Term.Build(); err != nil {
-			return
-		}
 		item.Childs = append(item.Childs, lastItem)
 	}
 

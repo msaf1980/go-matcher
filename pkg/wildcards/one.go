@@ -1,6 +1,9 @@
 package wildcards
 
-import "unicode/utf8"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 type ItemOne struct{}
 
@@ -10,6 +13,10 @@ func (item ItemOne) Type() (typ ItemType, s string, c rune) {
 
 func (item ItemOne) Strings() []string {
 	return nil
+}
+
+func (item ItemOne) WriteString(buf *strings.Builder) {
+	buf.WriteRune('?')
 }
 
 func (item ItemOne) Locate(part string, nextItems []InnerItem) (offset int, support bool, skip int) {
@@ -28,13 +35,13 @@ func (item ItemOne) Locate(part string, nextItems []InnerItem) (offset int, supp
 	return
 }
 
-func (item ItemOne) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemOne) Match(part string, nextItems []InnerItem) (found bool) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		found = true
 		part = part[n:]
 
 		if len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found = nextItems[0].Match(part, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}

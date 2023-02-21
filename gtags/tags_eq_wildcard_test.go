@@ -2,6 +2,7 @@ package gtags
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
@@ -10,7 +11,8 @@ import (
 func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 	tests := []testTaggedTermList{
 		{
-			query: "seriesByTag('name=a', 'b=c*')",
+			query:     "seriesByTag('name=a', 'b=c*')",
+			wantQuery: "seriesByTag('__name__=a','b=c*')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{
@@ -25,7 +27,8 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 			missPaths:  []string{"a?b=da", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
 		{
-			query: "seriesByTag('name=a.b', 'b=c*.a')",
+			query:     "seriesByTag('name=a.b', 'b=c*.a')",
+			wantQuery: "seriesByTag('__name__=a.b','b=c*.a')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
 				{
@@ -42,11 +45,12 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 			missPaths: []string{"a?b=c.a", "a.b?b=da", "a.b?b=ca", "a.b?b=ca.b", "a.b?b=v1", "a.b?c=v1", "b?a=v1"},
 		},
 		{
-			query: "seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')",
+			query:     "seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')",
+			wantQuery: "seriesByTag('__name__=a.b','b=a{a,bc}Z{q,qa}c.a')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
 				{
-					Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{qa,q}c.a", HasWildcard: true,
+					Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{q,qa}c.a", HasWildcard: true,
 					Glob: &wildcards.WildcardItems{
 						P: "a", Suffix: "c.a", MinSize: 7, MaxSize: 9,
 						Inners: []wildcards.InnerItem{
@@ -64,13 +68,30 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 		},
 		// compaction
 		{
-			query: "seriesByTag('name=a', 'b=c[a]')",
+			query:     "seriesByTag('name=a', 'b=c[a]')",
+			wantQuery: "seriesByTag('__name__=a','b=ca')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{Key: "b", Op: TaggedTermEq, Value: "ca"},
 			},
 			matchPaths: []string{"a?a=v1&b=ca", "a?b=ca", "a?a=v1&b=ca&e=v3"},
 			missPaths:  []string{"a?b=c", "a?b=v1", "a?c=v1", "b?a=v1"},
+		},
+		{
+			query:     "seriesByTag('name=a', 'b=a?*??c')",
+			wantQuery: "seriesByTag('__name__=a','b=a*???c')",
+			want: TaggedTermList{
+				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+				{
+					Key: "b", Op: TaggedTermEq, Value: "a*???c", HasWildcard: true,
+					Glob: &wildcards.WildcardItems{
+						P: "a", Suffix: "c", MinSize: 5, MaxSize: -1,
+						Inners: []wildcards.InnerItem{wildcards.ItemNStar(3)},
+					},
+				},
+			},
+			matchPaths: []string{"a?a=v1&b=aBCDc", "a?b=aAFCDc", "a?a=v1&b=aAFCDc&e=v3"},
+			missPaths:  []string{"a?b=c", "a?b=v1", "a?b=aCDc", "a?c=v1", "b?a=v1"},
 		},
 	}
 
@@ -99,19 +120,23 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b=c*')"},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=c*')", "seriesByTag('__name__=a','b=c*')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b=c*')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b=c*')": -1, "seriesByTag('__name__=a','b=c*')": -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=ca":      {"seriesByTag('name=a', 'b=c*')"},
-				"a?b=c":            {"seriesByTag('name=a', 'b=c*')"},
-				"a?a=v1&b=c&e=v3":  {"seriesByTag('name=a', 'b=c*')"},
-				"a?a=v1&b=ca&e=v3": {"seriesByTag('name=a', 'b=c*')"},
+				"a?a=v1&b=ca":      {"seriesByTag('name=a', 'b=c*')", "seriesByTag('__name__=a','b=c*')"},
+				"a?b=c":            {"seriesByTag('name=a', 'b=c*')", "seriesByTag('__name__=a','b=c*')"},
+				"a?a=v1&b=c&e=v3":  {"seriesByTag('name=a', 'b=c*')", "seriesByTag('__name__=a','b=c*')"},
+				"a?a=v1&b=ca&e=v3": {"seriesByTag('name=a', 'b=c*')", "seriesByTag('__name__=a','b=c*')"},
 			},
 			missPaths: []string{"a?b=da", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
@@ -131,20 +156,24 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a.b', 'b=c*.a')"},
+									Terminated: []string{
+										"seriesByTag('name=a.b', 'b=c*.a')",
+										"seriesByTag('__name__=a.b','b=c*.a')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a.b', 'b=c*.a')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a.b', 'b=c*.a')": -1, "seriesByTag('__name__=a.b','b=c*.a')": -1},
 			},
 			matchPaths: map[string][]string{
-				"a.b?a=v1&b=ca.a":      {"seriesByTag('name=a.b', 'b=c*.a')"},
-				"a.b?b=c.a":            {"seriesByTag('name=a.b', 'b=c*.a')"},
-				"a.b?a=v1&b=c.a&e=v3":  {"seriesByTag('name=a.b', 'b=c*.a')"},
-				"a.b?a=v1&b=ca.a&e=v3": {"seriesByTag('name=a.b', 'b=c*.a')"},
-				"a.b?a=v1&b=cb.a&e=v3": {"seriesByTag('name=a.b', 'b=c*.a')"},
+				"a.b?a=v1&b=ca.a":      {"seriesByTag('name=a.b', 'b=c*.a')", "seriesByTag('__name__=a.b','b=c*.a')"},
+				"a.b?b=c.a":            {"seriesByTag('name=a.b', 'b=c*.a')", "seriesByTag('__name__=a.b','b=c*.a')"},
+				"a.b?a=v1&b=c.a&e=v3":  {"seriesByTag('name=a.b', 'b=c*.a')", "seriesByTag('__name__=a.b','b=c*.a')"},
+				"a.b?a=v1&b=ca.a&e=v3": {"seriesByTag('name=a.b', 'b=c*.a')", "seriesByTag('__name__=a.b','b=c*.a')"},
+				"a.b?a=v1&b=cb.a&e=v3": {"seriesByTag('name=a.b', 'b=c*.a')", "seriesByTag('__name__=a.b','b=c*.a')"},
 			},
 			missPaths: []string{"a?b=c.a", "a.b?b=da", "a.b?b=ca", "a.b?b=ca.b", "a.b?b=v1", "a.b?c=v1", "b?a=v1"},
 		},
@@ -159,7 +188,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 							Childs: []*TaggedItem{
 								{
 									Term: &TaggedTerm{
-										Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{qa,q}c.a",
+										Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{q,qa}c.a",
 										HasWildcard: true,
 										Glob: &wildcards.WildcardItems{
 											MinSize: 7, MaxSize: 9, P: "a", Suffix: "c.a",
@@ -174,17 +203,23 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 											},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
+									Terminated: []string{
+										"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')",
+										"seriesByTag('__name__=a.b','b=a{a,bc}Z{q,qa}c.a')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')":    -1,
+					"seriesByTag('__name__=a.b','b=a{a,bc}Z{q,qa}c.a')": -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a.b?a=v1&b=aaZqc.a":   {"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
-				"a.b?a=v1&b=abcZqac.a": {"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
+				"a.b?a=v1&b=aaZqc.a":   {"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')", "seriesByTag('__name__=a.b','b=a{a,bc}Z{q,qa}c.a')"},
+				"a.b?a=v1&b=abcZqac.a": {"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')", "seriesByTag('__name__=a.b','b=a{a,bc}Z{q,qa}c.a')"},
 			},
 			missPaths: []string{"a?b=c.a", "a.b?b=da", "a.b?b=ca", "a.b?b=ca.b", "a.b?b=v1", "a.b?c=v1", "b?a=v1"},
 		},
@@ -198,24 +233,29 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 							Childs: []*TaggedItem{
 								{
-									Term:       &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "ca"},
-									Terminated: []string{"seriesByTag('name=a', 'b=c[a]')"},
+									Term: &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "ca"},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=c[a]')",
+										"seriesByTag('__name__=a','b=ca')"},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b=c[a]')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b=c[a]')": -1, "seriesByTag('__name__=a','b=ca')": -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=ca":      {"seriesByTag('name=a', 'b=c[a]')"},
-				"a?b=ca":           {"seriesByTag('name=a', 'b=c[a]')"},
-				"a?a=v1&b=ca&e=v3": {"seriesByTag('name=a', 'b=c[a]')"},
+				"a?a=v1&b=ca":      {"seriesByTag('name=a', 'b=c[a]')", "seriesByTag('__name__=a','b=ca')"},
+				"a?b=ca":           {"seriesByTag('name=a', 'b=c[a]')", "seriesByTag('__name__=a','b=ca')"},
+				"a?a=v1&b=ca&e=v3": {"seriesByTag('name=a', 'b=c[a]')", "seriesByTag('__name__=a','b=ca')"},
 			},
 			missPaths: []string{"a?b=c", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
 		{
-			name: `{"seriesByTag('name=a', 'b=c[a][Z-]*')"}`, queries: []string{"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+			name:    `{"seriesByTag('name=a', 'b=a?*??c')"}`,
+			queries: []string{"seriesByTag('name=a', 'b=a?*??c')", "seriesByTag('name=a', 'b=a*???c')"},
 			wantW: &TagsMatcher{
 				Root: &TaggedItem{
 					Childs: []*TaggedItem{
@@ -224,25 +264,76 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 							Childs: []*TaggedItem{
 								{
 									Term: &TaggedTerm{
-										Key: "b", Op: TaggedTermEq, Value: "c[a][Z-]*", HasWildcard: true,
+										Key: "b", Op: TaggedTermEq, Value: "a*???c", HasWildcard: true,
 										Glob: &wildcards.WildcardItems{
-											MinSize: 3, MaxSize: -1, P: "caZ",
-											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+											P: "a", Suffix: "c", MinSize: 5, MaxSize: -1,
+											Inners: []wildcards.InnerItem{wildcards.ItemNStar(3)},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=a?*??c')",
+										"seriesByTag('__name__=a','b=a*???c')",
+										"seriesByTag('name=a', 'b=a*???c')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b=c[a][Z-]*')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b=a?*??c')":    -1,
+					"seriesByTag('__name__=a','b=a*???c')": -1,
+					"seriesByTag('name=a', 'b=a*???c')":    -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=caZ":       {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
-				"a?b=caZb":           {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
-				"a?a=v1&b=caZ&e=v3":  {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
-				"a?a=v1&b=caZd&e=v3": {"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+				"a?a=v1&b=aBCDc": {
+					"seriesByTag('name=a', 'b=a?*??c')", "seriesByTag('__name__=a','b=a*???c')",
+					"seriesByTag('name=a', 'b=a*???c')",
+				},
+				"a?b=aAFCDc": {
+					"seriesByTag('name=a', 'b=a?*??c')", "seriesByTag('__name__=a','b=a*???c')",
+					"seriesByTag('name=a', 'b=a*???c')",
+				},
+				"a?a=v1&b=aAFCDc&e=v3": {
+					"seriesByTag('name=a', 'b=a?*??c')", "seriesByTag('__name__=a','b=a*???c')",
+					"seriesByTag('name=a', 'b=a*???c')",
+				},
+				"a?b=c": {}, "a?b=v1": {}, "a?b=aCDc": {}, "a?c=v1": {}, "b?a=v1": {},
+			},
+		},
+		{
+			name:    `{"seriesByTag('name=a', 'b=c[a][Z-]*')"}`,
+			queries: []string{"seriesByTag('name=a', 'b=c[a][Z-]*')"},
+			wantW: &TagsMatcher{
+				Root: &TaggedItem{
+					Childs: []*TaggedItem{
+						{
+							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
+							Childs: []*TaggedItem{
+								{
+									Term: &TaggedTerm{
+										Key: "b", Op: TaggedTermEq, Value: "caZ*", HasWildcard: true,
+										Glob: &wildcards.WildcardItems{
+											MinSize: 3, MaxSize: -1, P: "caZ",
+											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+										},
+									},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=c[a][Z-]*')", "seriesByTag('__name__=a','b=caZ*')",
+									},
+								},
+							},
+						},
+					},
+				},
+				Queries: map[string]int{"seriesByTag('name=a', 'b=c[a][Z-]*')": -1, "seriesByTag('__name__=a','b=caZ*')": -1},
+			},
+			matchPaths: map[string][]string{
+				"a?a=v1&b=caZ":       {"seriesByTag('name=a', 'b=c[a][Z-]*')", "seriesByTag('__name__=a','b=caZ*')"},
+				"a?b=caZb":           {"seriesByTag('name=a', 'b=c[a][Z-]*')", "seriesByTag('__name__=a','b=caZ*')"},
+				"a?a=v1&b=caZ&e=v3":  {"seriesByTag('name=a', 'b=c[a][Z-]*')", "seriesByTag('__name__=a','b=caZ*')"},
+				"a?a=v1&b=caZd&e=v3": {"seriesByTag('name=a', 'b=c[a][Z-]*')", "seriesByTag('__name__=a','b=caZ*')"},
 			},
 			missPaths: []string{"a?b=c", "a?b=ca", "a?b=caz", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
@@ -257,7 +348,7 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 							Childs: []*TaggedItem{
 								{
 									Term: &TaggedTerm{
-										Key: "b", Op: TaggedTermEq, Value: "a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l",
+										Key: "b", Op: TaggedTermEq, Value: "aaZQstLT*INN*zaSTltl",
 										HasWildcard: true, Glob: &wildcards.WildcardItems{
 											P: "aaZQstLT", Suffix: "zaSTltl", MinSize: 18, MaxSize: -1,
 											Inners: []wildcards.InnerItem{
@@ -265,19 +356,37 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 											},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')",
+										"seriesByTag('__name__=a','b=aaZQstLT*INN*zaSTltl')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')": -1,
+					"seriesByTag('__name__=a','b=aaZQstLT*INN*zaSTltl')":              -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=aaZQstLTINNzaSTltl":               {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
-				"a?b=aaZQstLTINN_zaSTltl":                   {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
-				"a?a=v1&b=aaZQstLT_INN_SKIP_zaSTltl&e=v3":   {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
-				"a?a=v1&b=aaZQstLT_SKIP_INN___zaSTltl&e=v3": {"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')"},
+				"a?a=v1&b=aaZQstLTINNzaSTltl": {
+					"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')",
+					"seriesByTag('__name__=a','b=aaZQstLT*INN*zaSTltl')",
+				},
+				"a?b=aaZQstLTINN_zaSTltl": {
+					"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')",
+					"seriesByTag('__name__=a','b=aaZQstLT*INN*zaSTltl')",
+				},
+				"a?a=v1&b=aaZQstLT_INN_SKIP_zaSTltl&e=v3": {
+					"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')",
+					"seriesByTag('__name__=a','b=aaZQstLT*INN*zaSTltl')",
+				},
+				"a?a=v1&b=aaZQstLT_SKIP_INN___zaSTltl&e=v3": {
+					"seriesByTag('name=a', 'b=a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l')",
+					"seriesByTag('__name__=a','b=aaZQstLT*INN*zaSTltl')",
+				},
 			},
 			missPaths: []string{
 				"a?b=c", "a?b=ca", "a?b=caz", "a?b=cazQl", "a?b=v1",
@@ -302,13 +411,17 @@ var (
 
 func BenchmarkEqualW_Terms(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		terms, err := ParseSeriesByTag(queryEqual)
+		terms, err := ParseSeriesByTag(queryEqualW)
 		if err != nil {
 			b.Fatal(err)
 		}
 		if err = terms.Build(); err != nil {
 			b.Fatal(err)
 		}
+		var buf strings.Builder
+		buf.Grow(len(queryEqualW))
+		terms.Rewrite(&buf)
+
 		tags, err := PathTags(pathEqualW)
 		if err != nil {
 			b.Fatal(err)
@@ -323,7 +436,9 @@ func BenchmarkEqualW_Terms(b *testing.B) {
 func BenchmarkEqualW_ByTags(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewTagsMatcher()
-		err := w.Add(queryEqualW)
+		var buf strings.Builder
+		buf.Grow(len(queryEqualW))
+		_, err := w.Add(queryEqualW, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -349,13 +464,16 @@ func BenchmarkEqualW_Regex(b *testing.B) {
 }
 
 func BenchmarkEqualW_Precompiled_Terms(b *testing.B) {
-	terms, err := ParseSeriesByTag(queryEqual)
+	terms, err := ParseSeriesByTag(queryEqualW)
 	if err != nil {
 		b.Fatal(err)
 	}
 	if err = terms.Build(); err != nil {
 		b.Fatal(err)
 	}
+	var buf strings.Builder
+	buf.Grow(len(queryEqualW))
+	terms.Rewrite(&buf)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -378,6 +496,10 @@ func BenchmarkEqualW_Precompiled_Terms2(b *testing.B) {
 	if err = terms.Build(); err != nil {
 		b.Fatal(err)
 	}
+	var buf strings.Builder
+	buf.Grow(len(queryEqualW))
+	terms.Rewrite(&buf)
+
 	tags, err := PathTags(pathEqualW)
 	if err != nil {
 		b.Fatal(err)
@@ -393,7 +515,9 @@ func BenchmarkEqualW_Precompiled_Terms2(b *testing.B) {
 
 func BenchmarkEqualW_Precompiled_ByTags(b *testing.B) {
 	w := NewTagsMatcher()
-	err := w.Add(queryEqualW)
+	var buf strings.Builder
+	buf.Grow(len(queryEqualW))
+	_, err := w.Add(queryEqualW, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -415,7 +539,9 @@ func BenchmarkEqualW_Precompiled_ByTags(b *testing.B) {
 
 func BenchmarkEqualW_Precompiled_ByTags2(b *testing.B) {
 	w := NewTagsMatcher()
-	err := w.Add(queryEqualW)
+	var buf strings.Builder
+	buf.Grow(len(queryEqualW))
+	_, err := w.Add(queryEqualW, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}

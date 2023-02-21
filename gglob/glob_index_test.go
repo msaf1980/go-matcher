@@ -19,7 +19,7 @@ func TestGlobMatcher_Index(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a*c", Terminated: "a*c", TermIndex: 0,
+								Node: "a*c", Terminated: []string{"a*c"}, TermIndex: []int{0},
 								WildcardItems: wildcards.WildcardItems{
 									P: "a", Suffix: "c",
 									Inners:  []wildcards.InnerItem{wildcards.ItemStar{}},
@@ -27,7 +27,7 @@ func TestGlobMatcher_Index(t *testing.T) {
 								},
 							},
 							{
-								Node: "a*c*", Terminated: "a*c*", TermIndex: 1,
+								Node: "a*c*", Terminated: []string{"a*c*"}, TermIndex: []int{1},
 								WildcardItems: wildcards.WildcardItems{
 									P: "a", MinSize: 2, MaxSize: -1,
 									Inners: []wildcards.InnerItem{
@@ -36,7 +36,7 @@ func TestGlobMatcher_Index(t *testing.T) {
 								},
 							},
 							{
-								Node: "a*b?c", Terminated: "a*b?c", TermIndex: 2,
+								Node: "a*b?c", Terminated: []string{"a*b?c"}, TermIndex: []int{2},
 								WildcardItems: wildcards.WildcardItems{
 									P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
 									Inners: []wildcards.InnerItem{
@@ -56,7 +56,7 @@ func TestGlobMatcher_Index(t *testing.T) {
 								},
 								Childs: []*NodeItem{
 									{
-										Node: "b", Terminated: "a*c.b", TermIndex: 3,
+										Node: "b", Terminated: []string{"a*c.b"}, TermIndex: []int{3},
 										WildcardItems: wildcards.WildcardItems{P: "b", MinSize: 0, MaxSize: 0},
 									},
 								},
@@ -65,7 +65,7 @@ func TestGlobMatcher_Index(t *testing.T) {
 								Node: "a", WildcardItems: wildcards.WildcardItems{P: "a"},
 								Childs: []*NodeItem{
 									{
-										Node: "b?d", Terminated: "a.b?d", TermIndex: 4,
+										Node: "b?d", Terminated: []string{"a.b?d"}, TermIndex: []int{4},
 										WildcardItems: wildcards.WildcardItems{
 											P: "b", Suffix: "d", MinSize: 3, MaxSize: 3,
 											Inners: []wildcards.InnerItem{wildcards.ItemOne{}},

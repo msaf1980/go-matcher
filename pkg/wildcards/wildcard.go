@@ -46,7 +46,7 @@ func (node *WildcardItems) Match(part string) (matched bool) {
 			part = part[:len(part)-len(node.Suffix)]
 		}
 
-		matched = node.Inners[0].Match(part, "", node.Inners[1:])
+		matched = node.Inners[0].Match(part, node.Inners[1:])
 	}
 	return
 }
@@ -115,9 +115,10 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 					}
 				}
 				// try to in-palce merge
-				typ, s, c := inner.Type()
-				switch typ {
-				case ItemTypeString:
+				// typ, s, c := inner.Type()
+				switch v := inner.(type) {
+				case ItemString:
+					s := string(v)
 					switch prev {
 					case ItemTypeString:
 						prevS += s
@@ -142,7 +143,8 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 							inners = append(inners, inner)
 						}
 					}
-				case ItemTypeRune:
+				case ItemRune:
+					c := rune(v)
 					switch prev {
 					case ItemTypeString:
 						var sb strings.Builder
@@ -175,6 +177,82 @@ func (node *WildcardItems) Parse(glob string) (err error) {
 							prevC = c
 							inners = append(inners, inner)
 						}
+					}
+				case ItemOne:
+					if len(inners) > 0 {
+						prev = ItemTypeOther
+						last := len(inners) - 1
+						switch vv := inners[last].(type) {
+						case ItemOne:
+							inners[last] = ItemMany(2)
+						case ItemMany:
+							vv++
+							inners[last] = vv
+						case ItemStar:
+							inners[last] = ItemNStar(1)
+						case ItemNStar:
+							vv++
+							inners[last] = vv
+						default:
+							inners = append(inners, inner)
+						}
+					} else {
+						inners = append(inners, inner)
+					}
+				case ItemMany:
+					if len(inners) > 0 {
+						prev = ItemTypeOther
+						last := len(inners) - 1
+						switch vv := inners[last].(type) {
+						case ItemOne:
+							v++
+							inners[last] = v
+						case ItemMany:
+							v += vv
+						case ItemStar:
+							inners[last] = ItemNStar(v)
+						case ItemNStar:
+							vv += ItemNStar(v)
+							inners[last] = vv
+						default:
+							inners = append(inners, inner)
+						}
+					} else {
+						inners = append(inners, inner)
+					}
+				case ItemStar:
+					if len(inners) > 0 {
+						prev = ItemTypeOther
+						last := len(inners) - 1
+						switch vv := inners[last].(type) {
+						case ItemOne:
+							inners[last] = ItemNStar(1)
+						case ItemMany:
+							inners[last] = ItemNStar(vv)
+						case ItemStar, ItemNStar: // dedupicate
+						default:
+							inners = append(inners, inner)
+						}
+					} else {
+						inners = append(inners, inner)
+					}
+				case ItemNStar:
+					if len(inners) > 0 {
+						prev = ItemTypeOther
+						last := len(inners) - 1
+						switch vv := inners[last].(type) {
+						case ItemOne:
+							v++
+						case ItemMany:
+							v += ItemNStar(vv)
+						case ItemStar: // dedupicate
+						case ItemNStar:
+							v += vv
+						default:
+							inners = append(inners, inner)
+						}
+					} else {
+						inners = append(inners, inner)
 					}
 				default:
 					prev = ItemTypeOther

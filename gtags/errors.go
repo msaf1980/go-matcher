@@ -29,7 +29,7 @@ type ErrNodeNotTerminated struct {
 }
 
 func (e ErrNodeNotTerminated) Error() string {
-	return "seriesByTag node contains no childs or terminated: " + e.Node
+	return "seriesByTag node contains no childs or Terminated: []string{" + e.Node
 }
 
 type ErrPathInvalid struct {

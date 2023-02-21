@@ -7,7 +7,8 @@ import (
 func TestTaggedTermListNe(t *testing.T) {
 	tests := []testTaggedTermList{
 		{
-			query: "seriesByTag('name=a', 'b=c', 'c!=vc')",
+			query:     "seriesByTag('name=a', 'b=c', 'c!=vc')",
+			wantQuery: "seriesByTag('__name__=a','b=c','c!=vc')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{Key: "b", Op: TaggedTermEq, Value: "c"},
@@ -38,8 +39,11 @@ func TestTagsMatcherNe(t *testing.T) {
 									Term: &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "c"},
 									Childs: []*TaggedItem{
 										{
-											Term:       &TaggedTerm{Key: "c", Op: TaggedTermNe, Value: "vc"},
-											Terminated: []string{"seriesByTag('name=a', 'b=c', 'c!=vc')"},
+											Term: &TaggedTerm{Key: "c", Op: TaggedTermNe, Value: "vc"},
+											Terminated: []string{
+												"seriesByTag('name=a', 'b=c', 'c!=vc')",
+												"seriesByTag('__name__=a','b=c','c!=vc')",
+											},
 										},
 									},
 								},
@@ -47,13 +51,24 @@ func TestTagsMatcherNe(t *testing.T) {
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b=c', 'c!=vc')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b=c', 'c!=vc')":   -1,
+					"seriesByTag('__name__=a','b=c','c!=vc')": -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=c":           {"seriesByTag('name=a', 'b=c', 'c!=vc')"},
-				"a?b=c":                {"seriesByTag('name=a', 'b=c', 'c!=vc')"},
-				"a?a=v1&b=c&e=v3":      {"seriesByTag('name=a', 'b=c', 'c!=vc')"},
-				"a?a=v1&b=c&c=v1&e=v3": {"seriesByTag('name=a', 'b=c', 'c!=vc')"},
+				"a?a=v1&b=c": {
+					"seriesByTag('name=a', 'b=c', 'c!=vc')", "seriesByTag('__name__=a','b=c','c!=vc')",
+				},
+				"a?b=c": {
+					"seriesByTag('name=a', 'b=c', 'c!=vc')", "seriesByTag('__name__=a','b=c','c!=vc')",
+				},
+				"a?a=v1&b=c&e=v3": {
+					"seriesByTag('name=a', 'b=c', 'c!=vc')", "seriesByTag('__name__=a','b=c','c!=vc')",
+				},
+				"a?a=v1&b=c&c=v1&e=v3": {
+					"seriesByTag('name=a', 'b=c', 'c!=vc')", "seriesByTag('__name__=a','b=c','c!=vc')",
+				},
 			},
 			missPaths: []string{"a?b=ca", "a?b=v1", "a?c=v1", "b?a=v1", "a?a=v1&b=c&c=vc&e=v3"},
 		},

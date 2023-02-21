@@ -1,6 +1,7 @@
 package gglob
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
@@ -15,7 +16,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "[a-c]", Terminated: "[a-c]", TermIndex: -1,
+								Node: "[a-c]", Terminated: []string{"[a-c]"},
 								WildcardItems: wildcards.WildcardItems{
 									MinSize: 1, MaxSize: 1,
 									Inners: []wildcards.InnerItem{
@@ -38,7 +39,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "[a-c]z", Terminated: "[a-c]z", TermIndex: -1,
+								Node: "[a-c]z", Terminated: []string{"[a-c]z"},
 								WildcardItems: wildcards.WildcardItems{
 									MinSize: 2, MaxSize: 2, Suffix: "z",
 									Inners: []wildcards.InnerItem{
@@ -61,7 +62,7 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "[a-c]*", Terminated: "[a-c]*", TermIndex: -1,
+								Node: "[a-c]*", Terminated: []string{"[a-c]*"},
 								WildcardItems: wildcards.WildcardItems{
 									MinSize: 1, MaxSize: -1,
 									Inners: []wildcards.InnerItem{
@@ -88,15 +89,15 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "[a-]", Terminated: "[a-]", TermIndex: -1,
+								Node: "a", Terminated: []string{"[a-]", "a"},
 								WildcardItems: wildcards.WildcardItems{P: "a", MinSize: 1, MaxSize: 1},
 							},
 						},
 					},
 				},
-				Globs: map[string]int{"[a-]": -1},
+				Globs: map[string]int{"[a-]": -1, "a": -1},
 			},
-			matchPaths: map[string][]string{"a": {"[a-]"}},
+			matchPaths: map[string][]string{"a": {"[a-]", "a"}},
 			missPaths:  []string{"", "b", "d", "ab", "a.b"},
 		},
 		{
@@ -106,15 +107,15 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a[a-]Z", Terminated: "a[a-]Z", TermIndex: -1,
+								Node: "aaZ", Terminated: []string{"a[a-]Z", "aaZ"},
 								WildcardItems: wildcards.WildcardItems{P: "aaZ", MinSize: 3, MaxSize: 3},
 							},
 						},
 					},
 				},
-				Globs: map[string]int{"a[a-]Z": -1},
+				Globs: map[string]int{"a[a-]Z": -1, "aaZ": -1},
 			},
-			matchPaths: map[string][]string{"aaZ": {"a[a-]Z"}},
+			matchPaths: map[string][]string{"aaZ": {"a[a-]Z", "aaZ"}},
 			missPaths:  []string{"", "a", "b", "d", "ab", "aaz", "aaZa", "a.b"},
 		},
 		{
@@ -124,15 +125,15 @@ func TestGlobMatcher_Rune(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a[a-]Z[Q]", Terminated: "a[a-]Z[Q]", TermIndex: -1,
+								Node: "aaZQ", Terminated: []string{"a[a-]Z[Q]", "aaZQ"},
 								WildcardItems: wildcards.WildcardItems{P: "aaZQ", MinSize: 4, MaxSize: 4},
 							},
 						},
 					},
 				},
-				Globs: map[string]int{"a[a-]Z[Q]": -1},
+				Globs: map[string]int{"a[a-]Z[Q]": -1, "aaZQ": -1},
 			},
-			matchPaths: map[string][]string{"aaZQ": {"a[a-]Z[Q]"}},
+			matchPaths: map[string][]string{"aaZQ": {"a[a-]Z[Q]", "aaZQ"}},
 			missPaths:  []string{"", "a", "Q", "aaZ", "aaZQa", "a.b"},
 		},
 	}
@@ -158,15 +159,15 @@ func TestGlobMatcher_Rune_Broken(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "[]a", Terminated: "[]a", TermIndex: -1,
+								Node: "a", Terminated: []string{"[]a", "a"},
 								WildcardItems: wildcards.WildcardItems{P: "a", MinSize: 1, MaxSize: 1},
 							},
 						},
 					},
 				},
-				Globs: map[string]int{"[]a": -1},
+				Globs: map[string]int{"[]a": -1, "a": -1},
 			},
-			matchPaths: map[string][]string{"a": {"[]a"}},
+			matchPaths: map[string][]string{"a": {"[]a", "a"}},
 			missPaths:  []string{"", "b", "ab"},
 		},
 	}
@@ -184,7 +185,9 @@ var (
 func BenchmarkRune(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetRune)
+		var buf strings.Builder
+		buf.Grow(len(targetRune))
+		_, err := w.Add(targetRune, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -206,7 +209,9 @@ func BenchmarkRune_Regex(b *testing.B) {
 
 func BenchmarkRune_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetRune)
+	var buf strings.Builder
+	buf.Grow(len(targetRune))
+	_, err := w.Add(targetRune, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -221,7 +226,9 @@ func BenchmarkRune_Precompiled(b *testing.B) {
 
 func BenchmarkRune_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetRune)
+	var buf strings.Builder
+	buf.Grow(len(targetRune))
+	_, err := w.Add(targetRune, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -255,7 +262,9 @@ var (
 func BenchmarkRuneStarMiss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetRuneStarMiss)
+		var buf strings.Builder
+		buf.Grow(len(targetRuneStarMiss))
+		_, err := w.Add(targetRuneStarMiss, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -277,7 +286,9 @@ func BenchmarkRuneStarMiss_Regex(b *testing.B) {
 
 func BenchmarkRuneStarMiss_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetRuneStarMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetRuneStarMiss))
+	_, err := w.Add(targetRuneStarMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -292,7 +303,9 @@ func BenchmarkRuneStarMiss_Precompiled(b *testing.B) {
 
 func BenchmarkRuneStarMiss_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetRuneStarMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetRuneStarMiss))
+	_, err := w.Add(targetRuneStarMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}

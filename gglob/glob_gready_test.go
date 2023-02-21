@@ -1,6 +1,9 @@
 package gglob
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 var (
 	targetGready_StringMiss = "sys*tgicabcdERt*ltem"
@@ -11,7 +14,9 @@ var (
 func BenchmarkGready_StringMiss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetGready_StringMiss)
+		var buf strings.Builder
+		buf.Grow(len(targetGready_StringMiss))
+		_, err := w.Add(targetGready_StringMiss, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -33,7 +38,9 @@ func BenchmarkGready_StringMiss_Regex(b *testing.B) {
 
 func BenchmarkGready_StringMiss_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_StringMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_StringMiss))
+	_, err := w.Add(targetGready_StringMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -48,7 +55,9 @@ func BenchmarkGready_StringMiss_Precompiled(b *testing.B) {
 
 func BenchmarkGready_StringMiss_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_StringMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_StringMiss))
+	_, err := w.Add(targetGready_StringMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -82,7 +91,9 @@ var (
 func BenchmarkGready_RuneMiss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetGready_RuneMiss)
+		var buf strings.Builder
+		buf.Grow(len(targetGready_RuneMiss))
+		_, err := w.Add(targetGready_RuneMiss, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -104,7 +115,9 @@ func BenchmarkGready_RuneMiss_Regex(b *testing.B) {
 
 func BenchmarkGready_RuneMiss_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_RuneMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_RuneMiss))
+	_, err := w.Add(targetGready_RuneMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -119,7 +132,9 @@ func BenchmarkGready_RuneMiss_Precompiled(b *testing.B) {
 
 func BenchmarkGready_RuneMiss_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_RuneMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_RuneMiss))
+	_, err := w.Add(targetGready_RuneMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -153,7 +168,9 @@ var (
 func BenchmarkGready_RuneRangesMiss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetGready_RuneRangesMiss)
+		var buf strings.Builder
+		buf.Grow(len(targetGready_RuneRangesMiss))
+		_, err := w.Add(targetGready_RuneRangesMiss, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -175,7 +192,9 @@ func BenchmarkGready_RuneRangesMiss_Regex(b *testing.B) {
 
 func BenchmarkGready_RuneRangesMiss_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_RuneRangesMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_RuneRangesMiss))
+	_, err := w.Add(targetGready_RuneRangesMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -190,7 +209,9 @@ func BenchmarkGready_RuneRangesMiss_Precompiled(b *testing.B) {
 
 func BenchmarkGready_RuneRangesMiss_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_RuneRangesMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_RuneRangesMiss))
+	_, err := w.Add(targetGready_RuneRangesMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -224,7 +245,9 @@ var (
 func BenchmarkGready_ListMiss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetGready_ListMiss)
+		var buf strings.Builder
+		buf.Grow(len(targetGready_ListMiss))
+		_, err := w.Add(targetGready_ListMiss, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -246,7 +269,9 @@ func BenchmarkGready_ListMiss_Regex(b *testing.B) {
 
 func BenchmarkGready_ListMiss_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_ListMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_ListMiss))
+	_, err := w.Add(targetGready_ListMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -261,7 +286,9 @@ func BenchmarkGready_ListMiss_Precompiled(b *testing.B) {
 
 func BenchmarkGready_ListMiss_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_ListMiss)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_ListMiss))
+	_, err := w.Add(targetGready_ListMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -295,7 +322,9 @@ var (
 func BenchmarkGready_ListSkip(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetGready_ListSkip)
+		var buf strings.Builder
+		buf.Grow(len(targetGready_ListSkip))
+		_, err := w.Add(targetGready_ListSkip, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -317,7 +346,9 @@ func BenchmarkGready_ListSkip_Regex(b *testing.B) {
 
 func BenchmarkGready_ListSkip_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_ListSkip)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_ListSkip))
+	_, err := w.Add(targetGready_ListSkip, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -332,7 +363,9 @@ func BenchmarkGready_ListSkip_Precompiled(b *testing.B) {
 
 func BenchmarkGready_ListSkip_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_ListSkip)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_ListSkip))
+	_, err := w.Add(targetGready_ListSkip, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -366,7 +399,9 @@ var (
 func BenchmarkGready_OneSkip(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
-		err := w.Add(targetGready_OneSkip)
+		var buf strings.Builder
+		buf.Grow(len(targetGready_OneSkip))
+		_, err := w.Add(targetGready_OneSkip, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -388,7 +423,9 @@ func BenchmarkGready_OneSkip_Regex(b *testing.B) {
 
 func BenchmarkGready_OneSkip_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_OneSkip)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_OneSkip))
+	_, err := w.Add(targetGready_OneSkip, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -403,7 +440,9 @@ func BenchmarkGready_OneSkip_Precompiled(b *testing.B) {
 
 func BenchmarkGready_OneSkip_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
-	err := w.Add(targetGready_OneSkip)
+	var buf strings.Builder
+	buf.Grow(len(targetGready_OneSkip))
+	_, err := w.Add(targetGready_OneSkip, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
