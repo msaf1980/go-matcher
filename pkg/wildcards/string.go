@@ -15,6 +15,10 @@ func (item ItemString) Strings() []string {
 	return nil
 }
 
+func (item ItemString) WriteString(buf *strings.Builder) {
+	buf.WriteString(string(item))
+}
+
 func (item ItemString) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
 	s := string(item)
 	support = true
@@ -24,7 +28,7 @@ func (item ItemString) Locate(part string, nextItems []InnerItem) (offset int, s
 	return
 }
 
-func (item ItemString) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemString) Match(part string, nextItems []InnerItem) (found bool) {
 	s := string(item)
 	if strings.HasPrefix(part, s) {
 		// strip prefix
@@ -32,7 +36,7 @@ func (item ItemString) Match(part string, nextParts string, nextItems []InnerIte
 		part = part[len(s):]
 
 		if len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextParts, nextItems[1:])
+			found = nextItems[0].Match(part, nextItems[1:])
 		} else if part != "" && len(nextItems) == 0 {
 			found = false
 		}

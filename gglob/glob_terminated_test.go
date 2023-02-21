@@ -15,7 +15,7 @@ func TestGlobMatcherTerminated(t *testing.T) {
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a", Terminated: "a", TermIndex: -1,
+								Node: "a", Terminated: []string{"a"},
 								WildcardItems: wildcards.WildcardItems{P: "a"},
 							},
 						},
@@ -26,11 +26,11 @@ func TestGlobMatcherTerminated(t *testing.T) {
 								Node: "a", WildcardItems: wildcards.WildcardItems{P: "a"},
 								Childs: []*NodeItem{
 									{
-										Node: "bc", Terminated: "a.bc", TermIndex: -1,
+										Node: "bc", Terminated: []string{"a.bc"},
 										WildcardItems: wildcards.WildcardItems{P: "bc"},
 									},
 									{
-										Node: "dc", Terminated: "a.dc", TermIndex: -1,
+										Node: "dc", Terminated: []string{"a.dc"},
 										WildcardItems: wildcards.WildcardItems{P: "dc"},
 									},
 								},
@@ -39,7 +39,7 @@ func TestGlobMatcherTerminated(t *testing.T) {
 								Node: "b", WildcardItems: wildcards.WildcardItems{P: "b"},
 								Childs: []*NodeItem{
 									{
-										Node: "bc", Terminated: "b.bc", TermIndex: -1,
+										Node: "bc", Terminated: []string{"b.bc"},
 										WildcardItems: wildcards.WildcardItems{P: "bc"},
 									},
 								},

@@ -7,30 +7,76 @@ import (
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
-func TestGlobMatcher_Star(t *testing.T) {
+func TestGlobMatcher_NStar(t *testing.T) {
 	tests := []testGlobMatcher{
 		// deduplication
 		{
-			name: `{"a******c"}`, globs: []string{"a******c"},
+			name: `{"a******?c", "a?******c", "a?******?c"}`,
+			globs: []string{
+				"a******?c", "a?******c", "a**?****c",
+				"a?******?c", "a**??c",
+				"a?*??c", "a*?*?*c", "a??*?*c", "a???**c",
+			},
 			wantW: &GlobMatcher{
 				Root: map[int]*NodeItem{
 					1: {
 						Childs: []*NodeItem{
 							{
-								Node: "a*c", Terminated: []string{"a******c", "a*c"},
+								Node: "a*?c", Terminated: []string{
+									"a******?c", "a*?c", "a?******c", "a**?****c",
+								},
 								WildcardItems: wildcards.WildcardItems{
-									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+									P: "a", Suffix: "c", MinSize: 3, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemNStar(1)},
+								},
+							},
+							{
+								Node: "a*??c", Terminated: []string{
+									"a?******?c", "a*??c", "a**??c", "a*?*?*c",
+								},
+								WildcardItems: wildcards.WildcardItems{
+									P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
+									Inners: []wildcards.InnerItem{wildcards.ItemNStar(2)},
+								},
+							},
+							{
+								Node:       "a*???c",
+								Terminated: []string{"a?*??c", "a*???c", "a??*?*c", "a???**c"},
+								WildcardItems: wildcards.WildcardItems{
+									MinSize: 5,
+									MaxSize: -1,
+									P:       "a",
+									Suffix:  "c",
+									Inners:  []wildcards.InnerItem{wildcards.ItemNStar(3)},
 								},
 							},
 						},
 					},
 				},
-				Globs: map[string]int{"a******c": -1, "a*c": -1},
+				Globs: map[string]int{
+					"a?******c": -1, "a**?****c": -1, "a******?c": -1, "a*?c": -1,
+					"a?******?c": -1, "a**??c": -1, "a*?*?*c": -1, "a*??c": -1,
+					"a?*??c": -1, "a*???c": -1, "a??*?*c": -1, "a???**c": -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"ac": {"a******c", "a*c"}, "abc": {"a******c", "a*c"}, "abcc": {"a******c", "a*c"}},
-			missPaths: []string{"", "acb"},
+				"aBc": {"a******?c", "a*?c", "a?******c", "a**?****c"},
+				"aBCc": {
+					"a******?c", "a*?c", "a?******c", "a**?****c",
+					"a?******?c", "a*??c", "a**??c", "a*?*?*c",
+				},
+				"aBCDc": {
+					"a******?c", "a*?c", "a?******c", "a**?****c",
+					"a?******?c", "a*??c", "a**??c", "a*?*?*c",
+					"a?*??c", "a*???c", "a??*?*c", "a???**c",
+				},
+				"aBCDEc": {
+					"a******?c", "a*?c", "a?******c", "a**?****c",
+					"a?******?c", "a*??c", "a**??c", "a*?*?*c",
+					"a?*??c", "a*???c", "a??*?*c", "a???**c",
+				},
+			},
+			missPaths: []string{"", "ac", "acb"},
 		},
 		// * match
 		{
@@ -131,7 +177,7 @@ func TestGlobMatcher_Star(t *testing.T) {
 				"ab_FIND_st":        {"a*?_FIND*_st"},
 				"aLc_FIND_st":       {"a*?_FIND*_st"},
 				"aLBc_FIND_st":      {"a*?_FIND*_st"},
-				"aLBc_FIND_STAR_st": {"a*?_FIND*_st"},
+				"aLBc_FIND_Star_st": {"a*?_FIND*_st"},
 				"aLBc_FINDB_st":     {"a*?_FIND*_st"},
 			},
 			missPaths: []string{"a_FIND_st", "a_FINDB_st"},
@@ -143,58 +189,58 @@ func TestGlobMatcher_Star(t *testing.T) {
 }
 
 var (
-	targetStarMiss = "sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertMISSg*tem"
-	pathStarMiss   = "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltem"
+	targetNStarMiss = "sy*abcdertg*babcdertg*cabcdertg*sy*abcdertg*babcdertg*cabcdertMISSg*tem"
+	pathNStarMiss   = "sysabcdertgebabcdertgicabcdertglsysabcdertgebabcdertgicabcdertgltem"
 )
 
 // becnmark for suffix optimization
-func BenchmarkStarMiss(b *testing.B) {
+func BenchmarkNStarMiss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewGlobMatcher()
 		var buf strings.Builder
-		buf.Grow(len(targetStarMiss))
-		_, err := w.Add(targetStarMiss, &buf)
+		buf.Grow(len(targetNStarMiss))
+		_, err := w.Add(targetNStarMiss, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
-		globs := w.Match(pathStarMiss)
+		globs := w.Match(pathNStarMiss)
 		if len(globs) > 0 {
 			b.Fatal(globs)
 		}
 	}
 }
 
-func BenchmarkStarMiss_Regex(b *testing.B) {
+func BenchmarkNStarMiss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		w := buildGlobRegexp(targetStarMiss)
-		if w.MatchString(pathStarMiss) {
-			b.Fatal(pathStarMiss)
+		w := buildGlobRegexp(targetNStarMiss)
+		if w.MatchString(pathNStarMiss) {
+			b.Fatal(pathNStarMiss)
 		}
 	}
 }
 
-func BenchmarkStarMiss_Precompiled(b *testing.B) {
+func BenchmarkNStarMiss_Precompiled(b *testing.B) {
 	w := NewGlobMatcher()
 	var buf strings.Builder
-	buf.Grow(len(targetStarMiss))
-	_, err := w.Add(targetStarMiss, &buf)
+	buf.Grow(len(targetNStarMiss))
+	_, err := w.Add(targetNStarMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs := w.Match(pathStarMiss)
+		globs := w.Match(pathNStarMiss)
 		if len(globs) > 0 {
 			b.Fatal(globs)
 		}
 	}
 }
 
-func BenchmarkStarMiss_Prealloc(b *testing.B) {
+func BenchmarkNStarMiss_Prealloc(b *testing.B) {
 	w := NewGlobMatcher()
 	var buf strings.Builder
-	buf.Grow(len(targetStarMiss))
-	_, err := w.Add(targetStarMiss, &buf)
+	buf.Grow(len(targetNStarMiss))
+	_, err := w.Add(targetNStarMiss, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -202,19 +248,19 @@ func BenchmarkStarMiss_Prealloc(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		globs = globs[:0]
-		w.MatchB(pathStarMiss, &globs)
+		w.MatchB(pathNStarMiss, &globs)
 		if len(globs) > 0 {
 			b.Fatal(globs)
 		}
 	}
 }
 
-func BenchmarkStarMiss_Precompiled_Regex(b *testing.B) {
-	w := buildGlobRegexp(targetStarMiss)
+func BenchmarkNStarMiss_Precompiled_Regex(b *testing.B) {
+	w := buildGlobRegexp(targetNStarMiss)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if w.MatchString(pathStarMiss) {
-			b.Fatal(pathStarMiss)
+		if w.MatchString(pathNStarMiss) {
+			b.Fatal(pathNStarMiss)
 		}
 	}
 }

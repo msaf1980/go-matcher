@@ -3,6 +3,7 @@ package gtags
 import (
 	"regexp"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -97,10 +98,13 @@ type testTagsMatcherIndex struct {
 
 func runTestTagsMatcherIndex(t *testing.T, tt testTagsMatcherIndex) {
 	w := NewTagsMatcher()
-	var err error
+	var (
+		err error
+		buf strings.Builder
+	)
 	t.Run(tt.name, func(t *testing.T) {
 		for n, query := range tt.queries {
-			err = w.AddIndexed(query, n)
+			_, err = w.AddIndexed(query, n, &buf)
 			if err != nil {
 				return
 			}

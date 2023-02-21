@@ -2,6 +2,7 @@ package gtags
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -13,12 +14,14 @@ func TestTaggedTermListEqual(t *testing.T) {
 		},
 		// empty
 		{
-			query:   "seriesByTag()",
-			wantErr: true,
+			query:     "seriesByTag()",
+			wantQuery: "seriesByTag()",
+			wantErr:   true,
 		},
 		// match
 		{
-			query: "seriesByTag('name=a', 'b=c')",
+			query:     "seriesByTag('name=a', 'b=c')",
+			wantQuery: "seriesByTag('__name__=a','b=c')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{Key: "b", Op: TaggedTermEq, Value: "c"},
@@ -27,7 +30,8 @@ func TestTaggedTermListEqual(t *testing.T) {
 			missPaths:  []string{"a?b=ca", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
 		{
-			query: "seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')",
+			query:     "seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')",
+			wantQuery: "seriesByTag('__name__=cpu.load_avg','app=postgresql','project=sales','subproject=crm')",
 			want: TaggedTermList{
 				{Key: "__name__", Op: TaggedTermEq, Value: "cpu.load_avg"},
 				{Key: "app", Op: TaggedTermEq, Value: "postgresql"},
@@ -81,19 +85,24 @@ func TestTagsMatcherEqual(t *testing.T) {
 							Term: &TaggedTerm{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 							Childs: []*TaggedItem{
 								{
-									Term:       &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "c"},
-									Terminated: []string{"seriesByTag('name=a', 'b=c')"},
+									Term: &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "c"},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=c')",
+										"seriesByTag('__name__=a','b=c')",
+									},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b=c')": -1},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b=c')": -1, "seriesByTag('__name__=a','b=c')": -1,
+				},
 			},
 			matchPaths: map[string][]string{
-				"a?a=v1&b=c":      {"seriesByTag('name=a', 'b=c')"},
-				"a?b=c":           {"seriesByTag('name=a', 'b=c')"},
-				"a?a=v1&b=c&e=v3": {"seriesByTag('name=a', 'b=c')"},
+				"a?a=v1&b=c":      {"seriesByTag('name=a', 'b=c')", "seriesByTag('__name__=a','b=c')"},
+				"a?b=c":           {"seriesByTag('name=a', 'b=c')", "seriesByTag('__name__=a','b=c')"},
+				"a?a=v1&b=c&e=v3": {"seriesByTag('name=a', 'b=c')", "seriesByTag('__name__=a','b=c')"},
 			},
 			missPaths: []string{"a?b=ca", "a?b=v1", "a?c=v1", "b?a=v1"},
 		},
@@ -113,8 +122,11 @@ func TestTagsMatcherEqual(t *testing.T) {
 											Term: &TaggedTerm{Key: "project", Op: TaggedTermEq, Value: "sales"},
 											Childs: []*TaggedItem{
 												{
-													Term:       &TaggedTerm{Key: "subproject", Op: TaggedTermEq, Value: "crm"},
-													Terminated: []string{"seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')"},
+													Term: &TaggedTerm{Key: "subproject", Op: TaggedTermEq, Value: "crm"},
+													Terminated: []string{
+														"seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')",
+														"seriesByTag('__name__=cpu.load_avg','app=postgresql','project=sales','subproject=crm')",
+													},
 												},
 											},
 										},
@@ -125,12 +137,14 @@ func TestTagsMatcherEqual(t *testing.T) {
 					},
 				},
 				Queries: map[string]int{
-					"seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')": -1,
+					"seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')":  -1,
+					"seriesByTag('__name__=cpu.load_avg','app=postgresql','project=sales','subproject=crm')": -1,
 				},
 			},
 			matchPaths: map[string][]string{
 				"cpu.load_avg?app=postgresql&dc=dc1&host=node1-db&project=sales&subproject=crm": {
 					"seriesByTag('name=cpu.load_avg', 'app=postgresql', 'project=sales', 'subproject=crm')",
+					"seriesByTag('__name__=cpu.load_avg','app=postgresql','project=sales','subproject=crm')",
 				},
 			},
 			missPaths: []string{
@@ -157,6 +171,7 @@ func TestTagsMatcherEqual(t *testing.T) {
 											Term: &TaggedTerm{Key: "b", Op: TaggedTermEq, Value: "c"},
 											Terminated: []string{
 												"seriesByTag('b=c','name=a', 'name=c')",
+												"seriesByTag('__name__=a','__name__=c','b=c')",
 												"seriesByTag('name=a', 'b=c', 'name=c')",
 											},
 										},
@@ -167,8 +182,9 @@ func TestTagsMatcherEqual(t *testing.T) {
 					},
 				},
 				Queries: map[string]int{
-					"seriesByTag('b=c','name=a', 'name=c')":  -1,
-					"seriesByTag('name=a', 'b=c', 'name=c')": -1,
+					"seriesByTag('b=c','name=a', 'name=c')":        -1,
+					"seriesByTag('__name__=a','__name__=c','b=c')": -1,
+					"seriesByTag('name=a', 'b=c', 'name=c')":       -1,
 				},
 			},
 			matchPaths: map[string][]string{},
@@ -197,6 +213,9 @@ func BenchmarkEqual_Terms(b *testing.B) {
 		if err = terms.Build(); err != nil {
 			b.Fatal(err)
 		}
+		var buf strings.Builder
+		buf.Grow(len(queryEqual))
+		terms.Rewrite(&buf)
 		tags, err := PathTags(pathEqual)
 		if err != nil {
 			b.Fatal(err)
@@ -211,7 +230,8 @@ func BenchmarkEqual_Terms(b *testing.B) {
 func BenchmarkEqual_ByTags(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := NewTagsMatcher()
-		err := w.Add(queryEqual)
+		var buf strings.Builder
+		_, err := w.Add(queryEqual, &buf)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -244,6 +264,9 @@ func BenchmarkEqual_Precompiled_Terms(b *testing.B) {
 	if err = terms.Build(); err != nil {
 		b.Fatal(err)
 	}
+	var buf strings.Builder
+	buf.Grow(len(queryEqual))
+	terms.Rewrite(&buf)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -266,6 +289,10 @@ func BenchmarkEqual_Precompiled_Terms2(b *testing.B) {
 	if err = terms.Build(); err != nil {
 		b.Fatal(err)
 	}
+	var buf strings.Builder
+	buf.Grow(len(queryEqual))
+	terms.Rewrite(&buf)
+
 	tags, err := PathTags(pathEqual)
 	if err != nil {
 		b.Fatal(err)
@@ -281,7 +308,9 @@ func BenchmarkEqual_Precompiled_Terms2(b *testing.B) {
 
 func BenchmarkEqual_Precompiled_ByTags(b *testing.B) {
 	w := NewTagsMatcher()
-	err := w.Add(queryEqual)
+	var buf strings.Builder
+	buf.Grow(len(queryEqual))
+	_, err := w.Add(queryEqual, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -303,7 +332,9 @@ func BenchmarkEqual_Precompiled_ByTags(b *testing.B) {
 
 func BenchmarkEqual_Precompiled_ByTags2(b *testing.B) {
 	w := NewTagsMatcher()
-	err := w.Add(queryEqual)
+	var buf strings.Builder
+	buf.Grow(len(queryEqual))
+	_, err := w.Add(queryEqual, &buf)
 	if err != nil {
 		b.Fatal(err)
 	}

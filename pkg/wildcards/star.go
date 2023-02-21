@@ -19,7 +19,11 @@ func (item ItemStar) Locate(part string, nextItems []InnerItem) (offset int, sup
 	return -1, false, 0
 }
 
-func (item ItemStar) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemStar) WriteString(buf *strings.Builder) {
+	buf.WriteRune('*')
+}
+
+func matchStar(part string, nextItems []InnerItem) (found bool) {
 	if part == "" && len(nextItems) == 0 {
 		return true
 	}
@@ -52,7 +56,7 @@ LOOP:
 						} else {
 							part = part[pos+len(v):]
 							if len(nextItems) > 0 {
-								if found = nextItems[1].Match(part, nextParts, nextItems[2:]); found {
+								if found = nextItems[1].Match(part, nextItems[2:]); found {
 									break LOOP_LIST
 								}
 							} else if part != "" {
@@ -69,10 +73,14 @@ LOOP:
 			break LOOP
 		}
 		if len(nextItems) > 0 {
-			if found = nextItems[0].Match(part, nextParts, nextItems[1:]); found {
+			if found = nextItems[0].Match(part, nextItems[1:]); found {
 				break LOOP
 			}
 		}
 	}
 	return
+}
+
+func (item ItemStar) Match(part string, nextItems []InnerItem) (found bool) {
+	return matchStar(part, nextItems)
 }

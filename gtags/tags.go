@@ -1,6 +1,8 @@
 package gtags
 
 import (
+	"strings"
+
 	"github.com/msaf1980/go-matcher/pkg/utils"
 )
 
@@ -18,65 +20,62 @@ func NewTagsMatcher() *TagsMatcher {
 }
 
 func (w *TagsMatcher) Adds(queries []string) (err error) {
+	var buf strings.Builder
 	for _, query := range queries {
-		if err = w.Add(query); err != nil {
+		buf.Grow(len(query))
+		if _, err = w.Add(query, &buf); err != nil {
 			return err
 		}
 	}
 	return
 }
 
-func (w *TagsMatcher) Add(query string) (err error) {
-	if query == "" {
-		return
-	}
-	if _, ok := w.Queries[query]; ok {
-		// aleady added
-		return
-	}
-	var (
-		terms TaggedTermList
-		item  *TaggedItem
-	)
-	if terms, err = ParseSeriesByTag(query); err != nil {
-		return err
-	}
-	if item, err = w.Root.Parse(terms); err != nil {
-		return err
-	}
-
-	item.Terminated = append(item.Terminated, query)
-
-	w.Queries[query] = -1
-
-	return
+func (w *TagsMatcher) Add(query string, buf *strings.Builder) (newQuery string, err error) {
+	return w.AddIndexed(query, -1, buf)
 }
 
-func (w *TagsMatcher) AddIndexed(query string, termIndex int) (err error) {
+func (w *TagsMatcher) AddIndexed(query string, termIndex int, buf *strings.Builder) (newQuery string, err error) {
 	if query == "" {
 		return
 	}
 	if _, ok := w.Queries[query]; ok {
 		// aleady added
+		newQuery = query
 		return
 	}
 	var (
 		terms TaggedTermList
 		item  *TaggedItem
 	)
+	buf.Reset()
 	if terms, err = ParseSeriesByTag(query); err != nil {
-		return err
+		return
 	}
-	if item, err = w.Root.Parse(terms); err != nil {
-		return err
+	if err = terms.Build(); err != nil {
+		return
 	}
+	terms.Rewrite(buf)
 
+	if item, err = w.Root.Parse(terms); err != nil {
+		return
+	}
 	item.Terminated = append(item.Terminated, query)
 	if termIndex > -1 {
 		item.TermIndex = append(item.TermIndex, termIndex)
 	}
 
 	w.Queries[query] = termIndex
+
+	newQuery = buf.String()
+	if newQuery == query {
+		newQuery = query
+	} else {
+		if _, ok := w.Queries[newQuery]; !ok {
+			w.Queries[newQuery] = termIndex // write optimized glob
+			item.Terminated = append(item.Terminated, newQuery)
+			w.Queries[newQuery] = termIndex
+		}
+	}
 
 	return
 }

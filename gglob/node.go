@@ -1,8 +1,10 @@
 package gglob
 
 import (
+	"sort"
 	"strings"
 
+	"github.com/msaf1980/go-matcher/pkg/utils"
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
@@ -10,13 +12,19 @@ import (
 type NodeItem struct {
 	Node string // raw string (or full glob for terminated)
 
-	Terminated string // end of chain (resulting glob)
-	TermIndex  int    // rule num of end of chain (resulting glob), can be used in specific cases
+	Terminated []string // end of chain (resulting glob)
+	TermIndex  []int    // rule num of end of chain (resulting glob), can be used in specific cases
 
 	wildcards.WildcardItems
 
 	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
 	Childs []*NodeItem // next possible parts slice
+}
+
+func (node *NodeItem) WriteString(buf *strings.Builder) {
+	buf.WriteString(node.P)
+	wildcards.WriteInnerItems(node.Inners, buf)
+	buf.WriteString(node.Suffix)
 }
 
 func (node *NodeItem) MatchNode(part string) (matched bool) {
@@ -50,15 +58,15 @@ func (node *NodeItem) MatchNode(part string) (matched bool) {
 			part = part[:len(part)-len(node.Suffix)]
 		}
 
-		matched = node.Inners[0].Match(part, "", node.Inners[1:])
+		matched = node.Inners[0].Match(part, node.Inners[1:])
 	}
 	return
 }
 
 func (node *NodeItem) MatchItems(part string, nextParts string, matched *[]string) {
 	if node.MatchNode(part) {
-		if node.Terminated != "" {
-			*matched = append(*matched, node.Terminated)
+		if len(node.Terminated) > 0 {
+			*matched = append(*matched, node.Terminated...)
 		} else if nextParts != "" {
 			part, nextParts, _ = strings.Cut(nextParts, ".")
 			for _, child := range node.Childs {
@@ -70,8 +78,8 @@ func (node *NodeItem) MatchItems(part string, nextParts string, matched *[]strin
 
 func (node *NodeItem) MatchIndexedItems(part string, nextParts string, matched *[]int) {
 	if node.MatchNode(part) {
-		if node.Terminated != "" {
-			*matched = append(*matched, node.TermIndex)
+		if len(node.TermIndex) > 0 {
+			*matched = append(*matched, node.TermIndex...)
 		} else if nextParts != "" {
 			part, nextParts, _ = strings.Cut(nextParts, ".")
 			for _, child := range node.Childs {
@@ -83,9 +91,9 @@ func (node *NodeItem) MatchIndexedItems(part string, nextParts string, matched *
 
 func (node *NodeItem) MatchFirstItems(part string, nextParts string, minMatched *int) {
 	if node.MatchNode(part) {
-		if node.Terminated != "" {
-			if *minMatched == -1 || *minMatched > node.TermIndex {
-				*minMatched = node.TermIndex
+		if len(node.Terminated) > 0 {
+			if *minMatched == -1 || *minMatched > node.TermIndex[0] {
+				*minMatched = node.TermIndex[0]
 			}
 		} else if nextParts != "" {
 			part, nextParts, _ = strings.Cut(nextParts, ".")
@@ -98,8 +106,8 @@ func (node *NodeItem) MatchFirstItems(part string, nextParts string, minMatched 
 
 func (node *NodeItem) MatchIndexedItemsPart(part string, parts []string, matched *[]int) {
 	if node.MatchNode(part) {
-		if node.Terminated != "" {
-			*matched = append(*matched, node.TermIndex)
+		if len(node.TermIndex) > 0 {
+			*matched = append(*matched, node.TermIndex...)
 		} else if len(parts) > 0 {
 			for _, child := range node.Childs {
 				child.MatchIndexedItemsPart(parts[0], parts[1:], matched)
@@ -110,9 +118,9 @@ func (node *NodeItem) MatchIndexedItemsPart(part string, parts []string, matched
 
 func (node *NodeItem) MatchFirstItemsPart(part string, parts []string, minMatched *int) {
 	if node.MatchNode(part) {
-		if node.Terminated != "" {
-			if *minMatched == -1 || *minMatched > node.TermIndex {
-				*minMatched = node.TermIndex
+		if len(node.Terminated) > 0 {
+			if *minMatched == -1 || *minMatched > node.TermIndex[0] {
+				*minMatched = node.TermIndex[0]
 			}
 		} else if len(parts) > 0 {
 			for _, child := range node.Childs {
@@ -124,8 +132,8 @@ func (node *NodeItem) MatchFirstItemsPart(part string, parts []string, minMatche
 
 func (node *NodeItem) MatchItemsPart(part string, parts []string, matched *[]string) {
 	if node.MatchNode(part) {
-		if node.Terminated != "" {
-			*matched = append(*matched, node.Terminated)
+		if len(node.Terminated) > 0 {
+			*matched = append(*matched, node.Terminated...)
 		} else if len(parts) > 0 {
 			for _, child := range node.Childs {
 				child.MatchItemsPart(parts[0], parts[1:], matched)
@@ -182,37 +190,67 @@ func (node *NodeItem) MatchFirstByParts(parts []string, minMatched *int) {
 }
 
 // Parse add glob for graphite path (dot-delimited, like a.b*.[a-c].{wait,idle}
-func (node *NodeItem) ParseNode(glob string, partsCount int, termIdx int) (lastNode *NodeItem, err error) {
+func (node *NodeItem) ParseNode(glob string, termIdx int, buf *strings.Builder) (newGlob string, lastNode *NodeItem, err error) {
 	var (
 		i    int
 		part string
 	)
 
-	last := partsCount - 1
 	nextParts := glob
 	for nextParts != "" {
 		found := false
 		part, nextParts, _ = strings.Cut(nextParts, ".")
 		if part == "" {
-			return nil, wildcards.ErrNodeEmpty{glob}
+			return glob, nil, wildcards.ErrNodeEmpty{glob}
 		}
+
+		lastNode = &NodeItem{Node: part}
+		if err = lastNode.Parse(part); err != nil {
+			return
+		}
+
+		// write glob segments
+		if buf.Len() > 0 {
+			buf.WriteRune('.')
+		}
+		start := buf.Len()
+		lastNode.WriteString(buf)
+		if nextParts == "" {
+			// end of glob
+			// TODO : get Terminated from buffer
+			lastNode.Terminated = append(lastNode.Terminated, glob)
+			if termIdx > -1 {
+				lastNode.TermIndex = append(lastNode.TermIndex, termIdx)
+				sort.Ints(lastNode.TermIndex)
+			}
+			nodeName := buf.String()
+			if nodeName == glob {
+				newGlob = glob
+			} else {
+				newGlob = string(utils.CloneString(nodeName))
+				lastNode.Terminated = append(lastNode.Terminated, newGlob)
+			}
+		}
+		nodeName := buf.String()[start:]
+		if nodeName != lastNode.Node {
+			lastNode.Node = string(utils.CloneString(nodeName))
+		}
+
 		for _, child := range node.Childs {
-			if part == child.Node {
+			if lastNode.Node == child.Node {
 				node = child
 				found = true
+				if nextParts == "" {
+					node.Terminated = append(node.Terminated, glob)
+					if termIdx > -1 {
+						node.TermIndex = append(node.TermIndex, termIdx)
+						sort.Ints(node.TermIndex)
+					}
+				}
 				break
 			}
 		}
 		if !found {
-			if i == last {
-				// last node, so terminate match
-				lastNode = &NodeItem{Node: part, Terminated: glob, TermIndex: termIdx}
-			} else {
-				lastNode = &NodeItem{Node: part}
-			}
-			if err = lastNode.Parse(part); err != nil {
-				return
-			}
 			node.Childs = append(node.Childs, lastNode)
 			node = lastNode
 		}
@@ -220,11 +258,6 @@ func (node *NodeItem) ParseNode(glob string, partsCount int, termIdx int) (lastN
 	}
 	if lastNode == nil {
 		err = wildcards.ErrGlobNotExpanded{glob}
-		return
-	}
-	if i != partsCount || (len(lastNode.Childs) == 0 && lastNode.Terminated == "") {
-		// child  or/and terminated node
-		err = wildcards.ErrNodeNotEnd{lastNode.Node}
 	}
 	return
 }

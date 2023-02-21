@@ -27,8 +27,11 @@ func TestTagsMatcherIndex(t *testing.T) {
 											MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b=c*')"},
-									TermIndex:  []int{0},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=c*')",
+										"seriesByTag('__name__=a','b=c*')",
+									},
+									TermIndex: []int{0},
 								},
 								{
 									Term: &TaggedTerm{
@@ -38,16 +41,20 @@ func TestTagsMatcherIndex(t *testing.T) {
 											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b=*a')"},
-									TermIndex:  []int{1},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b=*a')",
+										"seriesByTag('__name__=a','b=*a')"},
+									TermIndex: []int{1},
 								},
 							},
 						},
 					},
 				},
 				Queries: map[string]int{
-					"seriesByTag('name=a', 'b=c*')": 0,
-					"seriesByTag('name=a', 'b=*a')": 1,
+					"seriesByTag('name=a', 'b=c*')":    0,
+					"seriesByTag('__name__=a','b=c*')": 0,
+					"seriesByTag('name=a', 'b=*a')":    1,
+					"seriesByTag('__name__=a','b=*a')": 1,
 				},
 			},
 			matchPaths: map[string][]int{
@@ -75,14 +82,17 @@ func TestTagsMatcherIndex(t *testing.T) {
 											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
 										},
 									},
-									Terminated: []string{"seriesByTag('name=a', 'b!=c*')"},
-									TermIndex:  []int{0},
+									Terminated: []string{
+										"seriesByTag('name=a', 'b!=c*')", "seriesByTag('__name__=a','b!=c*')",
+									},
+									TermIndex: []int{0},
 								},
 							},
 						},
 					},
 				},
-				Queries: map[string]int{"seriesByTag('name=a', 'b!=c*')": 0},
+				Queries: map[string]int{
+					"seriesByTag('name=a', 'b!=c*')": 0, "seriesByTag('__name__=a','b!=c*')": 0},
 			},
 			matchPaths: map[string][]int{
 				"a?a=v1&b=ba":      {0},

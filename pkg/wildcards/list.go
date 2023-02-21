@@ -98,11 +98,22 @@ func (item *ItemList) Strings() []string {
 	return item.Vals
 }
 
+func (item *ItemList) WriteString(buf *strings.Builder) {
+	buf.WriteRune('{')
+	for i, s := range item.Vals {
+		if i > 0 {
+			buf.WriteRune(',')
+		}
+		buf.WriteString(s)
+	}
+	buf.WriteRune('}')
+}
+
 func (item *ItemList) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
 	return -1, false, 0
 }
 
-func (item *ItemList) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item *ItemList) Match(part string, nextItems []InnerItem) (found bool) {
 	l := len(part)
 	if l < item.ValsMin {
 		return
@@ -120,7 +131,7 @@ LOOP:
 			part = part[len(s):]
 
 			if len(nextItems) > 0 {
-				found = nextItems[0].Match(part, nextParts, nextItems[1:])
+				found = nextItems[0].Match(part, nextItems[1:])
 			} else if part != "" && len(nextItems) == 0 {
 				found = false
 			}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/msaf1980/go-matcher/pkg/escape"
+	"github.com/msaf1980/go-matcher/pkg/utils"
 	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
@@ -94,20 +95,30 @@ func (t TaggedTermList) Build() (err error) {
 	return
 }
 
-func (t TaggedTermList) Write(sb *strings.Builder) string {
-	sb.WriteString("seriesByTag(")
-	for i, term := range t {
+func (t TaggedTermList) Rewrite(buf *strings.Builder) {
+	buf.WriteString("seriesByTag(")
+	for i := range t {
 		if i > 0 {
-			sb.WriteByte(',')
+			buf.WriteByte(',')
 		}
-		sb.WriteByte('\'')
-		sb.WriteString(term.Key)
-		sb.WriteString(term.Op.String())
-		sb.WriteString(term.Value)
-		sb.WriteByte('\'')
+		buf.WriteByte('\'')
+		buf.WriteString(t[i].Key)
+		buf.WriteString(t[i].Op.String())
+		if t[i].HasWildcard {
+			start := buf.Len()
+			buf.WriteString(t[i].Glob.P)
+			wildcards.WriteInnerItems(t[i].Glob.Inners, buf)
+			buf.WriteString(t[i].Glob.Suffix)
+			newValue := buf.String()[start:]
+			if newValue != t[i].Value {
+				t[i].Value = utils.CloneString(newValue)
+			}
+		} else {
+			buf.WriteString(t[i].Value)
+		}
+		buf.WriteByte('\'')
 	}
-	sb.WriteString(")")
-	return sb.String()
+	buf.WriteString(")")
 }
 
 // MatchByPath match against tags map
