@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 )
 
+// ItemOne is a n any symbols: ??? for 3 symbols
 type ItemMany int
 
 func (item ItemMany) Type() (typ ItemType, s string, c rune) {

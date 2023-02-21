@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 )
 
+// ItemStar is a any runes count (N or greater): *? is minimum 1 rune symbol
 type ItemNStar int
 
 func (item ItemNStar) Strings() []string {

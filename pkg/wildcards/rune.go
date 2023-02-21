@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 )
 
+// ItemRune is a rune symbol (utf-8 char)
 type ItemRune rune
 
 func (item ItemRune) Type() (typ ItemType, s string, c rune) {

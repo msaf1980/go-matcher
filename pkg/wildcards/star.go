@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 )
 
+// ItemStar is a any runes count (0 or greater): *
 type ItemStar struct{}
 
 func (item ItemStar) Strings() []string {

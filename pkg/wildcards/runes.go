@@ -88,6 +88,7 @@ type RuneRange struct {
 	Last  rune
 }
 
+// ItemRuneRanges is a range of rune symbols: [a-crzA-Z] is a range of a-c r z A-Z
 type ItemRuneRanges []RuneRange
 
 func (item ItemRuneRanges) Type() (typ ItemType, s string, c rune) {

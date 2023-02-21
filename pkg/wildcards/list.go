@@ -83,6 +83,7 @@ func ListExpand(s string) (list []string, failed bool) {
 	return
 }
 
+// ItemList is a alternate list: {a,b,cd}
 type ItemList struct {
 	// nodeList
 	Vals    []string // strings

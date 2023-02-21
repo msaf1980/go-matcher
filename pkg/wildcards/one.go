@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 )
 
+// ItemOne is a any symbol: ?
 type ItemOne struct{}
 
 func (item ItemOne) Type() (typ ItemType, s string, c rune) {
