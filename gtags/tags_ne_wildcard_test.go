@@ -3,7 +3,7 @@ package gtags
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestTaggedTermListNe_Wildcard(t *testing.T) {
@@ -15,7 +15,7 @@ func TestTaggedTermListNe_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{
 					Key: "b", Op: TaggedTermNe, Value: "c*", HasWildcard: true,
-					Glob: &wildcards.WildcardItems{MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}}},
+					Glob: &items.NodeItem{MinSize: 1, MaxSize: -1, P: "c", Inners: []items.Item{items.ItemStar{}}},
 				},
 			},
 			matchPaths: []string{"a?a=v1&b=ba", "a?c=ca", "a?a=v1&b=b&e=v3", "a?a=v1&b=ba&e=v3"},
@@ -53,8 +53,8 @@ func TestTagsMatcherNe_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermNe, Value: "c*", HasWildcard: true,
-										Glob: &wildcards.WildcardItems{
-											MinSize: 1, MaxSize: -1, P: "c", Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+										Glob: &items.NodeItem{
+											MinSize: 1, MaxSize: -1, P: "c", Inners: []items.Item{items.ItemStar{}},
 										},
 									},
 									Terminated: []string{

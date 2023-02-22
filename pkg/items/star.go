@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 import (
 	"strings"
@@ -16,7 +16,7 @@ func (item ItemStar) Type() (typ ItemType, s string, c rune) {
 	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item ItemStar) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+func (item ItemStar) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
 	return -1, false, 0
 }
 
@@ -24,7 +24,7 @@ func (item ItemStar) WriteString(buf *strings.Builder) {
 	buf.WriteRune('*')
 }
 
-func matchStar(part string, nextItems []InnerItem) (found bool) {
+func matchStar(part string, nextItems []Item) (found bool) {
 	if part == "" && len(nextItems) == 0 {
 		return true
 	}
@@ -82,6 +82,6 @@ LOOP:
 	return
 }
 
-func (item ItemStar) Match(part string, nextItems []InnerItem) (found bool) {
+func (item ItemStar) Match(part string, nextItems []Item) (found bool) {
 	return matchStar(part, nextItems)
 }

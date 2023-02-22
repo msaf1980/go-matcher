@@ -4,19 +4,20 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/msaf1980/go-matcher/pkg/globs"
+	"github.com/msaf1980/go-matcher/pkg/items"
 	"github.com/msaf1980/go-matcher/pkg/utils"
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 // GlobMatcher is dotted-separated segment glob matcher, like a.b.[c-e]?.{f-o}*, writted for graphite project
 type GlobMatcher struct {
-	Root  map[int]*NodeItem
+	Root  map[int]*globs.NodeItem
 	Globs map[string]int
 }
 
 func NewGlobMatcher() *GlobMatcher {
 	return &GlobMatcher{
-		Root:  make(map[int]*NodeItem),
+		Root:  make(map[int]*globs.NodeItem),
 		Globs: make(map[string]int),
 	}
 }
@@ -52,12 +53,12 @@ func (w *GlobMatcher) AddIndexed(glob string, termIdx int, buf *strings.Builder)
 	return
 }
 
-func (w *GlobMatcher) parseItems(glob string, termIdx int, buf *strings.Builder) (newGlob string, lastNode *NodeItem, err error) {
-	glob, partsCount := wildcards.PathLevel(glob)
+func (w *GlobMatcher) parseItems(glob string, termIdx int, buf *strings.Builder) (newGlob string, lastNode *globs.NodeItem, err error) {
+	glob, partsCount := items.PathLevel(glob)
 
 	node, ok := w.Root[partsCount]
 	if !ok {
-		node = &NodeItem{}
+		node = &globs.NodeItem{}
 		w.Root[partsCount] = node
 	}
 	buf.Reset()
@@ -78,7 +79,7 @@ func (w *GlobMatcher) Match(path string) (globs []string) {
 	if path == "" {
 		return nil
 	}
-	path, partsCount := wildcards.PathLevel(path)
+	path, partsCount := items.PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
 		globs = make([]string, 0, utils.Min(4, len(node.Childs)))
 		node.Match(path, &globs)
@@ -92,7 +93,7 @@ func (w *GlobMatcher) MatchB(path string, globs *[]string) {
 	if path == "" {
 		return
 	}
-	path, partsCount := wildcards.PathLevel(path)
+	path, partsCount := items.PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
 		node.Match(path, globs)
 	}
@@ -102,7 +103,7 @@ func (w *GlobMatcher) MatchIndexed(path string) (globs []int) {
 	if path == "" {
 		return nil
 	}
-	path, partsCount := wildcards.PathLevel(path)
+	path, partsCount := items.PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
 		globs = make([]int, 0, utils.Min(4, len(node.Childs)))
 		node.MatchIndexed(path, &globs)
@@ -116,7 +117,7 @@ func (w *GlobMatcher) MatchIndexedB(path string, globs *[]int) {
 	if path == "" {
 		return
 	}
-	path, partsCount := wildcards.PathLevel(path)
+	path, partsCount := items.PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
 		node.MatchIndexed(path, globs)
 		sort.Ints(*globs)
@@ -128,7 +129,7 @@ func (w *GlobMatcher) MatchFirst(path string, globIndex *int) {
 	if path == "" {
 		return
 	}
-	path, partsCount := wildcards.PathLevel(path)
+	path, partsCount := items.PathLevel(path)
 	if node, ok := w.Root[partsCount]; ok {
 		node.MatchFirst(path, globIndex)
 	}

@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 import (
 	"math"
@@ -110,11 +110,11 @@ func (item *ItemList) WriteString(buf *strings.Builder) {
 	buf.WriteRune('}')
 }
 
-func (item *ItemList) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+func (item *ItemList) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
 	return -1, false, 0
 }
 
-func (item *ItemList) Match(part string, nextItems []InnerItem) (found bool) {
+func (item *ItemList) Match(part string, nextItems []Item) (found bool) {
 	l := len(part)
 	if l < item.ValsMin {
 		return
@@ -145,7 +145,7 @@ LOOP:
 }
 
 // func NewItemList return optimized version of InnerItem
-func NewItemList(vals []string) (item InnerItem, minLen, maxLen int) {
+func NewItemList(vals []string) (item Item, minLen, maxLen int) {
 	if len(vals) == 0 {
 		return
 	}

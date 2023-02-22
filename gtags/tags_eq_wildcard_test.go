@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestTaggedTermListEqual_Wildcard(t *testing.T) {
@@ -17,9 +17,9 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
-					Glob: &wildcards.WildcardItems{
+					Glob: &items.NodeItem{
 						MinSize: 1, MaxSize: -1, P: "c",
-						Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+						Inners: []items.Item{items.ItemStar{}},
 					},
 				},
 			},
@@ -33,9 +33,9 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
-					Glob: &wildcards.WildcardItems{
+					Glob: &items.NodeItem{
 						MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
-						Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+						Inners: []items.Item{items.ItemStar{}},
 					},
 				},
 			},
@@ -51,12 +51,12 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a.b"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{q,qa}c.a", HasWildcard: true,
-					Glob: &wildcards.WildcardItems{
+					Glob: &items.NodeItem{
 						P: "a", Suffix: "c.a", MinSize: 7, MaxSize: 9,
-						Inners: []wildcards.InnerItem{
-							&wildcards.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
-							wildcards.ItemRune('Z'),
-							&wildcards.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
+						Inners: []items.Item{
+							&items.ItemList{Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2},
+							items.ItemRune('Z'),
+							&items.ItemList{Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2},
 						},
 					},
 				},
@@ -84,9 +84,9 @@ func TestTaggedTermListEqual_Wildcard(t *testing.T) {
 				{Key: "__name__", Op: TaggedTermEq, Value: "a"},
 				{
 					Key: "b", Op: TaggedTermEq, Value: "a*???c", HasWildcard: true,
-					Glob: &wildcards.WildcardItems{
+					Glob: &items.NodeItem{
 						P: "a", Suffix: "c", MinSize: 5, MaxSize: -1,
-						Inners: []wildcards.InnerItem{wildcards.ItemNStar(3)},
+						Inners: []items.Item{items.ItemNStar(3)},
 					},
 				},
 			},
@@ -115,9 +115,9 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c*", HasWildcard: true,
-										Glob: &wildcards.WildcardItems{
+										Glob: &items.NodeItem{
 											MinSize: 1, MaxSize: -1, P: "c",
-											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+											Inners: []items.Item{items.ItemStar{}},
 										},
 									},
 									Terminated: []string{
@@ -151,9 +151,9 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "c*.a", HasWildcard: true,
-										Glob: &wildcards.WildcardItems{
+										Glob: &items.NodeItem{
 											MinSize: 3, MaxSize: -1, P: "c", Suffix: ".a",
-											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+											Inners: []items.Item{items.ItemStar{}},
 										},
 									},
 									Terminated: []string{
@@ -190,14 +190,14 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "a{a,bc}Z{q,qa}c.a",
 										HasWildcard: true,
-										Glob: &wildcards.WildcardItems{
+										Glob: &items.NodeItem{
 											MinSize: 7, MaxSize: 9, P: "a", Suffix: "c.a",
-											Inners: []wildcards.InnerItem{
-												&wildcards.ItemList{
+											Inners: []items.Item{
+												&items.ItemList{
 													Vals: []string{"a", "bc"}, ValsMin: 1, ValsMax: 2,
 												},
-												wildcards.ItemRune('Z'),
-												&wildcards.ItemList{
+												items.ItemRune('Z'),
+												&items.ItemList{
 													Vals: []string{"q", "qa"}, ValsMin: 1, ValsMax: 2,
 												},
 											},
@@ -265,9 +265,9 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "a*???c", HasWildcard: true,
-										Glob: &wildcards.WildcardItems{
+										Glob: &items.NodeItem{
 											P: "a", Suffix: "c", MinSize: 5, MaxSize: -1,
-											Inners: []wildcards.InnerItem{wildcards.ItemNStar(3)},
+											Inners: []items.Item{items.ItemNStar(3)},
 										},
 									},
 									Terminated: []string{
@@ -314,9 +314,9 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "caZ*", HasWildcard: true,
-										Glob: &wildcards.WildcardItems{
+										Glob: &items.NodeItem{
 											MinSize: 3, MaxSize: -1, P: "caZ",
-											Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+											Inners: []items.Item{items.ItemStar{}},
 										},
 									},
 									Terminated: []string{
@@ -349,10 +349,10 @@ func TestTagsMatcherEqual_Wildcard(t *testing.T) {
 								{
 									Term: &TaggedTerm{
 										Key: "b", Op: TaggedTermEq, Value: "aaZQstLT*INN*zaSTltl",
-										HasWildcard: true, Glob: &wildcards.WildcardItems{
+										HasWildcard: true, Glob: &items.NodeItem{
 											P: "aaZQstLT", Suffix: "zaSTltl", MinSize: 18, MaxSize: -1,
-											Inners: []wildcards.InnerItem{
-												wildcards.ItemStar{}, wildcards.ItemString("INN"), wildcards.ItemStar{},
+											Inners: []items.Item{
+												items.ItemStar{}, items.ItemString("INN"), items.ItemStar{},
 											},
 										},
 									},

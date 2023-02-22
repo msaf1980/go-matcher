@@ -7,8 +7,9 @@ import (
 	"strings"
 
 	"github.com/msaf1980/go-matcher/pkg/escape"
+	"github.com/msaf1980/go-matcher/pkg/globs"
+	"github.com/msaf1980/go-matcher/pkg/items"
 	"github.com/msaf1980/go-matcher/pkg/utils"
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 // Based on github.com/go-graphite/graphite-clickhouse/finder/tagged.go
@@ -34,17 +35,18 @@ type TaggedTerm struct {
 	Key         string
 	Op          TaggedTermOp
 	Value       string
-	HasWildcard bool                     // only for TaggedTermEq
-	Glob        *wildcards.WildcardItems // glob macher if HasWildcard
-	Re          *regexp.Regexp           // regexp
+	HasWildcard bool            // only for TaggedTermEq
+	Glob        *items.NodeItem // glob macher if HasWildcard
+	Re          *regexp.Regexp  // regexp
 }
 
 // Build compile regexp/glob
 func (term *TaggedTerm) Build() (err error) {
 	if term.HasWildcard {
-		term.Glob = new(wildcards.WildcardItems)
-		if err = term.Glob.Parse(term.Value); err != nil {
-			return
+		if glob, err := globs.ParseGlob(term.Value); err == nil {
+			term.Glob = &glob
+		} else {
+			return err
 		}
 		if len(term.Glob.Inners) == 0 {
 			term.Value = term.Glob.P
@@ -107,7 +109,7 @@ func (t TaggedTermList) Rewrite(buf *strings.Builder) {
 		if t[i].HasWildcard {
 			start := buf.Len()
 			buf.WriteString(t[i].Glob.P)
-			wildcards.WriteInnerItems(t[i].Glob.Inners, buf)
+			items.WriteInnerItems(t[i].Glob.Inners, buf)
 			buf.WriteString(t[i].Glob.Suffix)
 			newValue := buf.String()[start:]
 			if newValue != t[i].Value {
@@ -278,9 +280,9 @@ func ParseTaggedConditions(conditions []string) (TaggedTermList, error) {
 		}
 		switch terms[i].Op {
 		case TaggedTermEq, TaggedTermNe:
-			if wildcards.HasWildcard(terms[i].Value) {
+			if items.HasWildcard(terms[i].Value) {
 				terms[i].HasWildcard = true
-				// terms[i].Glob = new(wildcards.WildcardItems)
+				// terms[i].Glob = new(items.NodeItems)
 				// if err := terms[i].Glob.Parse(terms[i].Value); err != nil {
 				// 	return nil, err
 				// }

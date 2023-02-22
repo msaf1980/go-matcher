@@ -4,7 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
+	"github.com/msaf1980/go-matcher/pkg/globs"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestNodeItem_Merge(t *testing.T) {
@@ -12,12 +13,12 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #all", globs: []string{"a[a-]Z[Q]"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "aaZQ", Terminated: []string{"a[a-]Z[Q]", "aaZQ"},
-								WildcardItems: wildcards.WildcardItems{P: "aaZQ", MinSize: 4, MaxSize: 4},
+								NodeItem: items.NodeItem{P: "aaZQ", MinSize: 4, MaxSize: 4},
 							},
 						},
 					},
@@ -30,14 +31,14 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #prefix", globs: []string{"a[a-]Z[Q]*"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "aaZQ*", Terminated: []string{"a[a-]Z[Q]*", "aaZQ*"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "aaZQ", MinSize: 4, MaxSize: -1,
-									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+									Inners: []items.Item{items.ItemStar{}},
 								},
 							},
 						},
@@ -54,17 +55,17 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #suffix", globs: []string{"a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node:       "aaZQstLT*INN*zaSTltl",
 								Terminated: []string{"a[a-]Z[Q]st{LT}*I{NN}*[z-][a]ST{lt}l", "aaZQstLT*INN*zaSTltl"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "aaZQstLT", Suffix: "zaSTltl", MinSize: 18, MaxSize: -1,
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemStar{}, wildcards.ItemString("INN"),
-										wildcards.ItemStar{},
+									Inners: []items.Item{
+										items.ItemStar{}, items.ItemString("INN"),
+										items.ItemStar{},
 									},
 								},
 							},
@@ -82,17 +83,17 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #suffix 2", globs: []string{"a[a-]Z[Q]st{LT}*{NN}I*[z-][a]ST{lt}l"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node:       "aaZQstLT*NNI*zaSTltl",
 								Terminated: []string{"a[a-]Z[Q]st{LT}*{NN}I*[z-][a]ST{lt}l", "aaZQstLT*NNI*zaSTltl"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "aaZQstLT", Suffix: "zaSTltl", MinSize: 18, MaxSize: -1,
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemStar{}, wildcards.ItemString("NNI"),
-										wildcards.ItemStar{},
+									Inners: []items.Item{
+										items.ItemStar{}, items.ItemString("NNI"),
+										items.ItemStar{},
 									},
 								},
 							},
@@ -110,14 +111,14 @@ func TestNodeItem_Merge(t *testing.T) {
 		{
 			name: "merge strings #suffix 3", globs: []string{"a[a-]Z[Q]*[a]c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "aaZQ*ac", Terminated: []string{"a[a-]Z[Q]*[a]c", "aaZQ*ac"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "aaZQ", Suffix: "ac", MinSize: 6, MaxSize: -1,
-									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+									Inners: []items.Item{items.ItemStar{}},
 								},
 							},
 						},

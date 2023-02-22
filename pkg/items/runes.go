@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 import (
 	"sort"
@@ -114,7 +114,7 @@ func (item ItemRuneRanges) Strings() []string {
 	return nil
 }
 
-func (item ItemRuneRanges) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+func (item ItemRuneRanges) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
 	support = true
 	for i, c := range part {
 		if item.matchRune(c) {
@@ -142,7 +142,7 @@ func (item ItemRuneRanges) matchRune(c rune) bool {
 	return false
 }
 
-func (item ItemRuneRanges) Match(part string, nextItems []InnerItem) (found bool) {
+func (item ItemRuneRanges) Match(part string, nextItems []Item) (found bool) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		if item.matchRune(c) {
 			found = true
@@ -175,7 +175,7 @@ func (item ItemRuneMap) Strings() []string {
 	return nil
 }
 
-func (item ItemRuneMap) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+func (item ItemRuneMap) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
 	support = true
 	for i, c := range part {
 		if _, ok := item[c]; ok {
@@ -187,7 +187,7 @@ func (item ItemRuneMap) Locate(part string, nextItems []InnerItem) (offset int, 
 	return
 }
 
-func (item ItemRuneMap) Match(part string, nextParts string, nextItems []InnerItem) (found bool) {
+func (item ItemRuneMap) Match(part string, nextParts string, nextItems []Item) (found bool) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		if _, ok := item[c]; ok {
 			found = true

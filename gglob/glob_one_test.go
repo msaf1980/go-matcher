@@ -3,7 +3,8 @@ package gglob
 import (
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
+	"github.com/msaf1980/go-matcher/pkg/globs"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestGlobMatcher_One(t *testing.T) {
@@ -12,14 +13,14 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"?"}`, globs: []string{"?"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "?", Terminated: []string{"?"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									MinSize: 1, MaxSize: 1,
-									Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+									Inners: []items.Item{items.ItemOne{}},
 								},
 							},
 						},
@@ -33,14 +34,14 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"a?"}`, globs: []string{"a?"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a?", Terminated: []string{"a?"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", MinSize: 2, MaxSize: 2,
-									Inners: []wildcards.InnerItem{wildcards.ItemOne{}},
+									Inners: []items.Item{items.ItemOne{}},
 								},
 							},
 						},
@@ -54,14 +55,14 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"a?c"}`, globs: []string{"a?c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a?c", Terminated: []string{"a?c"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", MinSize: 3, MaxSize: 3,
-									Inners: []wildcards.InnerItem{wildcards.ItemOne{}}, Suffix: "c",
+									Inners: []items.Item{items.ItemOne{}}, Suffix: "c",
 								},
 							},
 						},
@@ -75,17 +76,17 @@ func TestGlobMatcher_One(t *testing.T) {
 		{
 			name: `{"a?[c]?d"}`, globs: []string{"a?[c]?d"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a?c?d", Terminated: []string{"a?[c]?d", "a?c?d"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", Suffix: "d", MinSize: 5, MaxSize: 5,
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemOne{},
-										wildcards.ItemRune('c'),
-										wildcards.ItemOne{},
+									Inners: []items.Item{
+										items.ItemOne{},
+										items.ItemRune('c'),
+										items.ItemOne{},
 									},
 								},
 							},
@@ -95,6 +96,31 @@ func TestGlobMatcher_One(t *testing.T) {
 				Globs: map[string]int{"a?[c]?d": -1, "a?c?d": -1},
 			},
 			matchPaths: map[string][]string{"aZccd": {"a?[c]?d", "a?c?d"}, "aZcAd": {"a?[c]?d", "a?c?d"}},
+			missPaths:  []string{"", "ab", "ac", "ace", "aZDAd", "a.c"},
+		},
+		{
+			name: `{"a*?c?d"}`, globs: []string{"a*?c?d"},
+			wantW: &GlobMatcher{
+				Root: map[int]*globs.NodeItem{
+					1: {
+						Childs: []*globs.NodeItem{
+							{
+								Node: "a*?c?d", Terminated: []string{"a*?c?d"},
+								NodeItem: items.NodeItem{
+									P: "a", Suffix: "d", MinSize: 5, MaxSize: -1,
+									Inners: []items.Item{
+										items.ItemNStar(1),
+										items.ItemRune('c'),
+										items.ItemOne{},
+									},
+								},
+							},
+						},
+					},
+				},
+				Globs: map[string]int{"a*?c?d": -1},
+			},
+			matchPaths: map[string][]string{"aZccd": {"a*?c?d"}, "aZcAd": {"a*?c?d"}, "aIZcAd": {"a*?c?d"}},
 			missPaths:  []string{"", "ab", "ac", "ace", "aZDAd", "a.c"},
 		},
 	}

@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 import (
 	"strings"
@@ -24,11 +24,11 @@ func (item ItemNStar) Type() (typ ItemType, s string, c rune) {
 	return ItemTypeOther, "", utf8.RuneError
 }
 
-func (item ItemNStar) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+func (item ItemNStar) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
 	return -1, false, 0
 }
 
-func (item ItemNStar) Match(part string, nextItems []InnerItem) (found bool) {
+func (item ItemNStar) Match(part string, nextItems []Item) (found bool) {
 	l := len(part)
 	min := int(item)
 	if l < min {

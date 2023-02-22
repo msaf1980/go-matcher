@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 import (
 	"strings"
@@ -20,7 +20,7 @@ func (item ItemOne) WriteString(buf *strings.Builder) {
 	buf.WriteRune('?')
 }
 
-func (item ItemOne) Locate(part string, nextItems []InnerItem) (offset int, support bool, skip int) {
+func (item ItemOne) Locate(part string, nextItems []Item) (offset int, support bool, skip int) {
 	if len(nextItems) == 0 || part == "" {
 		return -1, false, 0
 	}
@@ -36,7 +36,7 @@ func (item ItemOne) Locate(part string, nextItems []InnerItem) (offset int, supp
 	return
 }
 
-func (item ItemOne) Match(part string, nextItems []InnerItem) (found bool) {
+func (item ItemOne) Match(part string, nextItems []Item) (found bool) {
 	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
 		found = true
 		part = part[n:]

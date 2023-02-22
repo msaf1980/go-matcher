@@ -4,7 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
+	"github.com/msaf1980/go-matcher/pkg/globs"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestGlobMatcher_NStar(t *testing.T) {
@@ -18,36 +19,36 @@ func TestGlobMatcher_NStar(t *testing.T) {
 				"a?*??c", "a*?*?*c", "a??*?*c", "a???**c",
 			},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a*?c", Terminated: []string{
 									"a******?c", "a*?c", "a?******c", "a**?****c",
 								},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", Suffix: "c", MinSize: 3, MaxSize: -1,
-									Inners: []wildcards.InnerItem{wildcards.ItemNStar(1)},
+									Inners: []items.Item{items.ItemNStar(1)},
 								},
 							},
 							{
 								Node: "a*??c", Terminated: []string{
 									"a?******?c", "a*??c", "a**??c", "a*?*?*c",
 								},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
-									Inners: []wildcards.InnerItem{wildcards.ItemNStar(2)},
+									Inners: []items.Item{items.ItemNStar(2)},
 								},
 							},
 							{
 								Node:       "a*???c",
 								Terminated: []string{"a?*??c", "a*???c", "a??*?*c", "a???**c"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									MinSize: 5,
 									MaxSize: -1,
 									P:       "a",
 									Suffix:  "c",
-									Inners:  []wildcards.InnerItem{wildcards.ItemNStar(3)},
+									Inners:  []items.Item{items.ItemNStar(3)},
 								},
 							},
 						},
@@ -82,13 +83,13 @@ func TestGlobMatcher_NStar(t *testing.T) {
 		{
 			name: `{"*"}`, globs: []string{"*"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "*", Terminated: []string{"*"},
-								WildcardItems: wildcards.WildcardItems{
-									Inners: []wildcards.InnerItem{wildcards.ItemStar{}}, MaxSize: -1,
+								NodeItem: items.NodeItem{
+									Inners: []items.Item{items.ItemStar{}}, MaxSize: -1,
 								},
 							},
 						},
@@ -102,14 +103,14 @@ func TestGlobMatcher_NStar(t *testing.T) {
 		{
 			name: `{"a*c"}`, globs: []string{"a*c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a*c", Terminated: []string{"a*c"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", Suffix: "c", MinSize: 2, MaxSize: -1,
-									Inners: []wildcards.InnerItem{wildcards.ItemStar{}},
+									Inners: []items.Item{items.ItemStar{}},
 								},
 							},
 						},
@@ -127,15 +128,15 @@ func TestGlobMatcher_NStar(t *testing.T) {
 		{
 			name: `{"a*b?c"}`, globs: []string{"a*b?c"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a*b?c", Terminated: []string{"a*b?c"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", Suffix: "c", MinSize: 4, MaxSize: -1,
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemStar{}, wildcards.ItemRune('b'), wildcards.ItemOne{},
+									Inners: []items.Item{
+										items.ItemStar{}, items.ItemRune('b'), items.ItemOne{},
 									},
 								},
 							},
@@ -155,16 +156,16 @@ func TestGlobMatcher_NStar(t *testing.T) {
 		{
 			name: `{"a*?_FIND*st"}`, globs: []string{"a*?_FIND*_st"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a*?_FIND*_st", Terminated: []string{"a*?_FIND*_st"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									P: "a", Suffix: "_st", MinSize: 10, MaxSize: -1,
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemNStar(1),
-										wildcards.ItemString("_FIND"), wildcards.ItemStar{},
+									Inners: []items.Item{
+										items.ItemNStar(1),
+										items.ItemString("_FIND"), items.ItemStar{},
 									},
 								},
 							},

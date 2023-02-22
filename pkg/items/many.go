@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 import (
 	"strings"
@@ -35,7 +35,7 @@ func stringAfter(s string, length int) (string, bool) {
 	return s, true
 }
 
-func (item ItemMany) Locate(part string, nextItems []InnerItem) (offset int, support bool, skip int) {
+func (item ItemMany) Locate(part string, nextItems []Item) (offset int, support bool, skip int) {
 	if len(nextItems) == 0 {
 		return -1, false, 0
 	}
@@ -57,7 +57,7 @@ func (item ItemMany) Locate(part string, nextItems []InnerItem) (offset int, sup
 	return
 }
 
-func (item ItemMany) Match(part string, nextItems []InnerItem) (found bool) {
+func (item ItemMany) Match(part string, nextItems []Item) (found bool) {
 	var ok bool
 	if part, ok = stringAfter(part, int(item)); !ok {
 		return false

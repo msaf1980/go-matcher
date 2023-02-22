@@ -4,7 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
+	"github.com/msaf1980/go-matcher/pkg/globs"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestGlobMatcher_Rune(t *testing.T) {
@@ -12,15 +13,15 @@ func TestGlobMatcher_Rune(t *testing.T) {
 		{
 			name: `{"[a-c]"}`, globs: []string{"[a-c]"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "[a-c]", Terminated: []string{"[a-c]"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									MinSize: 1, MaxSize: 1,
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemRuneRanges{{'a', 'c'}},
+									Inners: []items.Item{
+										items.ItemRuneRanges{{'a', 'c'}},
 									},
 								},
 							},
@@ -35,15 +36,15 @@ func TestGlobMatcher_Rune(t *testing.T) {
 		{
 			name: `{"[a-c]z"}`, globs: []string{"[a-c]z"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "[a-c]z", Terminated: []string{"[a-c]z"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									MinSize: 2, MaxSize: 2, Suffix: "z",
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemRuneRanges{{'a', 'c'}},
+									Inners: []items.Item{
+										items.ItemRuneRanges{{'a', 'c'}},
 									},
 								},
 							},
@@ -58,15 +59,15 @@ func TestGlobMatcher_Rune(t *testing.T) {
 		{
 			name: `{"[a-c]*"}`, globs: []string{"[a-c]*"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "[a-c]*", Terminated: []string{"[a-c]*"},
-								WildcardItems: wildcards.WildcardItems{
+								NodeItem: items.NodeItem{
 									MinSize: 1, MaxSize: -1,
-									Inners: []wildcards.InnerItem{
-										wildcards.ItemRuneRanges{{'a', 'c'}}, wildcards.ItemStar{},
+									Inners: []items.Item{
+										items.ItemRuneRanges{{'a', 'c'}}, items.ItemStar{},
 									},
 								},
 							},
@@ -85,12 +86,12 @@ func TestGlobMatcher_Rune(t *testing.T) {
 		{
 			name: `{"[a-]"}`, globs: []string{"[a-]"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a", Terminated: []string{"[a-]", "a"},
-								WildcardItems: wildcards.WildcardItems{P: "a", MinSize: 1, MaxSize: 1},
+								NodeItem: items.NodeItem{P: "a", MinSize: 1, MaxSize: 1},
 							},
 						},
 					},
@@ -103,12 +104,12 @@ func TestGlobMatcher_Rune(t *testing.T) {
 		{
 			name: `{"a[a-]Z"}`, globs: []string{"a[a-]Z"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "aaZ", Terminated: []string{"a[a-]Z", "aaZ"},
-								WildcardItems: wildcards.WildcardItems{P: "aaZ", MinSize: 3, MaxSize: 3},
+								NodeItem: items.NodeItem{P: "aaZ", MinSize: 3, MaxSize: 3},
 							},
 						},
 					},
@@ -121,12 +122,12 @@ func TestGlobMatcher_Rune(t *testing.T) {
 		{
 			name: `{"a[a-]Z[Q]"}`, globs: []string{"a[a-]Z[Q]"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "aaZQ", Terminated: []string{"a[a-]Z[Q]", "aaZQ"},
-								WildcardItems: wildcards.WildcardItems{P: "aaZQ", MinSize: 4, MaxSize: 4},
+								NodeItem: items.NodeItem{P: "aaZQ", MinSize: 4, MaxSize: 4},
 							},
 						},
 					},
@@ -155,12 +156,12 @@ func TestGlobMatcher_Rune_Broken(t *testing.T) {
 		{
 			name: `{"[]a"}`, globs: []string{"[]a"},
 			wantW: &GlobMatcher{
-				Root: map[int]*NodeItem{
+				Root: map[int]*globs.NodeItem{
 					1: {
-						Childs: []*NodeItem{
+						Childs: []*globs.NodeItem{
 							{
 								Node: "a", Terminated: []string{"[]a", "a"},
-								WildcardItems: wildcards.WildcardItems{P: "a", MinSize: 1, MaxSize: 1},
+								NodeItem: items.NodeItem{P: "a", MinSize: 1, MaxSize: 1},
 							},
 						},
 					},

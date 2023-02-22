@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 import (
 	"strings"
@@ -19,7 +19,7 @@ func (item ItemString) WriteString(buf *strings.Builder) {
 	buf.WriteString(string(item))
 }
 
-func (item ItemString) Locate(part string, nextItems []InnerItem) (offset int, support bool, _ int) {
+func (item ItemString) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
 	s := string(item)
 	support = true
 	if offset = strings.Index(part, s); offset != -1 {
@@ -28,7 +28,7 @@ func (item ItemString) Locate(part string, nextItems []InnerItem) (offset int, s
 	return
 }
 
-func (item ItemString) Match(part string, nextItems []InnerItem) (found bool) {
+func (item ItemString) Match(part string, nextItems []Item) (found bool) {
 	s := string(item)
 	if strings.HasPrefix(part, s) {
 		// strip prefix

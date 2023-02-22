@@ -1,4 +1,4 @@
-package wildcards
+package items
 
 type ErrNodeMissmatch struct {
 	Type string

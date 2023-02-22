@@ -1,11 +1,11 @@
-package gglob
+package globs
 
 import (
 	"sort"
 	"strings"
 
+	"github.com/msaf1980/go-matcher/pkg/items"
 	"github.com/msaf1980/go-matcher/pkg/utils"
-	"github.com/msaf1980/go-matcher/pkg/wildcards"
 )
 
 // NodeItem contains pattern node item (with childs and fixed depth)
@@ -15,7 +15,7 @@ type NodeItem struct {
 	Terminated []string // end of chain (resulting glob)
 	TermIndex  []int    // rule num of end of chain (resulting glob), can be used in specific cases
 
-	wildcards.WildcardItems
+	items.NodeItem
 
 	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
 	Childs []*NodeItem // next possible parts slice
@@ -23,7 +23,7 @@ type NodeItem struct {
 
 func (node *NodeItem) WriteString(buf *strings.Builder) {
 	buf.WriteString(node.P)
-	wildcards.WriteInnerItems(node.Inners, buf)
+	items.WriteInnerItems(node.Inners, buf)
 	buf.WriteString(node.Suffix)
 }
 
@@ -201,11 +201,10 @@ func (node *NodeItem) ParseNode(glob string, termIdx int, buf *strings.Builder) 
 		found := false
 		part, nextParts, _ = strings.Cut(nextParts, ".")
 		if part == "" {
-			return glob, nil, wildcards.ErrNodeEmpty{glob}
+			return glob, nil, items.ErrNodeEmpty{glob}
 		}
 
-		lastNode = &NodeItem{Node: part}
-		if err = lastNode.Parse(part); err != nil {
+		if lastNode, err = Parse(part); err != nil {
 			return
 		}
 
@@ -257,7 +256,235 @@ func (node *NodeItem) ParseNode(glob string, termIdx int, buf *strings.Builder) 
 		i++
 	}
 	if lastNode == nil {
-		err = wildcards.ErrGlobNotExpanded{glob}
+		err = items.ErrGlobNotExpanded{glob}
+	}
+	return
+}
+
+func Parse(glob string) (node *NodeItem, err error) {
+	node = &NodeItem{Node: glob}
+	node.NodeItem, err = ParseGlob(glob)
+	return
+}
+
+func ParseGlob(glob string) (node items.NodeItem, err error) {
+	pos := items.IndexWildcard(glob)
+	if pos == -1 {
+		node.P = glob
+	} else {
+		if pos > 0 {
+			node.P = glob[:pos] // prefix
+			glob = glob[pos:]
+			node.MinSize = len(node.P)
+			node.MaxSize = len(node.P)
+		}
+		end := items.IndexLastWildcard(glob)
+		if end == 0 && glob[0] != '?' && glob[0] != '*' {
+			err = items.ErrNodeUnclosed{glob}
+			return
+		}
+		if end < len(glob)-1 {
+			end++
+			node.Suffix = glob[end:]
+			glob = glob[:end]
+			node.MinSize += len(node.Suffix)
+			node.MaxSize += len(node.Suffix)
+		}
+
+		switch glob {
+		case "*":
+			node.Inners = []items.Item{items.ItemStar{}}
+			node.MaxSize = -1 // unlimited
+		case "?":
+			node.Inners = []items.Item{items.ItemOne{}}
+			node.MinSize++
+			if node.MaxSize != -1 {
+				node.MaxSize++
+			}
+		default:
+			var (
+				inner    items.Item
+				min, max int
+			)
+			innerCount := items.WildcardCount(glob)
+			inners := make([]items.Item, 0, innerCount)
+
+			for glob != "" {
+				inner, glob, min, max, err = NextWildcardItem(glob)
+				if err != nil {
+					return
+				}
+				if inner == nil {
+					continue
+				}
+				node.MinSize += min
+				if node.MaxSize != -1 {
+					if max == -1 {
+						node.MaxSize = -1
+					} else {
+						node.MaxSize += max
+					}
+				}
+				// try to in-place merge
+				last := len(inners) - 1
+				switch v := inner.(type) {
+				case items.ItemString:
+					s := string(v)
+					if last == -1 {
+						if node.P == "" {
+							node.P = s
+						} else {
+							node.P += s
+						}
+					} else {
+						switch vv := inners[last].(type) {
+						case items.ItemString:
+							vv += v
+							inners[last] = vv
+						case items.ItemRune:
+							var sb strings.Builder
+							sb.Grow(len(s) + 1)
+							sb.WriteRune(rune(vv))
+							sb.WriteString(s)
+							inners[len(inners)-1] = items.ItemString(sb.String())
+						default:
+							inners = append(inners, inner)
+						}
+					}
+				case items.ItemRune:
+					c := rune(v)
+					if last == -1 {
+						if node.P == "" {
+							node.P = string(c)
+						} else {
+							var sb strings.Builder
+							sb.Grow(len(node.P) + 1)
+							sb.WriteString(node.P)
+							sb.WriteRune(c)
+							node.P = sb.String()
+						}
+					} else {
+						switch vv := inners[last].(type) {
+						case items.ItemString:
+							var sb strings.Builder
+							sb.Grow(len(vv) + 1)
+							sb.WriteString(string(vv))
+							sb.WriteRune(c)
+							inners[last] = items.ItemString(sb.String())
+						case items.ItemRune:
+							var sb strings.Builder
+							sb.Grow(2)
+							sb.WriteRune(rune(vv))
+							sb.WriteRune(c)
+							inners[last] = items.ItemString(sb.String())
+						default:
+							inners = append(inners, inner)
+						}
+					}
+				case items.ItemOne:
+					if last == -1 {
+						inners = append(inners, inner)
+					} else {
+						switch vv := inners[last].(type) {
+						case items.ItemOne:
+							inners[last] = items.ItemMany(2)
+						case items.ItemMany:
+							vv++
+							inners[last] = vv
+						case items.ItemStar:
+							inners[last] = items.ItemNStar(1)
+						case items.ItemNStar:
+							vv++
+							inners[last] = vv
+						default:
+							inners = append(inners, inner)
+						}
+					}
+				case items.ItemMany:
+					if last == -1 {
+						inners = append(inners, inner)
+					} else {
+						switch vv := inners[last].(type) {
+						case items.ItemOne:
+							v++
+							inners[last] = v
+						case items.ItemMany:
+							v += vv
+						case items.ItemStar:
+							inners[last] = items.ItemNStar(v)
+						case items.ItemNStar:
+							vv += items.ItemNStar(v)
+							inners[last] = vv
+						default:
+							inners = append(inners, inner)
+						}
+					}
+				case items.ItemStar:
+					if last == -1 {
+						inners = append(inners, inner)
+					} else {
+						switch vv := inners[last].(type) {
+						case items.ItemOne:
+							inners[last] = items.ItemNStar(1)
+						case items.ItemMany:
+							inners[last] = items.ItemNStar(vv)
+						case items.ItemStar, items.ItemNStar: // dedupicate
+						default:
+							inners = append(inners, inner)
+						}
+					}
+				case items.ItemNStar:
+					if last == -1 {
+						inners = append(inners, inner)
+					} else {
+						switch vv := inners[last].(type) {
+						case items.ItemOne:
+							v++
+						case items.ItemMany:
+							v += items.ItemNStar(vv)
+						case items.ItemStar: // dedupicate
+						case items.ItemNStar:
+							v += vv
+						default:
+							inners = append(inners, inner)
+						}
+					}
+				default:
+					inners = append(inners, inner)
+				}
+			}
+			if len(inners) > 1 {
+				last := len(inners) - 1
+				switch vv := inners[last].(type) {
+				case items.ItemString:
+					if node.Suffix == "" {
+						node.Suffix = string(vv)
+					} else {
+						node.Suffix = string(vv) + node.Suffix
+					}
+					inners = inners[:last]
+				case items.ItemRune:
+					var sb strings.Builder
+					sb.Grow(len(node.Suffix) + 1)
+					sb.WriteRune(rune(vv))
+					sb.WriteString(node.Suffix)
+					node.Suffix = sb.String()
+					inners = inners[:last]
+				}
+			}
+			if len(inners) == 0 {
+				if node.Suffix != "" {
+					if node.P == "" {
+						node.P = node.Suffix
+					} else {
+						node.P += node.Suffix
+					}
+					node.Suffix = ""
+				}
+			} else {
+				node.Inners = inners
+			}
+		}
 	}
 	return
 }
