@@ -1,6 +1,9 @@
 package utils
 
-import "unsafe"
+import (
+	"unicode/utf8"
+	"unsafe"
+)
 
 // CloneString returns a fresh copy of s.
 // It guarantees to make a copy of s into a new allocation,
@@ -24,4 +27,21 @@ func CloneString(s string) string {
 // UnsafeString returns the string under byte buffer
 func UnsafeString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+func StringSkipRunes(s string, runes int) (next int) {
+	for i := 0; i < runes; i++ {
+		_, n := utf8.DecodeRuneInString(s)
+		if n == 0 {
+			// failback
+			return -1
+		}
+		s = s[n:]
+		next += n
+	}
+	return
+}
+
+func SplitString(s string, start int) (string, string) {
+	return s[:start], s[start:]
 }

@@ -2,44 +2,72 @@ package items
 
 import (
 	"strings"
-	"unicode/utf8"
 )
 
-type ItemString string
-
-func (item ItemString) Type() (typ ItemType, s string, c rune) {
-	return ItemTypeString, string(item), utf8.RuneError
+type String struct {
+	S string
 }
 
-func (item ItemString) Strings() []string {
-	return nil
+func NewString(s string) Item {
+	return &String{S: s}
 }
 
-func (item ItemString) WriteString(buf *strings.Builder) {
-	buf.WriteString(string(item))
+func (item *String) WriteString(buf *strings.Builder) string {
+	l := buf.Len()
+	buf.WriteString(item.S)
+	return buf.String()[l:]
 }
 
-func (item ItemString) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
-	s := string(item)
-	support = true
-	if offset = strings.Index(part, s); offset != -1 {
-		offset += len(s)
+func (item *String) String() string {
+	var buf strings.Builder
+	return item.WriteString(&buf)
+}
+
+func (item *String) Add(s string) {
+	item.S += s
+}
+
+func (item *String) Prepend(s string) {
+	item.S = s + item.S
+}
+
+func (item *String) AddByte(b byte) {
+	item.S += string(b)
+}
+
+func (item *String) PrependByte(b byte) {
+	item.S = string(b) + item.S
+}
+
+func (item *String) AddRune(r rune) {
+	item.S += string(r)
+}
+
+func (item *String) PrependRune(r rune) {
+	item.S = string(r) + item.S
+}
+
+func (item *String) MinLen() int {
+	return len(item.S)
+}
+
+func (item *String) MaxLen() int {
+	return len(item.S)
+}
+
+func (item *String) Find(s string) (index, length int, support FindFlag) {
+	if index = strings.Index(s, item.S); index != -1 {
+		length = len(item.S)
 	}
 	return
 }
 
-func (item ItemString) Match(part string, nextItems []Item) (found bool) {
-	s := string(item)
-	if strings.HasPrefix(part, s) {
+func (item *String) Match(s string) (offset int, support FindFlag) {
+	if strings.HasPrefix(s, item.S) {
 		// strip prefix
-		found = true
-		part = part[len(s):]
-
-		if len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 {
-			found = false
-		}
+		offset = len(item.S)
+	} else {
+		offset = -1
 	}
 	return
 }

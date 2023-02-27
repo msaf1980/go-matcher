@@ -6,7 +6,7 @@ type ErrNodeMissmatch struct {
 }
 
 func (e ErrNodeMissmatch) Error() string {
-	return "node type '" + e.Type + "'mismatch: " + e.Node
+	return "node type '" + e.Type + "' mismatch: " + e.Node
 }
 
 type ErrNodeNotEnd struct {

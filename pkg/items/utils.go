@@ -5,42 +5,11 @@ import (
 	"unicode/utf8"
 )
 
-func SplitString(s string, start int) (string, string) {
-	return s[:start], s[start:]
-}
-
-func PathLevel(path string) (string, int) {
-	if path == "" {
-		return path, 0
+func AddMaxLen(a, b int) int {
+	if a > -1 && b > -1 {
+		return a + b
 	}
-
-	if path[len(path)-1] == '.' {
-		return path[:len(path)-1], strings.Count(path, ".")
-	}
-
-	return path, strings.Count(path, ".") + 1
-}
-
-func PathSplit(path string) (parts []string) {
-	if path == "" {
-		return []string{}
-	}
-
-	if path[len(path)-1] == '.' {
-		parts = strings.Split(path[:len(path)-1], ".")
-	} else {
-		parts = strings.Split(path, ".")
-	}
-	return
-}
-
-func HasEmptyParts(parts []string) bool {
-	for _, part := range parts {
-		if part == "" {
-			return true
-		}
-	}
-	return false
+	return -1
 }
 
 func WildcardCount(target string) (n int) {

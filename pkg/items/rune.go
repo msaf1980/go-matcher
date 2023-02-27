@@ -5,43 +5,64 @@ import (
 	"unicode/utf8"
 )
 
-// ItemRune is a rune symbol (utf-8 char)
-type ItemRune rune
+// Rune is a unicode symbol
+type Rune rune
 
-func (item ItemRune) Type() (typ ItemType, s string, c rune) {
-	return ItemTypeRune, "", rune(item)
+func (item Rune) Equal(a Item) bool {
+	if v, ok := a.(Rune); ok {
+		return item == v
+	}
+	return false
 }
 
-func (item ItemRune) Strings() []string {
-	return nil
-}
-
-func (item ItemRune) WriteString(buf *strings.Builder) {
+func (item Rune) WriteString(buf *strings.Builder) string {
+	l := buf.Len()
 	buf.WriteRune(rune(item))
+	return buf.String()[l:]
 }
 
-func (item ItemRune) Locate(part string, nextItems []Item) (offset int, support bool, _ int) {
-	support = true
+func (item Rune) String() string {
+	var buf strings.Builder
+	return item.WriteString(&buf)
+}
+
+func (item Rune) Append(s string) *String {
+	return &String{S: string(item) + s}
+}
+
+func (item Rune) AppendByte(b byte) *String {
+	return &String{S: string(item) + string(b)}
+}
+
+func (item Rune) AppendRune(r rune) *String {
+	return &String{S: string(item) + string(r)}
+}
+
+func (item Rune) MinLen() int {
+	return utf8.RuneLen(rune(item))
+}
+
+func (item Rune) MaxLen() int {
+	return utf8.RuneLen(rune(item))
+}
+
+func (item Rune) Find(s string) (index, length int, support FindFlag) {
 	c := rune(item)
-	if offset = strings.IndexRune(part, c); offset != -1 {
-		offset += 1
+	if index = strings.IndexRune(s, c); index != -1 {
+		length = utf8.RuneLen(c)
 	}
 	return
 }
 
-func (item ItemRune) Match(part string, nextItems []Item) (found bool) {
-	if c, n := utf8.DecodeRuneInString(part); c != utf8.RuneError {
+func (item Rune) Match(s string) (offset int, support FindFlag) {
+	if c, n := utf8.DecodeRuneInString(s); c != utf8.RuneError {
 		if c == rune(item) {
-			found = true
-			part = part[n:]
+			offset = n
+		} else {
+			offset = -1
 		}
-	}
-	if found {
-		if len(nextItems) > 0 {
-			found = nextItems[0].Match(part, nextItems[1:])
-		} else if part != "" && len(nextItems) == 0 {
-			found = false
-		}
+	} else {
+		offset = -1
 	}
 	return
 }
