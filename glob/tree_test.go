@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/msaf1980/go-matcher/pkg/items"
 	"github.com/msaf1980/go-matcher/pkg/tests"
 )
 
@@ -28,10 +29,17 @@ func mergeVerify(globs []string, index []int) []verify {
 	return v
 }
 
+type globTreeStr struct {
+	Root       *items.TreeItemStr
+	Globs      map[string]int
+	GlobsIndex map[int]string
+}
+
 type testGlobTree struct {
-	globs []string
-	want  *GlobTree
-	match map[string][]string
+	globs   []string
+	skipCmp bool // don't compare glob tree, only glob maps
+	want    *globTreeStr
+	match   map[string][]string
 }
 
 func runTestGlobTree(t *testing.T, n int, tt testGlobTree) {
@@ -45,14 +53,28 @@ func runTestGlobTree(t *testing.T, n int, tt testGlobTree) {
 			}
 		}
 
-		if !reflect.DeepEqual(gtree, tt.want) {
-			t.Fatalf("GlobTree(%#v) = %s", tt.globs, cmp.Diff(tt.want, gtree))
+		var globTree *globTreeStr
+		if tt.skipCmp {
+			globTree = &globTreeStr{
+				Globs:      gtree.Globs,
+				GlobsIndex: gtree.GlobsIndex,
+			}
+		} else {
+			globTree = &globTreeStr{
+				Root:       gtree.Root.StringItems(),
+				Globs:      gtree.Globs,
+				GlobsIndex: gtree.GlobsIndex,
+			}
 		}
+		if !reflect.DeepEqual(globTree, tt.want) {
+			t.Fatalf("GlobTree(%#v) = %s", tt.globs, cmp.Diff(tt.want, globTree))
+		}
+
 		verifyGlobTree(t, tt.globs, tt.match, gtree)
 	})
 }
 
-func verifyGlobTree(t *testing.T, globs []string, match map[string][]string, gtree *GlobTree) {
+func verifyGlobTree(t *testing.T, inGlobs []string, match map[string][]string, gtree *GlobTree) {
 	for path, wantGlobs := range match {
 		t.Run("#path="+path, func(t *testing.T) {
 			var (
@@ -69,24 +91,24 @@ func verifyGlobTree(t *testing.T, globs []string, match map[string][]string, gtr
 			sort.Ints(index)
 
 			if !reflect.DeepEqual(wantGlobs, globs) {
-				t.Fatalf("GlobTree(%#v).Match(%q) globs = %s", globs, path, cmp.Diff(wantGlobs, globs))
+				t.Fatalf("GlobTree(%#v).Match(%q) globs = %s", inGlobs, path, cmp.Diff(wantGlobs, globs))
 			}
 
 			if matched != len(globs) || len(globs) != len(index) {
-				t.Fatalf("GlobTree(%#v).Match(%q) = %d, want %d, index = %d", globs, path, matched, len(globs), len(index))
+				t.Fatalf("GlobTree(%#v).Match(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(globs), len(index))
 			}
 
 			for _, v := range verify {
 				if v.glob != gtree.GlobsIndex[v.index] {
 					t.Errorf("GlobTree(%#v).Match(%q) index = %d glob = %s, want %s",
-						globs, path, v.index, gtree.GlobsIndex[v.index], v.glob)
+						inGlobs, path, v.index, gtree.GlobsIndex[v.index], v.glob)
 				}
 			}
 
 			if len(index) > 0 {
 				if first != index[0] {
 					t.Errorf("GlobTree(%#v).Match(%q) first index = %d, want %d",
-						globs, path, first, index[0])
+						inGlobs, path, first, index[0])
 				}
 			}
 		})

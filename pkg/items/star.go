@@ -44,3 +44,8 @@ func (item Star) Match(s string) (offset int, support FindFlag) {
 	offset = utils.StringSkipRunes(s, int(item))
 	return
 }
+
+func (item Star) MatchLast(s string) (offset int, support FindFlag) {
+	support = FindNotSupported
+	return
+}

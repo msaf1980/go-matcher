@@ -42,6 +42,22 @@ func StringSkipRunes(s string, runes int) (next int) {
 	return
 }
 
+func StringSkipRunesLast(s string, runes int) (end int) {
+	l := len(s)
+	var n int
+	for i := 0; i < runes; i++ {
+		_, n = utf8.DecodeLastRuneInString(s)
+		if n == 0 {
+			// failback
+			return -1
+		}
+		s = s[:len(s)-n]
+		end += n
+	}
+	end = l - end
+	return
+}
+
 func SplitString(s string, start int) (string, string) {
 	return s[:start], s[start:]
 }

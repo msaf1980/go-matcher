@@ -66,3 +66,16 @@ func (item Rune) Match(s string) (offset int, support FindFlag) {
 	}
 	return
 }
+
+func (item Rune) MatchLast(s string) (offset int, support FindFlag) {
+	if c, n := utf8.DecodeLastRuneInString(s); c != utf8.RuneError {
+		if c == rune(item) {
+			offset = len(s) - n
+		} else {
+			offset = -1
+		}
+	} else {
+		offset = -1
+	}
+	return
+}

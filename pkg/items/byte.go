@@ -66,3 +66,11 @@ func (item Byte) Match(s string) (offset int, support FindFlag) {
 	}
 	return
 }
+
+func (item Byte) MatchLast(s string) (offset int, support FindFlag) {
+	n := len(s) - 1
+	if c := s[n]; c != byte(item) {
+		offset = -1
+	}
+	return
+}

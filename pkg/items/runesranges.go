@@ -47,3 +47,8 @@ func (item *RunesRanges) Match(s string) (offset int, support FindFlag) {
 	_, offset = item.StartsWith(s)
 	return
 }
+
+func (item *RunesRanges) MatchLast(s string) (offset int, support FindFlag) {
+	_, offset = item.EndsWith(s)
+	return
+}

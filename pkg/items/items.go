@@ -39,17 +39,26 @@ type Item interface {
 	//
 	// @length length of matched
 	//
-	// @support NotSupported, FindSupported, FindForwarded, FindStar
+	// @support NotSupported, FindDine, FindForwarded, FindStar
 	Find(s string) (index, length int, support FindFlag)
 
-	// Match is try to locate item from star and return
+	// Match is try to locate item on start and return
 	//
 	// return
 	//
 	// @offset index after item or -1 (if not found)
 	//
-	// @support FindNotSupported, FindList FindStar
+	// @support FindDone, FindNotSupported, FindList FindStar
 	Match(s string) (offset int, support FindFlag)
+
+	// Match is try to locate item on end and return
+	//
+	// return
+	//
+	// @offset index after item or -1 (if not found)
+	//
+	// @support FindDone, FindNotSupported
+	MatchLast(s string) (offset int, support FindFlag)
 }
 
 type ItemList interface {

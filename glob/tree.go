@@ -14,8 +14,19 @@ var (
 
 func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 	treeItem := rootTree
+
+	if gg.Suffix != "" {
+		newItem := items.LocateChildTreeItem(treeItem.Childs, gg.Suffix, true)
+		if newItem == nil {
+			node := items.NewNodeItem(gg.Suffix, items.NewString(gg.Suffix))
+			newItem = &items.TreeItem{NodeItem: node, Reverse: true}
+			treeItem.Childs = append(treeItem.Childs, newItem)
+		}
+		treeItem = newItem
+	}
+
 	if gg.Prefix != "" {
-		newItem := items.LocateChildTreeItem(treeItem.Childs, gg.Prefix)
+		newItem := items.LocateChildTreeItem(treeItem.Childs, gg.Prefix, false)
 		if newItem == nil {
 			node := items.NewNodeItem(gg.Prefix, items.NewString(gg.Prefix))
 			newItem = &items.TreeItem{NodeItem: node}
@@ -25,19 +36,9 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 	}
 
 	for i := 0; i < len(gg.Items); i++ {
-		newItem := items.LocateChildTreeItem(treeItem.Childs, gg.Items[i].Node)
+		newItem := items.LocateChildTreeItem(treeItem.Childs, gg.Items[i].Node, false)
 		if newItem == nil {
 			newItem = &items.TreeItem{NodeItem: gg.Items[i]}
-			treeItem.Childs = append(treeItem.Childs, newItem)
-		}
-		treeItem = newItem
-	}
-
-	if gg.Suffix != "" {
-		newItem := items.LocateChildTreeItem(treeItem.Childs, gg.Suffix)
-		if newItem == nil {
-			node := items.NewNodeItem(gg.Suffix, items.NewString(gg.Suffix))
-			newItem = &items.TreeItem{NodeItem: node}
 			treeItem.Childs = append(treeItem.Childs, newItem)
 		}
 		treeItem = newItem
@@ -54,6 +55,8 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 }
 
 // GlobTree is batch glob matcher
+//
+// TODO: need to be optimize, bad perfomance
 type GlobTree struct {
 	Root       *items.TreeItem
 	Globs      map[string]int

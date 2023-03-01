@@ -71,3 +71,13 @@ func (item *String) Match(s string) (offset int, support FindFlag) {
 	}
 	return
 }
+
+func (item *String) MatchLast(s string) (offset int, support FindFlag) {
+	if strings.HasSuffix(s, item.S) {
+		// strip suffix
+		offset = len(s) - len(item.S)
+	} else {
+		offset = -1
+	}
+	return
+}

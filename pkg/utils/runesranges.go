@@ -301,14 +301,14 @@ func (rs *RunesRanges) Index(s string) (pos int, c rune, n int) {
 	return -1, utf8.RuneError, 0
 }
 
-// // Index return index in string whether symbol is first inside.
+// StartsWith check than first symbol in string in range
 func (rs *RunesRanges) StartsWith(s string) (c rune, n int) {
 	if s == "" {
 		return utf8.RuneError, -1
 	}
 
 	// detect ASCII
-	if len(rs.UnicodeRanges) == 0 || s[0] < utf8.RuneSelf {
+	if s[0] < utf8.RuneSelf {
 		if rs.ASCII.Contains(s[0]) {
 			return rune(s[0]), 1
 		} else {
@@ -319,6 +319,35 @@ func (rs *RunesRanges) StartsWith(s string) (c rune, n int) {
 	// Unicode
 	c, n = utf8.DecodeRuneInString(s)
 	if c != utf8.RuneError && rs.ContainsUnicode(c) {
+		return
+	}
+
+	return utf8.RuneError, -1
+}
+
+// EndsWith check than first symbol in string in range
+func (rs *RunesRanges) EndsWith(s string) (c rune, n int) {
+	if s == "" {
+		return utf8.RuneError, -1
+	}
+
+	c, n = utf8.DecodeLastRuneInString(s)
+	if c == utf8.RuneError {
+		return utf8.RuneError, -1
+	}
+
+	// detect ASCII
+	if c < utf8.RuneSelf {
+		if rs.ASCII.Contains(byte(c)) {
+			return c, 1
+		} else {
+			return utf8.RuneError, -1
+		}
+	}
+
+	// Unicode
+	if rs.ContainsUnicode(c) {
+		n = len(s) - n
 		return
 	}
 

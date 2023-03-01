@@ -16,14 +16,14 @@ type TreeItem struct {
 
 // GGlobTree is batch glob matcher (dot-separated, like a.b*.c), writted for graphite project
 type GGlobTree struct {
-	Root       map[int]*TreeItem
+	Root       map[int][]*TreeItem
 	Globs      map[string]int
 	GlobsIndex map[int]string
 }
 
 func NewTree() *GGlobTree {
 	return &GGlobTree{
-		Root:       make(map[int]*TreeItem),
+		Root:       make(map[int][]*TreeItem),
 		Globs:      make(map[string]int),
 		GlobsIndex: make(map[int]string),
 	}

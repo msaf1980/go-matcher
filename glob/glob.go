@@ -261,6 +261,7 @@ func Parse(glob string) (g *Glob, err error) {
 			g.Node = buf.String()
 		}
 	}
+
 	return
 }
 

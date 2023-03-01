@@ -131,6 +131,11 @@ func (item *StringList) Match(s string) (offset int, support FindFlag) {
 	return
 }
 
+func (item *StringList) MatchLast(s string) (offset int, support FindFlag) {
+	support = FindNotSupported
+	return
+}
+
 // IsOptional check when contain empty value and can be skipped
 func (item *StringList) IsOptional() bool {
 	return item.MinSize == 0

@@ -2,11 +2,9 @@ package glob
 
 import (
 	"testing"
-
-	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
-func TestGlobTree(t *testing.T) {
+func TestGlobTree_Batch(t *testing.T) {
 	tests := []testGlobTree{
 		{
 			globs: []string{
@@ -24,215 +22,8 @@ func TestGlobTree(t *testing.T) {
 				"bc.*{,cd,b}",
 				"bc.*{,cd,b}*",
 			},
-			want: &GlobTree{
-				Root: &items.TreeItem{
-					Childs: []*items.TreeItem{
-						{
-							NodeItem: items.NodeItem{Node: "a.", Item: items.NewString("a.")},
-							Childs: []*items.TreeItem{
-								{
-									NodeItem: items.NodeItem{Node: "*", Item: items.Star(0)},
-									Childs: []*items.TreeItem{
-										{
-											NodeItem: items.NodeItem{Node: ".", Item: items.Byte('.')},
-											Childs: []*items.TreeItem{
-												{
-													NodeItem: items.NodeItem{Node: "{b,cd}",
-														Item: items.NewItemList([]string{"b", "cd"}),
-													},
-													Childs: []*items.TreeItem{
-														{
-															NodeItem: items.NodeItem{
-																Node: "*", Item: items.Star(0),
-															},
-															Childs: []*items.TreeItem{
-																{
-																	NodeItem: items.NodeItem{
-																		Node: ".e",
-																		Item: items.NewString(".e"),
-																	},
-																	Terminated: []string{
-																		"a.*.{b,cd}*.e",
-																	},
-																	TermIndex: []int{0},
-																},
-																{
-																	NodeItem: items.NodeItem{
-																		Node: ".df",
-																		Item: items.NewString(".df"),
-																	},
-																	Terminated: []string{"a.*.{b,cd}*.df"},
-																	TermIndex:  []int{2},
-																},
-															},
-														},
-													},
-												},
-												{
-													NodeItem: items.NodeItem{Node: "{bc,d}",
-														Item: items.NewItemList([]string{"bc", "d"}),
-													},
-													Childs: []*items.TreeItem{
-														{
-															NodeItem: items.NodeItem{
-																Node: "*", Item: items.Star(0),
-															},
-															Childs: []*items.TreeItem{
-																{
-																	NodeItem: items.NodeItem{
-																		Node: ".e",
-																		Item: items.NewString(".e"),
-																	},
-																	Terminated: []string{
-																		"a.*.{bc,d}*.e",
-																	},
-																	TermIndex: []int{4},
-																},
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						{
-							NodeItem: items.NodeItem{Node: "a.b.b", Item: items.NewString("a.b.b")},
-							Childs: []*items.TreeItem{
-								{
-									NodeItem: items.NodeItem{Node: "*", Item: items.Star(0)},
-									Childs: []*items.TreeItem{
-										{
-											NodeItem:   items.NodeItem{Node: ".e", Item: items.NewString(".e")},
-											Terminated: []string{"a.b.b*.e"},
-											TermIndex:  []int{3},
-										},
-										{
-											NodeItem: items.NodeItem{Node: ".", Item: items.Byte('.')},
-											Childs: []*items.TreeItem{
-												{
-													NodeItem: items.NodeItem{
-														Node: "{bc,c}",
-														Item: items.NewItemList([]string{"bc", "c"}),
-													},
-													Terminated: []string{"a.b.b*.{bc,c}"},
-													TermIndex:  []int{7},
-												},
-											},
-										},
-										{
-											NodeItem: items.NodeItem{
-												Node: "{bc,c}",
-												Item: items.NewItemList([]string{"bc", "c"}),
-											},
-											Terminated: []string{"a.b.b*{bc,c}"},
-											TermIndex:  []int{8},
-										},
-									},
-								},
-							},
-						},
-						{
-							NodeItem: items.NodeItem{Node: "*", Item: items.Star(0)},
-							Childs: []*items.TreeItem{
-								{
-									NodeItem: items.NodeItem{Node: ".", Item: items.Byte('.')},
-									Childs: []*items.TreeItem{
-										{
-											NodeItem: items.NodeItem{
-												Node: "{bc,d}",
-												Item: items.NewItemList([]string{"bc", "d"}),
-											},
-											Childs: []*items.TreeItem{
-												{
-													NodeItem: items.NodeItem{Node: "*", Item: items.Star(0)},
-													Childs: []*items.TreeItem{
-														{
-															NodeItem: items.NodeItem{
-																Node: ".e", Item: items.NewString(".e"),
-															},
-															Terminated: []string{"*.{bc,d}*.e"},
-															TermIndex:  []int{5},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-								{
-									NodeItem: items.NodeItem{
-										Node: "{b,cd}",
-										Item: items.NewItemList([]string{"b", "cd"}),
-									},
-									Childs: []*items.TreeItem{
-										{
-											NodeItem: items.NodeItem{Node: "*", Item: items.Star(0)},
-											Childs: []*items.TreeItem{
-												{
-													NodeItem: items.NodeItem{
-														Node: ".df", Item: items.NewString(".df"),
-													},
-													Terminated: []string{"*{b,cd}*.df"},
-													TermIndex:  []int{6},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						{
-							NodeItem: items.NodeItem{Node: "bc.", Item: items.NewString("bc.")},
-							Childs: []*items.TreeItem{
-								{
-									NodeItem: items.NodeItem{
-										Node: "{,b,cd}",
-										Item: items.NewItemList([]string{"", "b", "cd"}),
-									},
-									Terminated: []string{"bc.{,b,cd}"},
-									TermIndex:  []int{10},
-									Childs: []*items.TreeItem{
-										{
-											NodeItem: items.NodeItem{Node: "*", Item: items.Star(0)},
-											Childs: []*items.TreeItem{
-												{
-													NodeItem: items.NodeItem{
-														Node: ".df", Item: items.NewString(".df"),
-													},
-													Terminated: []string{"bc.{,b,cd}*.df"},
-													TermIndex:  []int{9},
-												},
-											},
-										},
-									},
-								},
-								{
-									NodeItem: items.NodeItem{Node: "*", Item: items.Star(0)},
-									Childs: []*items.TreeItem{
-										{
-											NodeItem: items.NodeItem{
-												Node: "{,b,cd}",
-												Item: items.NewItemList([]string{"", "b", "cd"}),
-											},
-											Terminated: []string{"bc.*{,b,cd}"},
-											TermIndex:  []int{11},
-											Childs: []*items.TreeItem{
-												{
-													NodeItem:   items.NodeItem{Node: "*", Item: items.Star(0)},
-													Terminated: []string{"bc.*{,b,cd}*"},
-													TermIndex:  []int{12},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+			skipCmp: true,
+			want: &globTreeStr{
 				Globs: map[string]int{
 					"a.*.{b,cd}*.e":  0,
 					"a.*.{b,cd}*.df": 2,
@@ -272,14 +63,14 @@ func TestGlobTree(t *testing.T) {
 				// empty list
 				"bc..df": {
 					"*{b,cd}*.df", "bc.{,b,cd}*.df",
-					"bc.*{,b,cd}",
+					"bc.*{,b,cd}", "bc.*{,b,cd}*",
 				},
 				"bc.cd.df": {
 					"*{b,cd}*.df", "*{b,cd}*.df", "bc.{,b,cd}*.df", "bc.{,b,cd}*.df",
-					"bc.*{,b,cd}", "bc.*{,b,cd}*",
+					"bc.*{,b,cd}", "bc.*{,b,cd}*", "bc.*{,b,cd}*",
 				},
-				"bc.": {"bc.{,b,cd}", "bc.*{,b,cd}", "bc.*{,b,cd}*"},
-				"bcd": {},
+				"bc.": {"bc.{,b,cd}", "bc.{,b,cd}", "bc.*{,b,cd}", "bc.*{,b,cd}*"},
+				"bcd": nil,
 			},
 		},
 	}
@@ -306,9 +97,23 @@ var (
 	}
 	stringsBatch = []string{
 		"a.b.bce.e",
+		"a.b.bceK.e",
+		"a.b.bceI.e",
+		"a.b.bceN.e",
+		"a.b.bcN.e",
+		"a.b.bcI.e",
+		"a.b.bcIN.e",
+		"a.b.bcKI.e",
 		"a.b.cd.e",
 		"a.D.bce.e",
 		"a.D.bcd.df",
+		"a.b.bceK.df",
+		"a.b.bceI.df",
+		"a.b.bceN.df",
+		"a.b.bcN.df",
+		"a.b.bcI.df",
+		"a.b.bcIN.df",
+		"a.b.bcKI.df",
 		"a.b.b.bc",
 		"a.b.bed.bc",
 		"bc..df",
