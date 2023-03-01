@@ -11,43 +11,38 @@ var (
 	ErrGlobExist = errors.New("glob already exist")
 )
 
+type Store interface {
+	Store(index int)
+}
+
+type MinStore struct {
+	N int
+}
+
+func NewMinStore() *MinStore {
+	return &MinStore{-1}
+}
+
+func (s *MinStore) Init() {
+	s.N = -1
+}
+
+func (s *MinStore) Store(index int) {
+	if s.N < 0 || s.N > index {
+		s.N = index
+	}
+}
+
 type TreeItem struct {
 	NodeItem
 
 	Reverse bool // for suffix
 
-	Terminated []string // end of chain (resulting raw/normalized globs)
-	TermIndex  []int    // rule num of end of chain (resulting glob), can be used in specific cases
+	Terminated string // end of chain (resulting raw/normalized globs)
+	TermIndex  int    // rule num of end of chain (resulting glob), can be used in specific cases
 
 	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
 	Childs []*TreeItem // next possible parts slice
-}
-
-type TreeItemStr struct {
-	Node string `json:"node"`
-
-	Reverse bool `json:"reverse"` // for suffix
-
-	Terminated []string `json:"terminated"` // end of chain (resulting raw/normalized globs)
-	TermIndex  []int    `json:"term_index"` // rule num of end of chain (resulting glob), can be used in specific cases
-
-	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
-	Childs []*TreeItemStr `json:"childs"` // next possible parts slice
-}
-
-func (treeItem *TreeItem) StringItems() *TreeItemStr {
-	treeItemStr := &TreeItemStr{
-		Node: treeItem.Node, Reverse: treeItem.Reverse,
-		Childs:     make([]*TreeItemStr, 0, len(treeItem.Childs)),
-		Terminated: treeItem.Terminated,
-		TermIndex:  treeItem.TermIndex,
-	}
-
-	for _, child := range treeItem.Childs {
-		treeItemStr.Childs = append(treeItemStr.Childs, child.StringItems())
-	}
-
-	return treeItemStr
 }
 
 func LocateChildTreeItem(childs []*TreeItem, node string, reverse bool) *TreeItem {
@@ -59,20 +54,12 @@ func LocateChildTreeItem(childs []*TreeItem, node string, reverse bool) *TreeIte
 	return nil
 }
 
-func setMin(v *int, a []int) {
-	for i := 0; i < len(a); i++ {
-		if *v < 0 || *v > a[i] {
-			*v = a[i]
-		}
-	}
-}
-
 // Match check string against []NodeItems (parsed wildcards or simple regular expression)
 //
 // return
 //
 // @matched counter for matched globs
-func (treeItem *TreeItem) Match(s string, globs *[]string, index *[]int, first *int) (matched int) {
+func (treeItem *TreeItem) Match(s string, globs *[]string, index *[]int, first Store) (matched int) {
 	for _, child := range treeItem.Childs {
 		if child.Reverse {
 			if len(s) < child.Item.MinLen() {
@@ -88,13 +75,13 @@ func (treeItem *TreeItem) Match(s string, globs *[]string, index *[]int, first *
 			s := s[:offset]
 			if s == "" && len(child.Terminated) > 0 {
 				if globs != nil {
-					*globs = append(*globs, child.Terminated...)
+					*globs = append(*globs, child.Terminated)
 				}
 				if index != nil {
-					*index = append(*index, child.TermIndex...)
+					*index = append(*index, child.TermIndex)
 				}
 				if first != nil {
-					setMin(first, child.TermIndex)
+					first.Store(child.TermIndex)
 				}
 				matched++
 			}
@@ -119,7 +106,7 @@ func (treeItem *TreeItem) Match(s string, globs *[]string, index *[]int, first *
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func (item *TreeItem) match(s string, globs *[]string, index *[]int, first *int) (matched int, abort bool) {
+func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store) (matched int, abort bool) {
 	if len(s) < item.Item.MinLen() {
 		return
 	}
@@ -132,13 +119,13 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first *int)
 	case FindDone:
 		if s == "" && len(item.Terminated) > 0 {
 			if globs != nil {
-				*globs = append(*globs, item.Terminated...)
+				*globs = append(*globs, item.Terminated)
 			}
 			if index != nil {
-				*index = append(*index, item.TermIndex...)
+				*index = append(*index, item.TermIndex)
 			}
 			if first != nil {
-				setMin(first, item.TermIndex)
+				first.Store(item.TermIndex)
 			}
 			matched++
 		}
@@ -152,13 +139,13 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first *int)
 
 		if s == "" && len(item.Terminated) > 0 {
 			if globs != nil {
-				*globs = append(*globs, item.Terminated...)
+				*globs = append(*globs, item.Terminated)
 			}
 			if index != nil {
-				*index = append(*index, item.TermIndex...)
+				*index = append(*index, item.TermIndex)
 			}
 			if first != nil {
-				setMin(first, item.TermIndex)
+				first.Store(item.TermIndex)
 			}
 			matched++
 		}
@@ -166,13 +153,13 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first *int)
 		if list.IsOptional() {
 			if s == "" && len(item.Terminated) > 0 {
 				if globs != nil {
-					*globs = append(*globs, item.Terminated...)
+					*globs = append(*globs, item.Terminated)
 				}
 				if index != nil {
-					*index = append(*index, item.TermIndex...)
+					*index = append(*index, item.TermIndex)
 				}
 				if first != nil {
-					setMin(first, item.TermIndex)
+					first.Store(item.TermIndex)
 				}
 				matched++
 			}
@@ -191,13 +178,13 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first *int)
 
 			if s == "" && len(item.Terminated) > 0 {
 				if globs != nil {
-					*globs = append(*globs, item.Terminated...)
+					*globs = append(*globs, item.Terminated)
 				}
 				if index != nil {
-					*index = append(*index, item.TermIndex...)
+					*index = append(*index, item.TermIndex)
 				}
 				if first != nil {
-					setMin(first, item.TermIndex)
+					first.Store(item.TermIndex)
 				}
 				matched++
 			}
@@ -215,13 +202,13 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first *int)
 		if len(item.Childs) == 0 {
 			if len(item.Terminated) > 0 {
 				if globs != nil {
-					*globs = append(*globs, item.Terminated...)
+					*globs = append(*globs, item.Terminated)
 				}
 				if index != nil {
-					*index = append(*index, item.TermIndex...)
+					*index = append(*index, item.TermIndex)
 				}
 				if first != nil {
-					setMin(first, item.TermIndex)
+					first.Store(item.TermIndex)
 				}
 				matched++
 			}
@@ -246,7 +233,7 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first *int)
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first *int) (matched int, abortGready bool) {
+func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first Store) (matched int, abortGready bool) {
 	var (
 		offset, length int
 		flag           FindFlag
@@ -271,13 +258,13 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first *
 
 			if s == "" && len(item.Childs) == 0 && len(item.Terminated) > 0 {
 				if globs != nil {
-					*globs = append(*globs, item.Terminated...)
+					*globs = append(*globs, item.Terminated)
 				}
 				if index != nil {
-					*index = append(*index, item.TermIndex...)
+					*index = append(*index, item.TermIndex)
 				}
 				if first != nil {
-					setMin(first, item.TermIndex)
+					first.Store(item.TermIndex)
 				}
 				matched++
 			} else {
@@ -294,13 +281,13 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first *
 				optional = false
 				if len(item.Terminated) > 0 {
 					if globs != nil {
-						*globs = append(*globs, item.Terminated...)
+						*globs = append(*globs, item.Terminated)
 					}
 					if index != nil {
-						*index = append(*index, item.TermIndex...)
+						*index = append(*index, item.TermIndex)
 					}
 					if first != nil {
-						setMin(first, item.TermIndex)
+						first.Store(item.TermIndex)
 					}
 					matched++
 				}
@@ -327,13 +314,13 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first *
 					if s == "" {
 						if len(item.Terminated) > 0 {
 							if globs != nil {
-								*globs = append(*globs, item.Terminated...)
+								*globs = append(*globs, item.Terminated)
 							}
 							if index != nil {
-								*index = append(*index, item.TermIndex...)
+								*index = append(*index, item.TermIndex)
 							}
 							if first != nil {
-								setMin(first, item.TermIndex)
+								first.Store(item.TermIndex)
 							}
 							matched++
 						}
@@ -369,13 +356,13 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first *
 		case FindStar:
 			if len(item.Childs) == 0 && len(item.Terminated) > 0 {
 				if globs != nil {
-					*globs = append(*globs, item.Terminated...)
+					*globs = append(*globs, item.Terminated)
 				}
 				if index != nil {
-					*index = append(*index, item.TermIndex...)
+					*index = append(*index, item.TermIndex)
 				}
 				if first != nil {
-					setMin(first, item.TermIndex)
+					first.Store(item.TermIndex)
 				}
 				matched++
 				return

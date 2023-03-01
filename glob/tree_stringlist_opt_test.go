@@ -2,8 +2,6 @@ package glob
 
 import (
 	"testing"
-
-	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestGlobTree_StringList_Opt(t *testing.T) {
@@ -14,21 +12,21 @@ func TestGlobTree_StringList_Opt(t *testing.T) {
 				"bc.*{,b,cd}",
 			},
 			want: &globTreeStr{
-				Root: &items.TreeItemStr{
-					Childs: []*items.TreeItemStr{
+				Root: &TreeItemStr{
+					Childs: []*TreeItemStr{
 						{
-							Node: "bc.", Childs: []*items.TreeItemStr{
+							Node: "bc.", Childs: []*TreeItemStr{
 								{
-									Node: "*", Childs: []*items.TreeItemStr{
+									Node: "*", Childs: []*TreeItemStr{
 										{
 											Node:       "{,b,cd}",
-											Terminated: []string{"bc.*{,b,cd}"},
-											TermIndex:  []int{1},
-											Childs: []*items.TreeItemStr{
+											Terminated: "bc.*{,b,cd}",
+											TermIndex:  1,
+											Childs: []*TreeItemStr{
 												{
-													Node: "*", Childs: []*items.TreeItemStr{},
-													Terminated: []string{"bc.*{,b,cd}*"},
-													TermIndex:  []int{0},
+													Node: "*", Childs: []*TreeItemStr{},
+													Terminated: "bc.*{,b,cd}*",
+													TermIndex:  0,
 												},
 											},
 										},

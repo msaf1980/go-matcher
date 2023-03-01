@@ -12,6 +12,33 @@ import (
 	"github.com/msaf1980/go-matcher/pkg/tests"
 )
 
+type TreeItemStr struct {
+	Node string `json:"node"`
+
+	Reverse bool `json:"reverse"` // for suffix
+
+	Terminated string `json:"terminated"` // end of chain (resulting raw/normalized globs)
+	TermIndex  int    `json:"term_index"` // rule num of end of chain (resulting glob), can be used in specific cases
+
+	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
+	Childs []*TreeItemStr `json:"childs"` // next possible parts slice
+}
+
+func StringItems(treeItem *items.TreeItem) *TreeItemStr {
+	treeItemStr := &TreeItemStr{
+		Node: treeItem.Node, Reverse: treeItem.Reverse,
+		Childs:     make([]*TreeItemStr, 0, len(treeItem.Childs)),
+		Terminated: treeItem.Terminated,
+		TermIndex:  treeItem.TermIndex,
+	}
+
+	for _, child := range treeItem.Childs {
+		treeItemStr.Childs = append(treeItemStr.Childs, StringItems(child))
+	}
+
+	return treeItemStr
+}
+
 type verify struct {
 	glob  string
 	index int
@@ -30,7 +57,7 @@ func mergeVerify(globs []string, index []int) []verify {
 }
 
 type globTreeStr struct {
-	Root       *items.TreeItemStr
+	Root       *TreeItemStr
 	Globs      map[string]int
 	GlobsIndex map[int]string
 }
@@ -61,7 +88,7 @@ func runTestGlobTree(t *testing.T, n int, tt testGlobTree) {
 			}
 		} else {
 			globTree = &globTreeStr{
-				Root:       gtree.Root.StringItems(),
+				Root:       StringItems(gtree.Root),
 				Globs:      gtree.Globs,
 				GlobsIndex: gtree.GlobsIndex,
 			}
@@ -81,7 +108,7 @@ func verifyGlobTree(t *testing.T, inGlobs []string, match map[string][]string, g
 				globs []string
 				index []int
 			)
-			first := -1
+			first := items.MinStore{-1}
 			matched := gtree.Match(path, &globs, &index, &first)
 
 			verify := mergeVerify(globs, index)
@@ -106,7 +133,7 @@ func verifyGlobTree(t *testing.T, inGlobs []string, match map[string][]string, g
 			}
 
 			if len(index) > 0 {
-				if first != index[0] {
+				if first.N != index[0] {
 					t.Errorf("GlobTree(%#v).Match(%q) first index = %d, want %d",
 						inGlobs, path, first, index[0])
 				}

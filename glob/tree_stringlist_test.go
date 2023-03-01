@@ -2,8 +2,6 @@ package glob
 
 import (
 	"testing"
-
-	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestGlobTree_StringList(t *testing.T) {
@@ -13,22 +11,22 @@ func TestGlobTree_StringList(t *testing.T) {
 				"a.*.{cd,b}*.e", "a.*.{b,cd,b}*.e",
 			},
 			want: &globTreeStr{
-				Root: &items.TreeItemStr{
-					Childs: []*items.TreeItemStr{
+				Root: &TreeItemStr{
+					Childs: []*TreeItemStr{
 						{
-							Node: ".e", Reverse: true, Childs: []*items.TreeItemStr{
+							Node: ".e", Reverse: true, Childs: []*TreeItemStr{
 								{
-									Node: "a.", Childs: []*items.TreeItemStr{
+									Node: "a.", Childs: []*TreeItemStr{
 										{
-											Node: "*", Childs: []*items.TreeItemStr{
+											Node: "*", Childs: []*TreeItemStr{
 												{
-													Node: ".", Childs: []*items.TreeItemStr{
+													Node: ".", Childs: []*TreeItemStr{
 														{
-															Node: "{b,cd}", Childs: []*items.TreeItemStr{
+															Node: "{b,cd}", Childs: []*TreeItemStr{
 																{
-																	Node: "*", Childs: []*items.TreeItemStr{},
-																	Terminated: []string{"a.*.{b,cd}*.e"},
-																	TermIndex:  []int{0},
+																	Node: "*", Childs: []*TreeItemStr{},
+																	Terminated: "a.*.{b,cd}*.e",
+																	TermIndex:  0,
 																},
 															},
 														},
@@ -58,18 +56,18 @@ func TestGlobTree_StringList(t *testing.T) {
 				"*{b,cd}*.df",
 			},
 			want: &globTreeStr{
-				Root: &items.TreeItemStr{
-					Childs: []*items.TreeItemStr{
+				Root: &TreeItemStr{
+					Childs: []*TreeItemStr{
 						{
-							Node: ".df", Reverse: true, Childs: []*items.TreeItemStr{
+							Node: ".df", Reverse: true, Childs: []*TreeItemStr{
 								{
-									Node: "*", Childs: []*items.TreeItemStr{
+									Node: "*", Childs: []*TreeItemStr{
 										{
-											Node: "{b,cd}", Childs: []*items.TreeItemStr{
+											Node: "{b,cd}", Childs: []*TreeItemStr{
 												{
-													Node: "*", Childs: []*items.TreeItemStr{},
-													Terminated: []string{"*{b,cd}*.df"},
-													TermIndex:  []int{0},
+													Node: "*", Childs: []*TreeItemStr{},
+													Terminated: "*{b,cd}*.df",
+													TermIndex:  0,
 												},
 											},
 										},
@@ -90,18 +88,18 @@ func TestGlobTree_StringList(t *testing.T) {
 		{
 			globs: []string{"a.b*.{bc,c}"},
 			want: &globTreeStr{
-				Root: &items.TreeItemStr{
-					Childs: []*items.TreeItemStr{
+				Root: &TreeItemStr{
+					Childs: []*TreeItemStr{
 						{
-							Node: "a.b", Childs: []*items.TreeItemStr{
+							Node: "a.b", Childs: []*TreeItemStr{
 								{
-									Node: "*", Childs: []*items.TreeItemStr{
+									Node: "*", Childs: []*TreeItemStr{
 										{
-											Node: ".", Childs: []*items.TreeItemStr{
+											Node: ".", Childs: []*TreeItemStr{
 												{
-													Node: "{bc,c}", Childs: []*items.TreeItemStr{},
-													Terminated: []string{"a.b*.{bc,c}"},
-													TermIndex:  []int{0},
+													Node: "{bc,c}", Childs: []*TreeItemStr{},
+													Terminated: "a.b*.{bc,c}",
+													TermIndex:  0,
 												},
 											},
 										},

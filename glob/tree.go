@@ -44,12 +44,8 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 		treeItem = newItem
 	}
 
-	if len(treeItem.Terminated) == 0 || treeItem.Terminated[0] != gg.Node {
-		treeItem.Terminated = append(treeItem.Terminated, gg.Node)
-	}
-	if len(treeItem.TermIndex) == 0 || treeItem.TermIndex[0] != index {
-		treeItem.TermIndex = append(treeItem.TermIndex, index)
-	}
+	treeItem.Terminated = gg.Node
+	treeItem.TermIndex = index
 
 	return treeItem
 }
@@ -109,7 +105,10 @@ func (gtree *GlobTree) AddGlob(glob string, index int) (normalized string, n int
 
 	addGlob(gtree.Root, g, index)
 
-	gtree.Globs[normalized] = index
+	gtree.Globs[g.Glob] = index
+	if normalized != g.Glob {
+		gtree.Globs[normalized] = index
+	}
 	gtree.GlobsIndex[index] = normalized
 
 	n = index
@@ -145,7 +144,10 @@ func (gtree *GlobTree) Add(g *Glob, index int) (normalized string, n int, err er
 
 	addGlob(gtree.Root, g, index)
 
-	gtree.Globs[normalized] = index
+	gtree.Globs[g.Glob] = index
+	if normalized != g.Glob {
+		gtree.Globs[normalized] = index
+	}
 	gtree.GlobsIndex[index] = normalized
 
 	n = index
@@ -153,6 +155,6 @@ func (gtree *GlobTree) Add(g *Glob, index int) (normalized string, n int, err er
 	return
 }
 
-func (gtree *GlobTree) Match(s string, globs *[]string, index *[]int, first *int) (matched int) {
+func (gtree *GlobTree) Match(s string, globs *[]string, index *[]int, first items.Store) (matched int) {
 	return gtree.Root.Match(s, globs, index, first)
 }

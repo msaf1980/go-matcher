@@ -2,6 +2,8 @@ package glob
 
 import (
 	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestGlobTree_Batch(t *testing.T) {
@@ -167,7 +169,7 @@ func Benchmark_Batch_GlobTree(b *testing.B) {
 				globs []string
 				index []int
 			)
-			first := -1
+			first := items.MinStore{-1}
 			_ = gtree.Match(s, &globs, &index, &first)
 		}
 	}
@@ -186,13 +188,13 @@ func Benchmark_Batch_GlobTree_Prealloc(b *testing.B) {
 	var (
 		globs []string
 		index []int
-		first int
 	)
+	first := items.MinStore{-1}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, s := range stringsBatch {
-			first = -1
+			first.Init()
 			globs = globs[:0]
 			index = index[:0]
 			_ = gtree.Match(s, &globs, &index, &first)
