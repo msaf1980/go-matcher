@@ -65,7 +65,7 @@ type ItemList interface {
 	Item
 
 	// IsOptional check when contain empty value and can be skipped
-	IsOptional() bool
+	IsOptional() bool // TODO: refactor with group (minN = 0, max = 1), it's more compatible with regexp
 
 	// Len is a values count (exclude empty)
 	Len() int

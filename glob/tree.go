@@ -67,7 +67,7 @@ func NewTree() *GlobTree {
 	}
 }
 
-func (gtree *GlobTree) AddGlob(glob string, index int) (normalized string, n int, err error) {
+func (gtree *GlobTree) Add(glob string, index int) (normalized string, n int, err error) {
 	if glob == "" {
 		return
 	}
@@ -116,7 +116,7 @@ func (gtree *GlobTree) AddGlob(glob string, index int) (normalized string, n int
 	return
 }
 
-func (gtree *GlobTree) Add(g *Glob, index int) (normalized string, n int, err error) {
+func (gtree *GlobTree) AddGlob(g *Glob, index int) (normalized string, n int, err error) {
 	if index < 0 {
 		err = ErrIndexInvalid
 		normalized = g.Node

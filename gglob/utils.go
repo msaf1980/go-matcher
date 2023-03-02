@@ -29,6 +29,29 @@ func PathSplit(path string) (parts []string) {
 	return
 }
 
+func PathSplitB(path string, parts *[]string) (ok bool) {
+	*parts = (*parts)[:0]
+	if path == "" {
+		return
+	}
+
+	last := len(path) - 1
+	if path[last] == '.' {
+		path = path[:last]
+	}
+
+	var part string
+	for path != "" {
+		part, path, _ = strings.Cut(path, ".")
+		if part == "" {
+			return
+		}
+		*parts = append(*parts, part)
+	}
+	ok = true
+	return
+}
+
 func HasEmptyParts(parts []string) bool {
 	for _, part := range parts {
 		if part == "" {

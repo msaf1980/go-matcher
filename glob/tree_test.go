@@ -3,13 +3,11 @@ package glob
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/msaf1980/go-matcher/pkg/items"
-	"github.com/msaf1980/go-matcher/pkg/tests"
 )
 
 type TreeItemStr struct {
@@ -24,7 +22,7 @@ type TreeItemStr struct {
 	Childs []*TreeItemStr `json:"childs"` // next possible parts slice
 }
 
-func StringItems(treeItem *items.TreeItem) *TreeItemStr {
+func StringTreeItem(treeItem *items.TreeItem) *TreeItemStr {
 	treeItemStr := &TreeItemStr{
 		Node: treeItem.Node, Reverse: treeItem.Reverse,
 		Childs:     make([]*TreeItemStr, 0, len(treeItem.Childs)),
@@ -33,7 +31,7 @@ func StringItems(treeItem *items.TreeItem) *TreeItemStr {
 	}
 
 	for _, child := range treeItem.Childs {
-		treeItemStr.Childs = append(treeItemStr.Childs, StringItems(child))
+		treeItemStr.Childs = append(treeItemStr.Childs, StringTreeItem(child))
 	}
 
 	return treeItemStr
@@ -73,7 +71,7 @@ func runTestGlobTree(t *testing.T, n int, tt testGlobTree) {
 	t.Run(fmt.Sprintf("%d#%#v", n, tt.globs), func(t *testing.T) {
 		gtree := NewTree()
 		for i, g := range tt.globs {
-			_, _, err := gtree.AddGlob(g, i)
+			_, _, err := gtree.Add(g, i)
 
 			if err != nil && err != ErrGlobExist {
 				t.Fatalf("GlobTree.Add(%q) error = %v", g, err)
@@ -88,7 +86,7 @@ func runTestGlobTree(t *testing.T, n int, tt testGlobTree) {
 			}
 		} else {
 			globTree = &globTreeStr{
-				Root:       StringItems(gtree.Root),
+				Root:       StringTreeItem(gtree.Root),
 				Globs:      gtree.Globs,
 				GlobsIndex: gtree.GlobsIndex,
 			}
@@ -143,15 +141,10 @@ func verifyGlobTree(t *testing.T, inGlobs []string, match map[string][]string, g
 }
 
 func parseGlobs(globs []string) (g []*Glob) {
-	for _, glob := range globs {
-		g = append(g, ParseMust(glob))
+	g = make([]*Glob, len(globs))
+	for i := 0; i < len(globs); i++ {
+		g[i] = ParseMust(globs[i])
 	}
-	return
-}
 
-func buildGlobSRegexp(globs []string) (re []*regexp.Regexp) {
-	for _, glob := range globs {
-		re = append(re, tests.BuildGlobRegexp(glob))
-	}
 	return
 }

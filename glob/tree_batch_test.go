@@ -27,18 +27,18 @@ func TestGlobTree_Batch(t *testing.T) {
 			skipCmp: true,
 			want: &globTreeStr{
 				Globs: map[string]int{
-					"a.*.{b,cd}*.e":  0,
-					"a.*.{b,cd}*.df": 2,
-					"a.b.b*.e":       3,
-					"a.*.{bc,d}*.e":  4,
-					"*.{bc,d}*.e":    5,
-					"*{b,cd}*.df":    6,
-					"a.b.b*.{bc,c}":  7,
-					"a.b.b*{bc,c}":   8,
-					"bc.{,b,cd}*.df": 9,
-					"bc.{,b,cd}":     10,
-					"bc.*{,b,cd}":    11,
-					"bc.*{,b,cd}*":   12,
+					"a.*.{b,cd}*.e": 0, "a.*.{cd,b}*.e": 0,
+					"a.*.{b,cd}*.df": 2, "a.*.{cd,b}*.df": 2,
+					"a.b.b*.e":      3,
+					"a.*.{bc,d}*.e": 4,
+					"*.{bc,d}*.e":   5,
+					"*{b,cd}*.df":   6, "*{cd,b}*.df": 6,
+					"a.b.b*.{bc,c}": 7, "a.b.b*.{c,bc}": 7,
+					"a.b.b*{bc,c}": 8, "a.b.b*{c,bc}": 8,
+					"bc.{,b,cd}*.df": 9, "bc.{,cd,b}*.df": 9,
+					"bc.{,b,cd}": 10, "bc.{,cd,b}": 10,
+					"bc.*{,b,cd}": 11, "bc.*{,cd,b}": 11,
+					"bc.*{,b,cd}*": 12, "bc.*{,cd,b}*": 12,
 				},
 				GlobsIndex: map[int]string{
 					0:  "a.*.{b,cd}*.e",
@@ -130,7 +130,7 @@ func Benchmark_Batch_GlobTree_Add(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		gtree := NewTree()
 		for i, g := range globsBatch {
-			_, _, err := gtree.AddGlob(g, i)
+			_, _, err := gtree.Add(g, i)
 
 			if err != nil && err != ErrGlobExist {
 				b.Fatalf("GlobTree.Add(%q) error = %v", g, err)
@@ -143,7 +143,7 @@ func Benchmark_Batch_GlobTree_Add_Cached(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		gtree := NewTree()
 		for i, g := range gBatch {
-			_, _, err := gtree.Add(g, i)
+			_, _, err := gtree.AddGlob(g, i)
 
 			if err != nil && err != ErrGlobExist {
 				b.Fatalf("GlobTree.Add(%q) error = %v", g, err)
@@ -155,7 +155,7 @@ func Benchmark_Batch_GlobTree_Add_Cached(b *testing.B) {
 func Benchmark_Batch_GlobTree(b *testing.B) {
 	gtree := NewTree()
 	for i, g := range gBatch {
-		_, _, err := gtree.Add(g, i)
+		_, _, err := gtree.AddGlob(g, i)
 
 		if err != nil && err != ErrGlobExist {
 			b.Fatalf("GlobTree.Add(%q) error = %v", g, err)
@@ -178,7 +178,7 @@ func Benchmark_Batch_GlobTree(b *testing.B) {
 func Benchmark_Batch_GlobTree_Prealloc(b *testing.B) {
 	gtree := NewTree()
 	for i, g := range gBatch {
-		_, _, err := gtree.Add(g, i)
+		_, _, err := gtree.AddGlob(g, i)
 
 		if err != nil && err != ErrGlobExist {
 			b.Fatalf("GlobTree.Add(%q) error = %v", g, err)
