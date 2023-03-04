@@ -151,11 +151,11 @@ func addGGlob(treeMap map[int]*GTreeItem, gg *GGlob, index int) *GTreeItem {
 			}
 			treeItem = newItem
 		} else {
-			if treeItem.Childs == nil {
-				treeItem.Childs = make([]*GTreeItem, 0, 8)
-			}
 			newItem := LocateChildGTreeItem(treeItem.Childs, gg.Parts[i].Node)
 			if newItem == nil {
+				if treeItem.Childs == nil {
+					treeItem.Childs = make([]*GTreeItem, 0, 2)
+				}
 				newItem = &GTreeItem{Item: gg.Parts[i]}
 				treeItem.Childs = append(treeItem.Childs, newItem)
 			}
