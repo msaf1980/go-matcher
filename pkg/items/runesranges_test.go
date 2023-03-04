@@ -55,7 +55,7 @@ func TestRunesRanges(t *testing.T) {
 }
 
 var (
-	findRunesRangesASCII   = "{ac,"
+	findRunesRangesASCII   = "[b-dK-Z]"
 	findRunesRangesUnicode = "[а-йв-у1-9b-dА-ДО-П你好世]"
 )
 
