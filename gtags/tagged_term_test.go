@@ -145,8 +145,7 @@ func TestPathTags(t *testing.T) {
 }
 
 var (
-	pathTagsNoEscape = "kube_pod_status_phase?app_kubernetes_io_component=metrics&app_kubernetes_io_name=kube-state-metrics&app_kubernetes_io_part_of=kube-state-metrics&app_kubernetes_io_version=2.7.0&helm_sh_chart=kube-state-metrics-4.24.0&instance=192.168.0.85_8080&job=kubernetes-service-endpoints"
-	pathTags         = "kube_pod_status_phase?app_kubernetes_io_component=metrics&app_kubernetes_io_name=kube-state-metrics&app_kubernetes_io_part_of=kube-state-metrics&app_kubernetes_io_version=2.7.0&helm_sh_chart=kube-state-metrics-4.24.0&instance=192.168.0.85%3A8080&job=kubernetes-service-endpoints"
+	pathTags = "kube_pod_status_phase?app_kubernetes_io_component=metrics&app_kubernetes_io_name=kube-state-metrics&app_kubernetes_io_part_of=kube-state-metrics&app_kubernetes_io_version=2.7.0&helm_sh_chart=kube-state-metrics-4.24.0&instance=192.168.0.85%3A8080&job=kubernetes-service-endpoints"
 )
 
 func BenchmarkPathTagsMap(b *testing.B) {
@@ -161,24 +160,6 @@ func BenchmarkPathTagsMap(b *testing.B) {
 func BenchmarkPathTags(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := PathTags(pathTags)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkPathTagsMap_NoEscape(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, err := PathTagsMap(pathTagsNoEscape)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkPathTags_NoEscape(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_, err := PathTags(pathTagsNoEscape)
 		if err != nil {
 			b.Fatal(err)
 		}

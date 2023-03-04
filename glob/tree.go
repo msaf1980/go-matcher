@@ -19,9 +19,6 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 		node := items.NewString(gg.Suffix)
 		newItem := items.LocateChildTreeItem(treeItem.Childs, node, true)
 		if newItem == nil {
-			if treeItem.Childs == nil {
-				treeItem.Childs = make([]*items.TreeItem, 0, 2)
-			}
 			newItem = &items.TreeItem{Item: node, Reverse: true}
 			treeItem.Childs = append(treeItem.Childs, newItem)
 		}
@@ -32,9 +29,6 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 		node := items.NewString(gg.Prefix)
 		newItem := items.LocateChildTreeItem(treeItem.Childs, node, false)
 		if newItem == nil {
-			if treeItem.Childs == nil {
-				treeItem.Childs = make([]*items.TreeItem, 0, 2)
-			}
 			newItem = &items.TreeItem{Item: node}
 			treeItem.Childs = append(treeItem.Childs, newItem)
 		}
@@ -44,9 +38,6 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 	for i := 0; i < len(gg.Items); i++ {
 		newItem := items.LocateChildTreeItem(treeItem.Childs, gg.Items[i], false)
 		if newItem == nil {
-			if treeItem.Childs == nil {
-				treeItem.Childs = make([]*items.TreeItem, 0, 2)
-			}
 			newItem = &items.TreeItem{Item: gg.Items[i]}
 			treeItem.Childs = append(treeItem.Childs, newItem)
 		}

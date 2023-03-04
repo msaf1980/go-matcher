@@ -1,10 +1,6 @@
 package escape
 
-import (
-	"strings"
-
-	"github.com/msaf1980/go-matcher/pkg/utils"
-)
+import "strings"
 
 func ishex(c byte) bool {
 	switch {
@@ -64,10 +60,8 @@ LOOP:
 	return sb.String()[pos:]
 }
 
-var unescapeSet = utils.MakeASCIISetMust("%+")
-
 func Unescape(s string) string {
-	first := unescapeSet.Index(s)
+	first := strings.IndexAny(s, "%+")
 	if first == -1 {
 		return s
 	} else {
@@ -79,7 +73,7 @@ func Unescape(s string) string {
 // unescape unescapes a string; the mode specifies
 // which section of the URL string is being unescaped.
 func UnescapeTo(s string, sb *strings.Builder) string {
-	first := unescapeSet.Index(s)
+	first := strings.IndexAny(s, "%+")
 	if first == -1 {
 		return s
 	}
@@ -90,7 +84,7 @@ func UnescapeTo(s string, sb *strings.Builder) string {
 // unescape unescapes a string; the mode specifies
 // which section of the URL string is being unescaped.
 func UnescapeNameTo(s string, sb *strings.Builder) (name string, nameTag string) {
-	first := unescapeSet.Index(s)
+	first := strings.IndexAny(s, "%+")
 	if first == -1 {
 		pos := sb.Len()
 		sb.WriteString("__name__=")
