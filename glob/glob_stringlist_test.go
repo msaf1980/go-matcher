@@ -361,6 +361,7 @@ func TestGlob_List_Broken(t *testing.T) {
 		// broken
 		{glob: "{ac", wantErr: true},
 		{glob: "a}c", wantErr: true},
+		{glob: "{b*,a?cd*,cda-z]}bc*c*e", wantErr: true},
 		// skip empty
 		{
 			glob:  "{}a",

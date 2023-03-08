@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestNewList(t *testing.T) {
+func TestNewGroup(t *testing.T) {
 	tests := []struct {
 		vals []string
 		want Item
@@ -25,7 +25,7 @@ func TestNewList(t *testing.T) {
 		},
 		{
 			vals: []string{"*??", "*?"},
-			want: &List{
+			want: &Group{
 				MinSize: 1, MaxSize: -1,
 				Vals: []Item{
 					Star(2),
@@ -36,36 +36,54 @@ func TestNewList(t *testing.T) {
 		// chains
 		{
 			vals: []string{"a", "b*"},
-			want: &List{
+			want: &Group{
 				MinSize: 1, MaxSize: -1,
 				Vals: []Item{
 					NewString("a"),
 					&Chain{
-						Items: []Item{NewString("b"), Star(0)}, MinSize: 1, MaxSize: -1,
+						Items: []Item{Byte('b'), Star(0)}, MinSize: 1, MaxSize: -1,
 					},
 				},
 			},
 		},
 		{
 			vals: []string{"a?cd*", "b*", "cde"},
-			want: &List{
+			want: &Group{
 				MinSize: 1, MaxSize: -1,
 				Vals: []Item{
 					&Chain{
-						Items:   []Item{NewString("a"), Any(1), NewString("cd"), Star(0)},
+						Items:   []Item{Byte('a'), Any(1), NewString("cd"), Star(0)},
 						MinSize: 4, MaxSize: -1,
 					},
 					&Chain{
-						Items: []Item{NewString("b"), Star(0)}, MinSize: 1, MaxSize: -1,
+						Items: []Item{Byte('b'), Star(0)}, MinSize: 1, MaxSize: -1,
 					},
 					NewString("cde"),
+				},
+			},
+		},
+		{
+			vals: []string{"a?cd*", "b*", "cd[a-z]"},
+			want: &Group{
+				MinSize: 1, MaxSize: -1,
+				Vals: []Item{
+					&Chain{
+						Items:   []Item{Byte('a'), Any(1), NewString("cd"), Star(0)},
+						MinSize: 4, MaxSize: -1,
+					},
+					&Chain{
+						Items: []Item{Byte('b'), Star(0)}, MinSize: 1, MaxSize: -1,
+					},
+					&Chain{
+						Items: []Item{NewString("cd"), NewRunesRanges("[a-z]")}, MinSize: 3, MaxSize: 3,
+					},
 				},
 			},
 		},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("%d#%#v", n, tt.vals), func(t *testing.T) {
-			if got := NewItemList(tt.vals); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := NewItemList(tt.vals); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewList(%#v) = %s", tt.vals, cmp.Diff(tt.want, got))
 			}
 		})

@@ -170,7 +170,7 @@ func TestStringList(t *testing.T) {
 			list, ok := ListExpand(tt.list)
 			require.Equal(t, !tt.wantFailed, ok, "ListExpand(%q) status", tt.list)
 
-			item := NewItemList(list)
+			item, _ := NewItemList(list)
 			if !reflect.DeepEqual(tt.wantItem, item) {
 				t.Fatalf("NewItemList(%q) = %s", tt.list, cmp.Diff(tt.wantItem, item))
 			}
@@ -252,7 +252,7 @@ func BenchmarkStringList_Find_ASCII(b *testing.B) {
 			b.Fail()
 		}
 
-		item := NewItemList(list)
+		item, _ := NewItemList(list)
 		l := item.(ItemList)
 
 		s := stringStringListASCII
@@ -275,7 +275,7 @@ func BenchmarkStringList_Find_ASCII_Prealloc(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -296,7 +296,7 @@ func BenchmarkStringList_Find_ASCII_Skip(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -323,7 +323,7 @@ func BenchmarkStringList_Match_ASCII(b *testing.B) {
 			b.Fail()
 		}
 
-		item := NewItemList(list)
+		item, _ := NewItemList(list)
 		l := item.(ItemList)
 
 		s := stringStringListASCII
@@ -342,7 +342,7 @@ func BenchmarkStringList_Match_ASCII_Prealloc(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -362,7 +362,7 @@ func BenchmarkStringList_Match_ASCII_Skip(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -390,7 +390,7 @@ func BenchmarkStringList_Find_Unicode(b *testing.B) {
 			b.Fail()
 		}
 
-		item := NewItemList(list)
+		item, _ := NewItemList(list)
 		l := item.(ItemList)
 
 		s := stringStringListUnicode
@@ -413,7 +413,7 @@ func BenchmarkStringList_Find_Unicode_Prealloc(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -434,7 +434,7 @@ func BenchmarkStringList_Find_Unicode_Skip(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -461,7 +461,7 @@ func BenchmarkStringList_Match_Unicode(b *testing.B) {
 			b.Fail()
 		}
 
-		item := NewItemList(list)
+		item, _ := NewItemList(list)
 		l := item.(ItemList)
 
 		s := stringStringListUnicode
@@ -479,7 +479,7 @@ func BenchmarkStringList_Match_Unicode_Prealloc(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -500,7 +500,7 @@ func BenchmarkStringList_Match_Unicode_Skip(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -526,7 +526,7 @@ func BenchmarkStringList_Match_ASCII_Miss(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -545,7 +545,7 @@ func BenchmarkStringList_Match_ASCII_Miss_Skip(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -567,7 +567,7 @@ func BenchmarkStringList_Match_Unicode_Miss(b *testing.B) {
 		b.Fail()
 	}
 
-	item := NewItemList(list)
+	item, _ := NewItemList(list)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

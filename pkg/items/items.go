@@ -15,9 +15,10 @@ const (
 	FindDone FindFlag = iota // find supported
 	// find supported and also can be forwarded to next items (like ?, but for wildcards it's merged)
 	FindForwarded
-	FindList  // list item
-	FindStar  // gready item
-	FindGroup // group like {a*,b?}
+	FindList // list item
+	FindStar // gready item
+	FindGroup
+	FindChain
 )
 
 type Item interface {
@@ -72,7 +73,7 @@ func ItemsEqual(a, b []Item) bool {
 		return false
 	}
 	for i := 0; i < len(a); i++ {
-		if a[i].Equal(b[i]) {
+		if !a[i].Equal(b[i]) {
 			return false
 		}
 	}
@@ -131,28 +132,53 @@ func (node *NodeItem) WriteString(buf *strings.Builder) {
 	buf.WriteString(node.Node)
 }
 
+type nextItemsTree struct {
+	items []Item
+	next  *nextItemsTree
+}
+
+func (t *nextItemsTree) IsEmpty() bool {
+	return len(t.items) == 0 && (t.next == nil || t.next.IsEmpty())
+}
+
+func (t *nextItemsTree) Next() ([]Item, *nextItemsTree) {
+	if len(t.items) > 0 {
+		return t.items, t.next
+	}
+	if t.next == nil {
+		return nil, nil
+	}
+	return t.next.items, t.next.next
+}
+
 // MatchItems check string against []NodeItems (parsed wildcards or simple regular expression)
 func MatchItems(s string, items []Item) bool {
-	matched, _ := matchItems(s, items)
+	matched, _ := matchItems(s, items, nil)
 	return matched
 }
 
-// matchItems check string against []NodeItems (parsed wildcards or simple regular expression)
+// matchItems check string against []Item (parsed wildcards or simple regular expression)
 //
 // return
 //
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func matchItems(s string, items []Item) (matched, abortGready bool) {
+func matchItems(s string, items []Item, nextItems *nextItemsTree) (matched, abortGready bool) {
 	var (
 		pos, offset int
 		flag        FindFlag
 	)
 	for {
 		if pos == len(items) {
-			matched = s == ""
-			return
+			if nextItems == nil || nextItems.IsEmpty() {
+				matched = s == ""
+				return
+			} else {
+				items, nextItems = nextItems.Next()
+				matched, _ = matchItems(s, items, nextItems)
+				return
+			}
 		}
 		if len(s) < items[pos].MinLen() {
 			return
@@ -168,32 +194,86 @@ func matchItems(s string, items []Item) (matched, abortGready bool) {
 			list := items[pos].(ItemList)
 			pos := pos + 1
 
+			if list.IsOptional() {
+				s := s
+				if len(items) == pos {
+					if nextItems == nil || nextItems.IsEmpty() {
+						if s == "" {
+							matched = true
+							return
+						}
+					} else {
+						items, nextItems := nextItems.Next()
+						if matched, _ = matchItems(s, items, nextItems); matched {
+							return
+						}
+					}
+				} else if matched, _ = matchItems(s, items[pos:], nextItems); matched {
+					return
+				}
+			}
+
 			for i := 0; i < list.Len(); i++ {
 				if offset = list.MatchN(s, i); offset == -1 {
 					continue
 				}
 				s := s[offset:]
 				if len(items) == pos {
-					if s == "" {
-						matched = true
-						return
+					if nextItems == nil || nextItems.IsEmpty() {
+						if s == "" {
+							matched = true
+							return
+						}
+					} else {
+						items, nextItems := nextItems.Next()
+						if matched, _ = matchItems(s, items, nextItems); matched {
+							return
+						}
 					}
-				} else if matched, _ = matchItems(s, items[pos:]); matched {
+				} else if matched, _ = matchItems(s, items[pos:], nextItems); matched {
 					return
 				}
 			}
 
-			if list.IsOptional() {
-				if len(items) == 1 {
-					if s == "" {
-						matched = true
-						return
+			return
+		case FindGroup:
+			group := items[pos].(*Group)
+			pos := pos + 1
+
+			if group.IsOptional() {
+				s := s
+				if len(items) == pos {
+					if nextItems == nil || nextItems.IsEmpty() {
+						if s == "" {
+							matched = true
+							return
+						}
+					} else {
+						items, nextItems := nextItems.Next()
+						if matched, _ = matchItems(s, items, nextItems); matched {
+							return
+						}
 					}
-				} else if matched, _ = matchItems(s, items[pos:]); matched {
+				} else if matched, _ = matchItems(s, items[pos:], nextItems); matched {
 					return
 				}
 			}
 
+			for i := 0; i < len(group.Vals); i++ {
+				next := nextItemsTree{
+					items: items[pos:],
+					next:  nextItems,
+				}
+				if v, ok := group.Vals[i].(*Chain); ok {
+					if matched, _ = matchItems(s, v.Items, &next); matched {
+						return
+					}
+				} else {
+					if matched, _ = matchItems(s, []Item{group.Vals[i]}, &next); matched {
+						return
+					}
+				}
+			}
 			return
 		case FindNotSupported:
 			panic("not supported in match")
@@ -201,11 +281,16 @@ func matchItems(s string, items []Item) (matched, abortGready bool) {
 			panic("forwarded match")
 		case FindStar:
 			pos := pos + 1
-			if len(items) <= pos {
-				matched = true
-				return
+			if len(items) == pos {
+				if nextItems == nil || nextItems.IsEmpty() {
+					matched = true
+					return
+				} else {
+					items, nextItems = nextItems.Next()
+					return matchStarItems(s, items, nextItems)
+				}
 			} else {
-				return matchStarItems(s, items[pos:])
+				return matchStarItems(s, items[pos:], nextItems)
 			}
 		default:
 			panic(fmt.Errorf("unsupported find flag: %d", flag))
@@ -213,27 +298,38 @@ func matchItems(s string, items []Item) (matched, abortGready bool) {
 	}
 }
 
-// matchStarItems check string against []NodeItems after Star item
+// matchStarItems check string against []Item after Star item
 //
 // return
 //
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func matchStarItems(s string, items []Item) (matched, abortGready bool) {
+func matchStarItems(s string, items []Item, nextItems *nextItemsTree) (matched, abortGready bool) {
 	var (
 		offset, length int
 		flag           FindFlag
 	)
 	if len(items) == 0 {
-		matched = s == ""
-		abortGready = true
-		return
+		if nextItems == nil || nextItems.IsEmpty() {
+			matched = s == ""
+			abortGready = true
+			return
+		} else {
+			items, nextItems = nextItems.Next()
+			return matchStarItems(s, items, nextItems)
+		}
 	}
 	for {
 		if len(items) == 0 || items[0] == nil {
-			matched = s == ""
-			return
+			if nextItems == nil || nextItems.IsEmpty() {
+				matched = s == ""
+				return
+			} else {
+				items, nextItems = nextItems.Next()
+				matched, _ = matchItems(s, items, nextItems)
+				return
+			}
 		}
 		if len(s) < items[0].MinLen() {
 			abortGready = true
@@ -249,7 +345,7 @@ func matchStarItems(s string, items []Item) (matched, abortGready bool) {
 		switch flag {
 		case FindDone:
 			sub := s[length:]
-			if matched, abortGready = matchItems(sub, items[1:]); matched || abortGready {
+			if matched, abortGready = matchItems(sub, items[1:], nextItems); matched || abortGready {
 				return
 			}
 		case FindList:
@@ -259,11 +355,18 @@ func matchStarItems(s string, items []Item) (matched, abortGready bool) {
 				s := s
 				for {
 					if len(items) == 1 {
-						if s == "" {
-							matched = true
-							return
+						if nextItems == nil || nextItems.IsEmpty() {
+							if s == "" {
+								matched = true
+								break
+							}
+						} else {
+							items, nextItems := nextItems.Next()
+							if matched, _ = matchItems(s, items, nextItems); matched {
+								return
+							}
 						}
-					} else if matched, _ = matchStarItems(s, items[1:]); matched {
+					} else if matched, _ = matchStarItems(s, items[1:], nextItems); matched {
 						return
 					}
 					// skip one symbol and retry scan
@@ -274,7 +377,6 @@ func matchStarItems(s string, items []Item) (matched, abortGready bool) {
 				}
 			}
 
-			// TODO: abort gready with FindFirst
 			for {
 				var offsetN int
 				offset := -1
@@ -288,11 +390,18 @@ func matchStarItems(s string, items []Item) (matched, abortGready bool) {
 					}
 					s := s[offsetN+length:]
 					if len(items) == 1 {
-						if s == "" {
-							matched = true
-							return
+						if nextItems == nil || nextItems.IsEmpty() {
+							if s == "" {
+								matched = true
+								return
+							}
+						} else {
+							items, nextItems := nextItems.Next()
+							if matched, _ = matchItems(s, items, nextItems); matched {
+								return
+							}
 						}
-					} else if matched, _ = matchItems(s, items[1:]); matched {
+					} else if matched, _ = matchItems(s, items[1:], nextItems); matched {
 						return
 					}
 				}
@@ -300,10 +409,50 @@ func matchStarItems(s string, items []Item) (matched, abortGready bool) {
 					break
 				}
 				s = s[offset:]
+				// shift to one rune from minimal offset
 				if _, length = utf8.DecodeRuneInString(s); length < 1 {
 					break
 				}
 				s = s[length:]
+			}
+
+			return
+		case FindGroup:
+			group := items[0].(*Group)
+
+			if group.IsOptional() {
+				s := s
+				if len(items) == 1 {
+					if nextItems == nil || nextItems.IsEmpty() {
+						if s == "" {
+							matched = true
+							return
+						}
+					} else {
+						items, nextItems := nextItems.Next()
+						if matched, _ = matchStarItems(s, items, nextItems); matched {
+							return
+						}
+					}
+				} else if matched, _ = matchStarItems(s, items[1:], nextItems); matched {
+					return
+				}
+			}
+
+			for i := 0; i < len(group.Vals); i++ {
+				next := nextItemsTree{
+					items: items[1:],
+					next:  nextItems,
+				}
+				if v, ok := group.Vals[i].(*Chain); ok {
+					if matched, _ = matchStarItems(s, v.Items, &next); matched {
+						return
+					}
+				} else {
+					if matched, _ = matchStarItems(s, []Item{group.Vals[i]}, &next); matched {
+						return
+					}
+				}
 			}
 
 			return
@@ -313,11 +462,18 @@ func matchStarItems(s string, items []Item) (matched, abortGready bool) {
 			panic("forwarded match")
 		case FindStar:
 			if len(items) == 1 {
-				matched = true
-				return
+				if nextItems == nil || nextItems.IsEmpty() {
+					matched = true
+					return
+				} else {
+					items, nextItems := nextItems.Next()
+					if matched, _ = matchStarItems(s, items, nextItems); matched {
+						return
+					}
+				}
 			}
 			items = items[1:]
-			continue
+			// continue
 		default:
 			panic(fmt.Errorf("unsupported find flag: %d", flag))
 		}

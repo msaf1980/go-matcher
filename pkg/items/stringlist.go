@@ -216,7 +216,7 @@ func (item *StringList) MatchN(s string, n int) (offset int) {
 }
 
 // func NewItemList return optimized version of InnerItem
-func NewItemList(vals []string) (item Item) {
+func NewItemList(vals []string) (item Item, err error) {
 	// TODO: support escape symbols
 	// TODO: support gready list like {a*,b}
 	if len(vals) == 0 {
@@ -224,17 +224,17 @@ func NewItemList(vals []string) (item Item) {
 	}
 	if len(vals) == 1 {
 		if vals[0] == "" {
-			return nil
+			return nil, nil
 		}
 		// one item optimization
 		c, n := utf8.DecodeRuneInString(vals[0])
 		if n == len(vals[0]) {
 			if c <= 127 {
-				return Byte(c)
+				return Byte(c), nil
 			}
-			return Rune(c)
+			return Rune(c), nil
 		}
-		return NewString(vals[0])
+		return NewString(vals[0]), nil
 	}
 	minLen := math.MaxInt
 	maxLen := 0
@@ -256,14 +256,14 @@ func NewItemList(vals []string) (item Item) {
 			if !firstASCII.Add(vals[i][0]) {
 				asciiStarted = false
 			}
-			if HasStarAny(vals[i]) {
+			if HasWildcard(vals[i]) {
 				hasStar = true
 				break
 			}
 		}
 	}
 	if hasStar {
-		item = NewList(vals)
+		item, err = NewGroup(vals)
 	} else {
 		if minLen == 0 {
 			if vals[0] != "" {

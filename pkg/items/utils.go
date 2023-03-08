@@ -12,10 +12,6 @@ func AddMaxLen(a, b int) int {
 	return -1
 }
 
-func HasStarAny(target string) bool {
-	return strings.ContainsAny(target, "*?")
-}
-
 func WildcardCount(target string) (n int) {
 	for _, c := range target {
 		switch c {

@@ -122,7 +122,7 @@ func Parse(glob string) (g *Glob, err error) {
 			inners := make([]items.Item, 0, innerCount)
 
 			for glob != "" {
-				inner, glob, err = NextWildcardItem(glob)
+				inner, glob, err = items.NextWildcardItem(glob)
 				if err != nil {
 					return
 				}

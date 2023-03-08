@@ -71,7 +71,7 @@ func TestGlobTree_Batch(t *testing.T) {
 					"*{b,cd}*.df", "*{b,cd}*.df", "bc.{,b,cd}*.df", "bc.{,b,cd}*.df",
 					"bc.*{,b,cd}", "bc.*{,b,cd}*", "bc.*{,b,cd}*",
 				},
-				"bc.": {"bc.{,b,cd}", "bc.{,b,cd}", "bc.*{,b,cd}", "bc.*{,b,cd}*"},
+				"bc.": {"bc.{,b,cd}", "bc.*{,b,cd}", "bc.*{,b,cd}*"},
 				"bcd": nil,
 			},
 		},
