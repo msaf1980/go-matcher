@@ -23,7 +23,7 @@ func BenchmarkGready_List_Tree(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_List_Regex(b *testing.B) {
+func _BenchmarkGready_List_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globsBatchList[0])
 		if !w.MatchString(pathsBatchList[0]) {
@@ -87,7 +87,7 @@ func BenchmarkGready_List_Tree_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_List_Regex_Precompiled(b *testing.B) {
+func _BenchmarkGready_List_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globsBatchList[0])
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

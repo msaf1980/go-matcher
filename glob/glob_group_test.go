@@ -122,7 +122,7 @@ func Benchmark_Group(b *testing.B) {
 	}
 }
 
-func Benchmark_Group_Regex(b *testing.B) {
+func _Benchmark_Group_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGroup)
 		if !w.MatchString(stringGroup) {
@@ -157,7 +157,7 @@ func Benchmark_Star_Group(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_Group_Regex(b *testing.B) {
+func _Benchmark_Star_Group_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarGroup)
 		if !w.MatchString(stringStarGroup) {

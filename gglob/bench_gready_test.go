@@ -43,7 +43,7 @@ func BenchmarkGready_StringMiss_Tree(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_StringMiss_Regex(b *testing.B) {
+func _BenchmarkGready_StringMiss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGready_StringMiss)
 		if w.MatchString(pathGready_StringMiss) {
@@ -124,7 +124,7 @@ func BenchmarkGready_StringMiss_Tree_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_StringMiss_Regex_Precompiled(b *testing.B) {
+func _BenchmarkGready_StringMiss_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globGready_StringMiss)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -156,7 +156,7 @@ func BenchmarkGready_ByteMiss_Tree(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_ByteMiss_Regex(b *testing.B) {
+func _BenchmarkGready_ByteMiss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGready_ByteMiss)
 		if w.MatchString(pathGready_ByteMiss) {
@@ -165,7 +165,7 @@ func BenchmarkGready_ByteMiss_Regex(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_ByteMiss_Tree_Precompiled(b *testing.B) {
+func _BenchmarkGready_ByteMiss_Tree_Precompiled(b *testing.B) {
 	w := NewTree()
 	g := ParseMust(globGready_ByteMiss)
 
@@ -220,7 +220,7 @@ func BenchmarkGready_ByteMiss_Tree_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_ByteMiss_Regex_Precompiled(b *testing.B) {
+func _BenchmarkGready_ByteMiss_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globGready_ByteMiss)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -252,7 +252,7 @@ func BenchmarkGready_RuneRangesMiss_ASCII_Tree(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_RuneRangesMiss_ASCII_Regex(b *testing.B) {
+func _BenchmarkGready_RuneRangesMiss_ASCII_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGready_RuneRangesMiss_ASCII)
 		if w.MatchString(pathGready_RuneRangesMiss_ASCII) {
@@ -316,7 +316,7 @@ func BenchmarkGready_RuneRangesMiss_ASCII_Tree_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_RuneRangesMiss_ASCII_Regex_Precompiled(b *testing.B) {
+func _BenchmarkGready_RuneRangesMiss_ASCII_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globGready_RuneRangesMiss_ASCII)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -347,7 +347,7 @@ func BenchmarkGready_ListMiss_Tree(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_ListMiss_Regex(b *testing.B) {
+func _BenchmarkGready_ListMiss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGready_ListMiss)
 		if w.MatchString(pathGready_ListMiss) {
@@ -411,7 +411,7 @@ func BenchmarkGready_ListMiss_Tree_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_ListMiss_Regex_Precompiled(b *testing.B) {
+func _BenchmarkGready_ListMiss_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globGready_ListMiss)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -442,7 +442,7 @@ func BenchmarkGready_ListSkip_Tree(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_ListSkip_Regex(b *testing.B) {
+func _BenchmarkGready_ListSkip_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGready_ListSkip)
 		if w.MatchString(pathGready_ListSkip) {
@@ -506,7 +506,7 @@ func BenchmarkGready_ListSkip_Tree_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_ListSkip_Regex_Precompiled(b *testing.B) {
+func _BenchmarkGready_ListSkip_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globGready_ListSkip)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -537,7 +537,7 @@ func BenchmarkGready_OneSkip_Tree(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_OneSkip_Regex(b *testing.B) {
+func _BenchmarkGready_OneSkip_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGready_OneSkip)
 		if w.MatchString(pathGready_OneSkip) {
@@ -601,7 +601,7 @@ func BenchmarkGready_OneSkip_Tree_Prealloc(b *testing.B) {
 	}
 }
 
-func BenchmarkGready_OneSkip_Regex_Precompiled(b *testing.B) {
+func _BenchmarkGready_OneSkip_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globGready_OneSkip)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

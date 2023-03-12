@@ -104,7 +104,7 @@ func Benchmark_Star_Any_Miss(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_Any_Miss_Regex(b *testing.B) {
+func _Benchmark_Star_Any_Miss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globAnySkipASCII)
 		if w.MatchString(stringAnySkipASCII) {
@@ -124,7 +124,7 @@ func Benchmark_Star_Any_Miss_Precompiled(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_Any_Miss_Regex_Precompiled(b *testing.B) {
+func _Benchmark_Star_Any_Miss_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globAnySkipASCII)
 
 	b.ResetTimer()

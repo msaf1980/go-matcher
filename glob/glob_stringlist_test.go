@@ -391,7 +391,7 @@ func Benchmark_Star_StringList_ASCII(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_StringList_ASCII_Regex(b *testing.B) {
+func _Benchmark_Star_StringList_ASCII_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarListASCII)
 		if !w.MatchString(stringListASCII) {
@@ -411,7 +411,7 @@ func Benchmark_Star_StringList_ASCII_Precompiled(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_StringList_Regex_Precompiled(b *testing.B) {
+func _Benchmark_Star_StringList_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globStarListASCII)
 
 	b.ResetTimer()
