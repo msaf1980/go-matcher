@@ -60,9 +60,7 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 	return treeItem
 }
 
-// GlobTree is batch glob matcher
-//
-// TODO: need to be optimize, bad perfomance
+// GlobTree is batch glob matcher (use on large globs set)
 type GlobTree struct {
 	Root       *items.TreeItem
 	Globs      map[string]int
@@ -93,6 +91,10 @@ func (gtree *GlobTree) Add(glob string, index int) (normalized string, n int, er
 		normalized = glob
 		return
 	}
+	if normalized, ok = gtree.GlobsIndex[index]; ok {
+		err = ErrIndexDup
+		return
+	}
 
 	var g *Glob
 	if g, err = Parse(glob); err != nil {
@@ -103,11 +105,6 @@ func (gtree *GlobTree) Add(glob string, index int) (normalized string, n int, er
 		// aleady added
 		err = ErrGlobExist
 		normalized = g.Node
-		return
-	}
-
-	if normalized, ok = gtree.GlobsIndex[index]; ok {
-		err = ErrIndexDup
 		return
 	}
 

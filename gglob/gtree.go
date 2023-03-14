@@ -167,7 +167,7 @@ func addGGlob(treeMap map[int]*GTreeItem, gg *GGlob, index int) *GTreeItem {
 	return treeItem
 }
 
-// GGlobTree is batch glob matcher (dot-separated, like a.b*.c), writted for graphite project
+// GGlobTree is batch glob matcher (dot-separated, like a.b*.c), writted for graphite project (use on large globs set)
 type GGlobTree struct {
 	Root       map[int]*GTreeItem
 	Globs      map[string]int
@@ -198,6 +198,10 @@ func (gtree *GGlobTree) Add(globString string, index int) (normalized string, n 
 		normalized = globString
 		return
 	}
+	if normalized, ok = gtree.GlobsIndex[index]; ok {
+		err = glob.ErrIndexDup
+		return
+	}
 
 	var g *GGlob
 	if g, err = Parse(globString); err != nil {
@@ -208,11 +212,6 @@ func (gtree *GGlobTree) Add(globString string, index int) (normalized string, n 
 		// aleady added
 		err = glob.ErrGlobExist
 		normalized = g.Node
-		return
-	}
-
-	if normalized, ok = gtree.GlobsIndex[index]; ok {
-		err = glob.ErrIndexDup
 		return
 	}
 
