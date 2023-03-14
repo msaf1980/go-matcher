@@ -1,6 +1,7 @@
 package gglob
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 
@@ -23,7 +24,9 @@ func BenchmarkBatchHuge_Moira_Tree_Precompiled2(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var globs []string
 		first := items.MinStore{-1}
-		_ = w.Match(pathsBatchHugeMoira[i], &globs, nil, &first)
+		// _ = w.Match(pathsBatchHugeMoira[i], &globs, nil, &first)
+		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
+		_ = w.Match(path, &globs, nil, &first)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -37,8 +40,10 @@ func BenchmarkBatchHuge_Moira_GGlob_Precompiled(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
 		for k := 0; k < len(g); k++ {
-			_ = g[k].Match(pathsBatchHugeMoira[i])
+			// _ = g[k].Match(pathsBatchHugeMoira[i])
+			_ = g[k].Match(path)
 		}
 	}
 	b.StopTimer()
@@ -46,7 +51,7 @@ func BenchmarkBatchHuge_Moira_GGlob_Precompiled(b *testing.B) {
 	b.ReportMetric(float64(b.N)/d.Seconds(), "match/s")
 }
 
-func BenchmarkBatchHuge_Moira_GGlob_Prealloc_ByParts(b *testing.B) {
+func BenchmarkBatchHuge_Moira_GGlob_ByParts_Prealloc(b *testing.B) {
 	g := parseGGlobs(globsBatchHugeMoira)
 	parts := make([]string, 8)
 	pathsBatchHugeMoira := generatePaths(gGlobsBatchHugeMoira, b.N)
@@ -54,8 +59,9 @@ func BenchmarkBatchHuge_Moira_GGlob_Prealloc_ByParts(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		PathSplitB(pathsBatchHugeMoira[i], &parts)
-		length := len(pathsBatchHugeMoira[i])
+		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
+		length := len(path)
+		PathSplitB(path, &parts)
 		for k := 0; k < len(g); k++ {
 			_ = g[k].MatchByParts(parts, length)
 		}
@@ -83,7 +89,9 @@ func BenchmarkBatchHuge_Moira_Tree_Prealloc(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		globs = globs[:0]
 		first.Init()
-		_ = w.Match(pathsBatchHugeMoira[i], &globs, nil, &first)
+		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
+		_ = w.Match(path, &globs, nil, &first)
+		// _ = w.Match(pathsBatchHugeMoira[i], &globs, nil, &first)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -110,7 +118,9 @@ func BenchmarkBatchHuge_Moira_Tree_Prealloc_ByParts(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		globs = globs[:0]
 		first.Init()
-		_ = PathSplitB(pathsBatchHugeMoira[i], &parts)
+		// _ = PathSplitB(pathsBatchHugeMoira[i], &parts)
+		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
+		_ = PathSplitB(path, &parts)
 		_ = w.MatchByParts(parts, &globs, nil, &first)
 	}
 	b.StopTimer()

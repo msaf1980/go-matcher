@@ -24,16 +24,17 @@ func runTestTaggedTermList(t *testing.T, tt testTaggedTermList) {
 		t.Fatalf("ParseSeriesByTag(%q) error = %v, wantErr %v", tt.query, err, tt.wantErr)
 	}
 
-	if tt.query != "" {
+	if err == nil {
 		var buf strings.Builder
 		terms.WriteString(&buf)
 		assert.Equal(t, tt.wantQuery, buf.String(), tt.query)
-	}
 
-	if !cmp.Equal(terms, tt.want, cmpTransform) {
-		t.Errorf("TagsMatcher.Add() = %s", cmp.Diff(tt.want, terms, cmpTransform))
+		if !cmp.Equal(terms, tt.want, cmpTransform) {
+			t.Errorf("ParseSeriesByTag(%q) = %s", tt.query, cmp.Diff(tt.want, terms, cmpTransform))
+		}
+
+		verifyTaggedTermList(t, tt.matchPaths, tt.missPaths, terms)
 	}
-	verifyTaggedTermList(t, tt.matchPaths, tt.missPaths, terms)
 
 	if tt.wantErr {
 		assert.Equal(t, 0, len(tt.matchPaths), "can't check on error", tt.query)
@@ -43,19 +44,19 @@ func runTestTaggedTermList(t *testing.T, tt testTaggedTermList) {
 
 func verifyTaggedTermList(t *testing.T, matchPaths, missPaths []string, terms TaggedTermList) {
 	for _, path := range matchPaths {
-		tags, err := PathTagsMap(path)
+		tags, err := PathTags(path)
 		if err != nil {
 			t.Errorf("PathTags(%q) err = %q", path, err.Error())
 		}
-		if !terms.MatchByTagsMap(tags) {
-			t.Errorf("TaggedTermList.MatchByPathMap(%q) != true", path)
+		if !terms.MatchByTags(tags) {
+			t.Errorf("TaggedTermList.MatchByTags(%q) != true", path)
 		}
 		tagsMap, err := PathTagsMap(path)
 		if err != nil {
 			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
 		}
 		if !terms.MatchByTagsMap(tagsMap) {
-			t.Errorf("TaggedTermList.MatchByPathMap(%q) != true", path)
+			t.Errorf("TaggedTermList.MatchByTagsMap(%q) != true", path)
 		}
 	}
 	for _, path := range missPaths {
@@ -64,14 +65,14 @@ func verifyTaggedTermList(t *testing.T, matchPaths, missPaths []string, terms Ta
 			t.Errorf("PathTags(%q) err = %q", path, err.Error())
 		}
 		if terms.MatchByTags(tags) {
-			t.Errorf("TaggedTermList.MatchByPath(%q) != false", path)
+			t.Errorf("TaggedTermList.MatchByTags(%q) != false", path)
 		}
 		tagsMap, err := PathTagsMap(path)
 		if err != nil {
 			t.Errorf("PathTagsMap(%q) err = %q", path, err.Error())
 		}
 		if terms.MatchByTagsMap(tagsMap) {
-			t.Errorf("TaggedTermList.MatchByPathMap(%q) != false", path)
+			t.Errorf("TaggedTermList.MatchByTagsMap(%q) != false", path)
 		}
 	}
 }
