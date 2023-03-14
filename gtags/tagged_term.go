@@ -8,6 +8,7 @@ import (
 
 	"github.com/msaf1980/go-matcher/glob"
 	"github.com/msaf1980/go-matcher/pkg/escape"
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 // Based on github.com/go-graphite/graphite-clickhouse/finder/tagged.go
@@ -38,9 +39,28 @@ type TaggedTerm struct {
 	Re          *regexp.Regexp // regexp
 }
 
-// Build compile regexp/glob
-func (term *TaggedTerm) Build() (err error) {
-	if term.HasWildcard {
+func (t TaggedTerm) WriteString(buf *strings.Builder) {
+	buf.WriteString(t.Key)
+	buf.WriteString(t.Op.String())
+	buf.WriteString(t.Value)
+}
+
+func (t TaggedTerm) String() string {
+	var buf strings.Builder
+	buf.Grow(24)
+	t.WriteString(&buf)
+	return buf.String()
+}
+
+// build compile regexp/glob
+func (term *TaggedTerm) build() (err error) {
+	if term.Op == TaggedTermMatch || term.Op == TaggedTermNotMatch {
+		term.Re, err = regexp.Compile(term.Value)
+		if err != nil {
+			err = ErrExprInvalid{term.Value}
+		}
+	} else if items.HasWildcard(term.Value) {
+		term.HasWildcard = true
 		if term.Glob, err = glob.Parse(term.Value); err != nil {
 			return err
 		}
@@ -50,11 +70,6 @@ func (term *TaggedTerm) Build() (err error) {
 			term.HasWildcard = false
 		} else {
 			term.HasWildcard = true
-		}
-	} else if term.Op == TaggedTermMatch || term.Op == TaggedTermNotMatch {
-		term.Re, err = regexp.Compile(term.Value)
-		if err != nil {
-			err = ErrExprInvalid{term.Value}
 		}
 	}
 	return
@@ -78,11 +93,13 @@ func (term *TaggedTerm) Match(v string) bool {
 		return term.Re.MatchString(v)
 	case TaggedTermNotMatch:
 		return !term.Re.MatchString(v)
+	default:
+		// must be unreacheable
+		panic(fmt.Errorf("invalid op : %d", term.Op))
 	}
-	// must be unreacheable
-	panic(fmt.Errorf("invalid op : %d", term.Op))
 }
 
+// TaggedTermList is parsed seriesByTag expression
 type TaggedTermList []TaggedTerm
 
 func (t TaggedTermList) WriteString(buf *strings.Builder) {
@@ -92,12 +109,17 @@ func (t TaggedTermList) WriteString(buf *strings.Builder) {
 			buf.WriteByte(',')
 		}
 		buf.WriteByte('\'')
-		buf.WriteString(t[i].Key)
-		buf.WriteString(t[i].Op.String())
-		buf.WriteString(t[i].Value)
+		t[i].WriteString(buf)
 		buf.WriteByte('\'')
 	}
 	buf.WriteString(")")
+}
+
+func (t TaggedTermList) String() string {
+	var buf strings.Builder
+	buf.Grow(24 * len(t))
+	t.WriteString(&buf)
+	return buf.String()
 }
 
 // MatchByPath match against tags map
@@ -218,15 +240,13 @@ func ParseSeriesByTag(query string) (terms TaggedTermList, err error) {
 		return
 	}
 
-	if n < 1 {
-		err = ErrQueryInvalid{query}
-		return
-	}
-
 	return ParseTaggedConditions(conditions[:n])
 }
 
 func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error) {
+	if len(conditions) == 0 {
+		return
+	}
 	terms = make(TaggedTermList, len(conditions))
 
 	for i := 0; i < len(conditions); i++ {
@@ -263,7 +283,7 @@ func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error
 			terms[i].Key = "__name__"
 		}
 
-		if err = terms[i].Build(); err != nil {
+		if err = terms[i].build(); err != nil {
 			return
 		}
 	}
@@ -286,7 +306,7 @@ func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error
 	return terms, nil
 }
 
-// PathTags split GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3) into Tag's map
+// PathTagsMap split GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3) into Tag's map
 func PathTagsMap(path string) (tags map[string]string, err error) {
 	name, args, ok := strings.Cut(path, "?")
 	if !ok || strings.Contains(name, "=") {
@@ -327,9 +347,32 @@ type Tag struct {
 func PathTags(path string) (tags []Tag, err error) {
 	name, args, ok := strings.Cut(path, "?")
 	if !ok || strings.Contains(name, "=") {
-		err = ErrPathInvalid{"name", "not found"}
+		err = ErrPathInvalid{"name", "not found in " + name}
 	}
 	tagsCount := strings.Count(args, "&") + 2
+	tags = make([]Tag, 0, tagsCount)
+	var (
+		kv, k, v string
+	)
+	tags = append(tags, Tag{Key: "__name__", Value: escape.Unescape(name)})
+	for args != "" {
+		if k, v, args, ok = NextTag(args); ok {
+			tags = append(tags, Tag{Key: escape.Unescape(k), Value: escape.Unescape(v)})
+		} else {
+			err = ErrPathInvalid{kv, "not delimited with ="}
+			break
+		}
+	}
+	return
+}
+
+// GraphitePathTags split Graphite tagged path format (like name?a=v1&b=v2&c=v3) into Tag's slice
+func GraphitePathTags(path string) (tags []Tag, err error) {
+	name, args, ok := strings.Cut(path, ";")
+	if !ok || strings.Contains(name, "=") {
+		err = ErrPathInvalid{"name", "not found"}
+	}
+	tagsCount := strings.Count(args, ";") + 2
 	tags = make([]Tag, 0, tagsCount)
 	var (
 		kv, k, v string
