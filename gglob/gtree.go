@@ -10,12 +10,25 @@ import (
 type GTreeItem struct {
 	Item *glob.Glob
 
+	Terminate  bool
 	Terminated string // end of chain (resulting raw/normalized globs)
 	TermIndex  int    // rule num of end of chain (resulting glob), can be used in specific cases
 
 	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
 	ChildsMap map[string]*GTreeItem // full match
 	Childs    []*GTreeItem          // next possible parts slice
+}
+
+func (item *GTreeItem) append(globs *[]string, index *[]int, first items.Store) {
+	if globs != nil {
+		*globs = append(*globs, item.Terminated)
+	}
+	if index != nil {
+		*index = append(*index, item.TermIndex)
+	}
+	if first != nil {
+		first.Store(item.TermIndex)
+	}
 }
 
 func (item *GTreeItem) MatchItems(path string, globs *[]string, index *[]int, first items.Store) (matched int) {
@@ -76,16 +89,8 @@ func (item *GTreeItem) MatchItemsByParts(parts []string, globs *[]string, index 
 	if len(item.ChildsMap) > 0 {
 		if child, ok := item.ChildsMap[parts[0]]; ok {
 			if len(parts) == 1 {
-				if child.Terminated != "" {
-					if globs != nil {
-						*globs = append(*globs, child.Terminated)
-					}
-					if index != nil {
-						*index = append(*index, child.TermIndex)
-					}
-					if first != nil {
-						first.Store(child.TermIndex)
-					}
+				if child.Terminate {
+					child.append(globs, index, first)
 					matched++
 				}
 			} else {
@@ -99,15 +104,7 @@ func (item *GTreeItem) MatchItemsByParts(parts []string, globs *[]string, index 
 		if item.Childs[i].Item.Match(parts[0]) {
 			if len(parts) == 1 {
 				if item.Childs[i].Terminated != "" {
-					if globs != nil {
-						*globs = append(*globs, item.Childs[i].Terminated)
-					}
-					if index != nil {
-						*index = append(*index, item.Childs[i].TermIndex)
-					}
-					if first != nil {
-						first.Store(item.Childs[i].TermIndex)
-					}
+					item.Childs[i].append(globs, index, first)
 					matched++
 				}
 			} else {
@@ -163,6 +160,7 @@ func addGGlob(treeMap map[int]*GTreeItem, gg *GGlob, index int) *GTreeItem {
 		}
 	}
 
+	treeItem.Terminate = true
 	treeItem.Terminated = gg.Node
 	treeItem.TermIndex = index
 

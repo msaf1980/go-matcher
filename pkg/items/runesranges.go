@@ -22,7 +22,7 @@ func NewRunesRanges(ranges string) *RunesRanges {
 
 func (item *RunesRanges) Equal(a Item) bool {
 	if v, ok := a.(*RunesRanges); ok {
-		return item.Equal(v)
+		return item.RunesRanges.Equal(&v.RunesRanges)
 	}
 	return false
 }

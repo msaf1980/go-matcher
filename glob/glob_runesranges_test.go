@@ -103,7 +103,7 @@ func Benchmark_Star_RunesRanges_ASCII(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_RunesRanges_ASCII_Regex(b *testing.B) {
+func _Benchmark_Star_RunesRanges_ASCII_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarRuneRangesAscii)
 		if !w.MatchString(stringStarRuneRangesAscii) {
@@ -123,7 +123,7 @@ func Benchmark_Star_RunesRanges_ASCII_Precompiled(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_RunesRanges_ASCII_Regex_Precompiled(b *testing.B) {
+func _Benchmark_Star_RunesRanges_ASCII_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globStarRuneRangesAscii)
 
 	b.ResetTimer()
@@ -149,7 +149,7 @@ func Benchmark_Star_RunesRanges_Unicode(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_RunesRanges_Unicode_Regex(b *testing.B) {
+func _Benchmark_Star_RunesRanges_Unicode_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarRuneRangesUnicode)
 		if !w.MatchString(stringStarRuneRangesUnicode) {
@@ -169,7 +169,7 @@ func Benchmark_Star_RunesRanges_Unicode_Precompiled(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_RunesRanges_Unicode_Regex_Precompiled(b *testing.B) {
+func _Benchmark_Star_RunesRanges_Unicode_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globStarRuneRangesUnicode)
 
 	b.ResetTimer()

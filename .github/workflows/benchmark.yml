@@ -1,43 +1,89 @@
+name: Benchmark (PR)
+
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - '**'
-      - '!docs/**'
-      - '!**.md'
   pull_request:
     paths:
       - '**'
       - '!docs/**'
       - '!**.md'
-name: Benchmark
+
 jobs:
-  Compare:
+  Benchmark:
+    strategy:
+      matrix:
+        go-version:
+          - 1.18.x
+          - 1.19.x
+          - 1.x
     runs-on: ubuntu-latest
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.20.x
-      - name: Fetch Repository
-        uses: actions/checkout@v3
-      - name: Run Benchmark
-        run: set -o pipefail; go test ./... -benchmem -run=^$ -bench '^Benchmark.*($|^_Regex)' | tee output.txt
-      - name: Get Previous Benchmark Results
-        uses: actions/cache@v3
-        with:
-          path: ./cache
-          key: ${{ runner.os }}-benchmark
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          # What benchmark tool the output.txt came from
-          tool: 'go'
-          # Where the output from the benchmark tool is stored
-          output-file-path: output.txt
-          # Where the previous data file is stored
-          external-data-json-path: ./cache/benchmark-data.json
-          # Workflow will fail when an alert happens
-          fail-on-alert: true
-      # Upload the updated cache file for the next job by actions/cache
+
+    - name: Install Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Install benchstat
+      run: | 
+        go install golang.org/x/perf/cmd/benchstat@latest
+        go install github.com/msaf1980/qbenchstat/cmd/qbenchstat@latest
+
+    - name: Setup benchmarks
+      run: |
+        echo "PR_COMMENT=$(mktemp)" >> $GITHUB_ENV
+        echo "TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+
+    - name: Checkout (PR)
+      uses: actions/checkout@v3
+
+    - name: Benchmark (PR)
+      run: |
+        set -euo pipefail; for i in {1..5}; do
+          echo STEP ${i}
+          go test ./... -benchmem -run=^$ -bench '^Benchmark' | tee -a ${{ env.TMP_DIR }}/bench-pr.txt
+        done
+
+    - name: Checkout Base
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Benchmark (Base)
+      run: |
+        set -euo pipefail; for i in {1..5}; do
+          echo STEP ${i}
+          go test ./... -benchmem -run=^$ -bench '^Benchmark' | tee -a ${{ env.TMP_DIR }}/bench-base.txt
+        done
+
+    - name: Benchstat
+      run: |
+        cp ${{ env.TMP_DIR }}/bench-base.txt ${{ env.TMP_DIR }}/bench-pr.txt .
+        set -euo pipefail
+        qbenchstat -increasing 'match/s' -threshold 2 -format html bench-base.txt bench-pr.txt > ${{ env.TMP_DIR }}/benchcmp.html
+        qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt | tee benchcmp-${{ matrix.go-version }}.html
+
+    - name: Create comment PR
+      run: |
+        echo 'Benchmark comparison for golang ${{ matrix.go-version }} on [${{ github.event.pull_request.head.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.head.sha }}) (${{ github.event.pull_request.head.ref }}) vs [${{ github.event.pull_request.base.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.base.sha }}) (${{ github.event.pull_request.base.ref }})' > ${{ env.TMP_DIR }}/pr_comment
+        
+        echo "<details><summary>Benchmark diff</summary>" >> ${{ env.TMP_DIR }}/pr_comment
+        cat ${{ env.TMP_DIR }}/benchcmp.html >> ${{ env.TMP_DIR }}/pr_comment
+        echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
+
+        # echo "<details><summary>Benchmark result</summary>" >> ${{ env.TMP_DIR }}/pr_comment
+        # echo '```' >> ${{ env.TMP_DIR }}/pr_comment
+        # cat ${{ env.TMP_DIR }}/bench-pr.txt >> ${{ env.TMP_DIR }}/pr_comment
+        # echo '```' >> ${{ env.TMP_DIR }}/pr_comment
+        # echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
+
+    - name: 'Comment PR'
+      uses: actions/github-script@v4.0.2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: require('fs').readFileSync('${{ env.TMP_DIR }}/pr_comment').toString()
+          });
