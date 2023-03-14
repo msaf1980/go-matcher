@@ -113,7 +113,7 @@ var (
 	unicodeString = strings.Repeat("Abcd", 20) + "你好世, ЫВАЙz"
 )
 
-func Benchmark_Contains_ASCIISet(b *testing.B) {
+func BenchmarkContains_ASCIISet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		as, _ := MakeASCIISet(asciiSet)
 		if !as.Contains('z') {
@@ -122,7 +122,7 @@ func Benchmark_Contains_ASCIISet(b *testing.B) {
 	}
 }
 
-func Benchmark_Contains_ASCIISet_Prealloc(b *testing.B) {
+func BenchmarkContains_ASCIISet_Prealloc(b *testing.B) {
 	as, _ := MakeASCIISet(asciiSet)
 
 	b.ResetTimer()
@@ -133,7 +133,7 @@ func Benchmark_Contains_ASCIISet_Prealloc(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexASCII_ASCIISet(b *testing.B) {
+func BenchmarkIndexASCII_ASCIISet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		as, _ := MakeASCIISet(asciiSet)
 		if index := as.Index(unicodeString); index != len(unicodeString)-1 {
@@ -144,7 +144,7 @@ func Benchmark_IndexASCII_ASCIISet(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexASCII_ASCIISet_Prealloc(b *testing.B) {
+func BenchmarkIndexASCII_ASCIISet_Prealloc(b *testing.B) {
 	as, _ := MakeASCIISet(asciiSet)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -156,7 +156,7 @@ func Benchmark_IndexASCII_ASCIISet_Prealloc(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexASCII_StringsAny(b *testing.B) {
+func BenchmarkIndexASCII_StringsAny(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if index := strings.IndexAny(unicodeString, asciiSet); index != len(unicodeString)-1 {
 			b.Fatalf("strings.IndexAny(%q, %q) = %d, want %d",

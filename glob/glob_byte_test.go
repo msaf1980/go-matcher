@@ -30,7 +30,7 @@ var (
 	globByte = "*T*"
 )
 
-func Benchmark_Star_Byte_Miss(b *testing.B) {
+func BenchmarkStar_Byte_Miss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globByte)
 		if !g.Match(stringStarEndAscii) {
@@ -39,7 +39,7 @@ func Benchmark_Star_Byte_Miss(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_Byte_Miss_Regex(b *testing.B) {
+func _BenchmarkStar_Byte_Miss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globByte)
 		if !w.MatchString(stringStarEndAscii) {
@@ -48,7 +48,7 @@ func _Benchmark_Star_Byte_Miss_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_Byte_Miss_Precompiled(b *testing.B) {
+func BenchmarkStar_Byte_Miss_Precompiled(b *testing.B) {
 	g := ParseMust(globByte)
 
 	b.ResetTimer()
@@ -59,7 +59,7 @@ func Benchmark_Star_Byte_Miss_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_Byte_Miss_Regex_Precompiled(b *testing.B) {
+func _BenchmarkStar_Byte_Miss_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globByte)
 
 	b.ResetTimer()

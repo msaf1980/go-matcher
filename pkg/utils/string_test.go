@@ -61,13 +61,13 @@ func TestStringSkipRunesLast(t *testing.T) {
 	}
 }
 
-func Benchmark_String_SkipRunes(b *testing.B) {
+func BenchmarkString_SkipRunes(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = StringSkipRunes("ЯB界Cd", 3)
 	}
 }
 
-func Benchmark_String_SkipRunesEmpty(b *testing.B) {
+func BenchmarkString_SkipRunesEmpty(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = StringSkipRunes("ЯB界Cd", 0)
 	}

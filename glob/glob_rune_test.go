@@ -42,7 +42,7 @@ var (
 	globRune = "*Т*"
 )
 
-func Benchmark_Star_Rune_Miss(b *testing.B) {
+func BenchmarkStar_Rune_Miss(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globRune)
 		if !g.Match(stringStarEndUnicode) {
@@ -51,7 +51,7 @@ func Benchmark_Star_Rune_Miss(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_Rune_Miss_Regex(b *testing.B) {
+func _BenchmarkStar_Rune_Miss_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globRune)
 		if !w.MatchString(stringStarEndUnicode) {
@@ -60,7 +60,7 @@ func _Benchmark_Star_Rune_Miss_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_Rune_Miss_Precompiled(b *testing.B) {
+func BenchmarkStar_Rune_Miss_Precompiled(b *testing.B) {
 	g := ParseMust(globRune)
 
 	b.ResetTimer()
@@ -71,7 +71,7 @@ func Benchmark_Star_Rune_Miss_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_Rune_Miss_Regex_Precompiled(b *testing.B) {
+func _BenchmarkStar_Rune_Miss_Regex_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globRune)
 
 	b.ResetTimer()

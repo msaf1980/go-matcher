@@ -181,7 +181,7 @@ var (
 	stringBenchASCII = "DB.Sales.BalanceCluster.node1.DownEndpointCount"
 )
 
-func Benchmark_GGlob_ASCII(b *testing.B) {
+func BenchmarkGGlob_ASCII(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globBenchASCII)
 		if !g.Match(stringBenchASCII) {
@@ -190,7 +190,7 @@ func Benchmark_GGlob_ASCII(b *testing.B) {
 	}
 }
 
-func _Benchmark_Regex_ASCII(b *testing.B) {
+func _BenchmarkRegex_ASCII(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globBenchASCII)
 		if !w.MatchString(stringBenchASCII) {
@@ -199,7 +199,7 @@ func _Benchmark_Regex_ASCII(b *testing.B) {
 	}
 }
 
-func Benchmark_GGlob_ASCII_Precompiled(b *testing.B) {
+func BenchmarkGGlob_ASCII_Precompiled(b *testing.B) {
 	g := ParseMust(globBenchASCII)
 
 	b.ResetTimer()
@@ -210,7 +210,7 @@ func Benchmark_GGlob_ASCII_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Regex_ASCII_Precompiled(b *testing.B) {
+func _BenchmarkRegex_ASCII_Precompiled(b *testing.B) {
 	w := tests.BuildGlobRegexp(globBenchASCII)
 
 	b.ResetTimer()

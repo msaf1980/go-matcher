@@ -254,7 +254,7 @@ func TestRunesRanges_Index(t *testing.T) {
 	}
 }
 
-func Benchmark_IndexUnicode_ASCII_RuneSet_Large(b *testing.B) {
+func BenchmarkIndexUnicode_ASCII_RuneSet_Large(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var rs RunesRanges
 		rs.Adds(asciiSet)
@@ -266,7 +266,7 @@ func Benchmark_IndexUnicode_ASCII_RuneSet_Large(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexUnicode_ASCII_RuneSet_Prealloc(b *testing.B) {
+func BenchmarkIndexUnicode_ASCII_RuneSet_Prealloc(b *testing.B) {
 	var rs RunesRanges
 	rs.Adds(asciiSet)
 
@@ -280,7 +280,7 @@ func Benchmark_IndexUnicode_ASCII_RuneSet_Prealloc(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexUnicode_ASCII_StringsAny(b *testing.B) {
+func BenchmarkIndexUnicode_ASCII_StringsAny(b *testing.B) {
 	want := len(unicodeString) - 1
 	for i := 0; i < b.N; i++ {
 		if index := strings.IndexAny(unicodeString, asciiSet); index != want {
@@ -295,7 +295,7 @@ var (
 	runeSet = "界Яz"
 )
 
-func Benchmark_IndexUnicode_Unicode_RuneSet(b *testing.B) {
+func BenchmarkIndexUnicode_Unicode_RuneSet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var rs RunesRanges
 		rs.Adds(runeSet)
@@ -307,7 +307,7 @@ func Benchmark_IndexUnicode_Unicode_RuneSet(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexUnicode_Unicode_RuneSet_Prealloc(b *testing.B) {
+func BenchmarkIndexUnicode_Unicode_RuneSet_Prealloc(b *testing.B) {
 	var rs RunesRanges
 	rs.Adds(runeSet)
 
@@ -321,7 +321,7 @@ func Benchmark_IndexUnicode_Unicode_RuneSet_Prealloc(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexUnicode_Unicode_StringsAny(b *testing.B) {
+func BenchmarkIndexUnicode_Unicode_StringsAny(b *testing.B) {
 	want := len(unicodeString) - 1
 	for i := 0; i < b.N; i++ {
 		if index := strings.IndexAny(unicodeString, runeSet); index != want {
@@ -337,7 +337,7 @@ var (
 	largeRuneSet = "界ЯqrstuvwxyzefgikmoqsuQRSTUVWXYZEFGIKMOQSU"
 )
 
-func Benchmark_IndexUnicode_Large_RuneSet(b *testing.B) {
+func BenchmarkIndexUnicode_Large_RuneSet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var rs RunesRanges
 		rs.Adds(largeRuneSet)
@@ -349,7 +349,7 @@ func Benchmark_IndexUnicode_Large_RuneSet(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexUnicode_Large_RuneSet_Prealloc(b *testing.B) {
+func BenchmarkIndexUnicode_Large_RuneSet_Prealloc(b *testing.B) {
 	var rs RunesRanges
 	rs.Adds(largeRuneSet)
 
@@ -363,7 +363,7 @@ func Benchmark_IndexUnicode_Large_RuneSet_Prealloc(b *testing.B) {
 	}
 }
 
-func Benchmark_IndexUnicode_StringsAny_Large(b *testing.B) {
+func BenchmarkIndexUnicode_StringsAny_Large(b *testing.B) {
 	want := len(unicodeString) - 1
 	for i := 0; i < b.N; i++ {
 		if index := strings.IndexAny(unicodeString, largeRuneSet); index != want {

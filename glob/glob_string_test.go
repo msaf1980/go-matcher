@@ -169,7 +169,7 @@ var (
 	stringSuffixMissAscii = strings.Repeat("findПОИСК", 20) + "LAST_ENDOF"
 )
 
-func Benchmark_Suffix_Miss_ASCII(b *testing.B) {
+func BenchmarkSuffix_Miss_ASCII(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globSuffixMissAscii)
 		if g.Match(stringSuffixMissAscii) {
@@ -178,7 +178,7 @@ func Benchmark_Suffix_Miss_ASCII(b *testing.B) {
 	}
 }
 
-func _Benchmark_Suffix_Miss_ASCII_Regex(b *testing.B) {
+func _BenchmarkSuffix_Miss_ASCII_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globSuffixMissAscii)
 		if w.MatchString(stringSuffixMissAscii) {
@@ -187,7 +187,7 @@ func _Benchmark_Suffix_Miss_ASCII_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Suffix_Miss_ASCII_Precompiled(b *testing.B) {
+func BenchmarkSuffix_Miss_ASCII_Precompiled(b *testing.B) {
 	g := ParseMust(globSuffixMissAscii)
 
 	b.ResetTimer()
@@ -198,7 +198,7 @@ func Benchmark_Suffix_Miss_ASCII_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Suffix_Miss_ASCII_Regex_Precompiled(b *testing.B) {
+func _BenchmarkSuffix_Miss_ASCII_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globSuffixMissAscii)
 
 	b.ResetTimer()
@@ -215,7 +215,7 @@ var (
 	stringStarEndAscii      = strings.Repeat("findПОИСК", 20) + "LAST_ENDOF"
 )
 
-func Benchmark_Star_String_Miss_ASCII(b *testing.B) {
+func BenchmarkStar_String_Miss_ASCII(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globStarStringMissAscii)
 		if g.Match(stringStarEndAscii) {
@@ -224,7 +224,7 @@ func Benchmark_Star_String_Miss_ASCII(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_String_Miss_ASCII_Regex(b *testing.B) {
+func _BenchmarkStar_String_Miss_ASCII_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarStringMissAscii)
 		if w.MatchString(stringStarEndAscii) {
@@ -233,7 +233,7 @@ func _Benchmark_Star_String_Miss_ASCII_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_String_Miss_ASCII_Precompiled(b *testing.B) {
+func BenchmarkStar_String_Miss_ASCII_Precompiled(b *testing.B) {
 	g := ParseMust(globStarStringMissAscii)
 
 	b.ResetTimer()
@@ -244,7 +244,7 @@ func Benchmark_Star_String_Miss_ASCII_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_String_Miss_ASCII_Regex_Precompiled(b *testing.B) {
+func _BenchmarkStar_String_Miss_ASCII_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globStarStringMissAscii)
 
 	b.ResetTimer()
@@ -261,7 +261,7 @@ var (
 	stringStarEndUnicode      = strings.Repeat("ПОИСКfind", 20) + "ЛАСТ_КОНЕЦ"
 )
 
-func Benchmark_Star_String_Miss_Unicode(b *testing.B) {
+func BenchmarkStar_String_Miss_Unicode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globStarStringMissUnicode)
 		if g.Match(stringStarEndUnicode) {
@@ -270,7 +270,7 @@ func Benchmark_Star_String_Miss_Unicode(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_String_Miss_Unicode_Regex(b *testing.B) {
+func _BenchmarkStar_String_Miss_Unicode_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarStringMissUnicode)
 		if w.MatchString(stringStarEndUnicode) {
@@ -279,7 +279,7 @@ func _Benchmark_Star_String_Miss_Unicode_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_String_Miss_Unicode_Precompiled(b *testing.B) {
+func BenchmarkStar_String_Miss_Unicode_Precompiled(b *testing.B) {
 	g := ParseMust(globStarStringMissUnicode)
 
 	b.ResetTimer()
@@ -290,7 +290,7 @@ func Benchmark_Star_String_Miss_Unicode_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_String_Miss_Unicode_Regex_Precompiled(b *testing.B) {
+func _BenchmarkStar_String_Miss_Unicode_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globStarStringMissUnicode)
 
 	b.ResetTimer()
@@ -306,7 +306,7 @@ var (
 	globStarSuffixMissUnicode = strings.Repeat("ПОИСК*", 20) + "ЛАСТ_НЕТ*ЙОНЕЦ"
 )
 
-func Benchmark_Star_Suffix_Miss_Unicode(b *testing.B) {
+func BenchmarkStar_Suffix_Miss_Unicode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globStarSuffixMissUnicode)
 		if g.Match(stringStarEndUnicode) {
@@ -315,7 +315,7 @@ func Benchmark_Star_Suffix_Miss_Unicode(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_Suffix_Miss_Unicode_Regex(b *testing.B) {
+func _BenchmarkStar_Suffix_Miss_Unicode_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarSuffixMissUnicode)
 		if w.MatchString(stringStarEndUnicode) {
@@ -324,7 +324,7 @@ func _Benchmark_Star_Suffix_Miss_Unicode_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_Suffix_Miss_Unicode_Precompiled(b *testing.B) {
+func BenchmarkStar_Suffix_Miss_Unicode_Precompiled(b *testing.B) {
 	g := ParseMust(globStarSuffixMissUnicode)
 
 	b.ResetTimer()
@@ -335,7 +335,7 @@ func Benchmark_Star_Suffix_Miss_Unicode_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_Suffix_Miss_Unicode_Regex_Precompiled(b *testing.B) {
+func _BenchmarkStar_Suffix_Miss_Unicode_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globStarSuffixMissUnicode)
 
 	b.ResetTimer()

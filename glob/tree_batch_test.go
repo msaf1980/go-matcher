@@ -126,7 +126,7 @@ var (
 	gBatch = parseGlobs(globsBatch)
 )
 
-func Benchmark_Batch_GlobTree_Add(b *testing.B) {
+func BenchmarkBatch_GlobTree_Add(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		gtree := NewTree()
 		for i, g := range globsBatch {
@@ -139,7 +139,7 @@ func Benchmark_Batch_GlobTree_Add(b *testing.B) {
 	}
 }
 
-func Benchmark_Batch_GlobTree_Add_Cached(b *testing.B) {
+func BenchmarkBatch_GlobTree_Add_Cached(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		gtree := NewTree()
 		for i, g := range gBatch {
@@ -152,7 +152,7 @@ func Benchmark_Batch_GlobTree_Add_Cached(b *testing.B) {
 	}
 }
 
-func Benchmark_Batch_GlobTree(b *testing.B) {
+func BenchmarkBatch_GlobTree(b *testing.B) {
 	gtree := NewTree()
 	for i, g := range gBatch {
 		_, _, err := gtree.AddGlob(g, i)
@@ -175,7 +175,7 @@ func Benchmark_Batch_GlobTree(b *testing.B) {
 	}
 }
 
-func Benchmark_Batch_GlobTree_Prealloc(b *testing.B) {
+func BenchmarkBatch_GlobTree_Prealloc(b *testing.B) {
 	gtree := NewTree()
 	for i, g := range gBatch {
 		_, _, err := gtree.AddGlob(g, i)
@@ -202,13 +202,13 @@ func Benchmark_Batch_GlobTree_Prealloc(b *testing.B) {
 	}
 }
 
-func Benchmark_Batch_Glob_Parse(b *testing.B) {
+func BenchmarkBatch_Glob_Parse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = parseGlobs(globsBatch)
 	}
 }
 
-func Benchmark_Batch_Glob_Prealloc(b *testing.B) {
+func BenchmarkBatch_Glob_Prealloc(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, s := range stringsBatch {
 			for _, g := range gBatch {

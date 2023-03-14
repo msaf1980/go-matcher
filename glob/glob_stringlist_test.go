@@ -382,7 +382,7 @@ var (
 		"SalesCluster.node1.DownEndpointCount"
 )
 
-func Benchmark_Star_StringList_ASCII(b *testing.B) {
+func BenchmarkStar_StringList_ASCII(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globStarListASCII)
 		if !g.Match(stringListASCII) {
@@ -391,7 +391,7 @@ func Benchmark_Star_StringList_ASCII(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_StringList_ASCII_Regex(b *testing.B) {
+func _BenchmarkStar_StringList_ASCII_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarListASCII)
 		if !w.MatchString(stringListASCII) {
@@ -400,7 +400,7 @@ func _Benchmark_Star_StringList_ASCII_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_StringList_ASCII_Precompiled(b *testing.B) {
+func BenchmarkStar_StringList_ASCII_Precompiled(b *testing.B) {
 	g := ParseMust(globStarListASCII)
 
 	b.ResetTimer()
@@ -411,7 +411,7 @@ func Benchmark_Star_StringList_ASCII_Precompiled(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_StringList_Regex_Precompiled(b *testing.B) {
+func _BenchmarkStar_StringList_Regex_Precompiled(b *testing.B) {
 	g := tests.BuildGlobRegexp(globStarListASCII)
 
 	b.ResetTimer()
@@ -431,7 +431,7 @@ var (
 	stringList       = "StoreCluster"
 )
 
-func Benchmark_StringList03_Precompiled(b *testing.B) {
+func BenchmarkStringList03_Precompiled(b *testing.B) {
 	g := ParseMust(globStringList03)
 
 	b.ResetTimer()
@@ -442,7 +442,7 @@ func Benchmark_StringList03_Precompiled(b *testing.B) {
 	}
 }
 
-func Benchmark_StringList05_Precompiled(b *testing.B) {
+func BenchmarkStringList05_Precompiled(b *testing.B) {
 	g := ParseMust(globStringList05)
 
 	b.ResetTimer()
@@ -453,7 +453,7 @@ func Benchmark_StringList05_Precompiled(b *testing.B) {
 	}
 }
 
-func Benchmark_StringList10_Precompiled(b *testing.B) {
+func BenchmarkStringList10_Precompiled(b *testing.B) {
 	g := ParseMust(globStringList10)
 
 	b.ResetTimer()
@@ -464,7 +464,7 @@ func Benchmark_StringList10_Precompiled(b *testing.B) {
 	}
 }
 
-func Benchmark_StringList50_Precompiled(b *testing.B) {
+func BenchmarkStringList50_Precompiled(b *testing.B) {
 	g := ParseMust(globStringList50)
 
 	b.ResetTimer()

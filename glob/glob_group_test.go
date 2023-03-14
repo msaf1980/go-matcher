@@ -113,7 +113,7 @@ var (
 	stringGroup = "cdqbcZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZcIe"
 )
 
-func Benchmark_Group(b *testing.B) {
+func BenchmarkGroup(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globGroup)
 		if !g.Match(stringGroup) {
@@ -122,7 +122,7 @@ func Benchmark_Group(b *testing.B) {
 	}
 }
 
-func _Benchmark_Group_Regex(b *testing.B) {
+func _BenchmarkGroup_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globGroup)
 		if !w.MatchString(stringGroup) {
@@ -131,7 +131,7 @@ func _Benchmark_Group_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Group_Precompiled(b *testing.B) {
+func BenchmarkGroup_Precompiled(b *testing.B) {
 	g := ParseMust(globGroup)
 
 	b.ResetTimer()
@@ -148,7 +148,7 @@ var (
 	stringStarGroup = "ZZZZZZZZcZZZZZZZZZZZZcdqbcZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZcIe"
 )
 
-func Benchmark_Star_Group(b *testing.B) {
+func BenchmarkStar_Group(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := ParseMust(globStarGroup)
 		if !g.Match(stringStarGroup) {
@@ -157,7 +157,7 @@ func Benchmark_Star_Group(b *testing.B) {
 	}
 }
 
-func _Benchmark_Star_Group_Regex(b *testing.B) {
+func _BenchmarkStar_Group_Regex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := tests.BuildGlobRegexp(globStarGroup)
 		if !w.MatchString(stringStarGroup) {
@@ -166,7 +166,7 @@ func _Benchmark_Star_Group_Regex(b *testing.B) {
 	}
 }
 
-func Benchmark_Star_Group_Precompiled(b *testing.B) {
+func BenchmarkStar_Group_Precompiled(b *testing.B) {
 	g := ParseMust(globStarGroup)
 
 	b.ResetTimer()
