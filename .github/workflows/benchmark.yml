@@ -60,7 +60,7 @@ jobs:
         cp ${{ env.TMP_DIR }}/bench-base.txt ${{ env.TMP_DIR }}/bench-pr.txt .
         set -euo pipefail
         qbenchstat -increasing 'match/s' -threshold 2 -format html bench-base.txt bench-pr.txt > ${{ env.TMP_DIR }}/benchcmp.html
-        qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt | tee benchcmp-${{ matrix.go-version }}.html
+        #qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt | tee benchcmp-${{ matrix.go-version }}.html
 
     - name: Create comment PR
       run: |
