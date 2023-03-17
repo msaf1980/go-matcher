@@ -12,11 +12,9 @@ import (
 )
 
 type GTreeItemStr struct {
-	Node string `json:"node"`
+	Node string
 
-	Terminate  bool   `json:"terminate"`
-	Terminated string `json:"terminated"` // end of chain (resulting raw/normalized globs)
-	TermIndex  int    `json:"term_index"` // rule num of end of chain (resulting glob), can be used in specific cases
+	Terminated items.Terminated
 
 	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
 	ChildsMap map[string]*GTreeItemStr `json:"childs_map"`
@@ -30,9 +28,7 @@ func StringGTreeItem(treeItem *GTreeItem) *GTreeItemStr {
 	}
 	treeItemStr := &GTreeItemStr{
 		Node:       node,
-		Terminate:  treeItem.Terminate,
 		Terminated: treeItem.Terminated,
-		TermIndex:  treeItem.TermIndex,
 	}
 
 	if treeItem.Childs != nil {
@@ -199,15 +195,18 @@ func TestGGlobTree(t *testing.T) {
 														Node: "*[0-8]",
 														ChildsMap: map[string]*GTreeItemStr{
 															"DownEndpointCount": {
-																Node:       "DownEndpointCount",
-																Terminate:  true,
-																Terminated: "DB.*.{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}.*[0-8].DownEndpointCount",
+																Node: "DownEndpointCount",
+																Terminated: items.Terminated{
+																	Terminate: true,
+																	Query:     "DB.*.{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}.*[0-8].DownEndpointCount",
+																},
 															},
 															"UpStatus": {
-																Node:       "UpStatus",
-																Terminate:  true,
-																Terminated: "DB.*.{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}.*[0-8].UpStatus",
-																TermIndex:  1,
+																Node: "UpStatus",
+																Terminated: items.Terminated{
+																	Terminate: true, Index: 1,
+																	Query: "DB.*.{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}.*[0-8].UpStatus",
+																},
 															},
 														},
 													},
@@ -229,10 +228,11 @@ func TestGGlobTree(t *testing.T) {
 												Node: "{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}",
 												ChildsMap: map[string]*GTreeItemStr{
 													"UpStatus": {
-														Node:       "UpStatus",
-														Terminate:  true,
-														Terminated: "DB.*.{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}.UpStatus",
-														TermIndex:  2,
+														Node: "UpStatus",
+														Terminated: items.Terminated{
+															Terminate: true, Index: 2,
+															Query: "DB.*.{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}.UpStatus",
+														},
 													},
 												},
 											},

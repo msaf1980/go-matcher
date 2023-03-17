@@ -18,3 +18,12 @@ func SliceEqual[T comparable](a, b []T) bool {
 	}
 	return true
 }
+
+func ContainsReverse[T comparable](a []T, k T) bool {
+	for i := len(a) - 1; i >= 0; i-- {
+		if k == a[i] {
+			return true
+		}
+	}
+	return false
+}

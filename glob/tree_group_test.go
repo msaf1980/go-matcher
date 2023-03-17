@@ -2,6 +2,8 @@ package glob
 
 import (
 	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestGlobTree_Group(t *testing.T) {
@@ -26,8 +28,10 @@ func TestGlobTree_Group(t *testing.T) {
 															Node: "c", Childs: []*TreeItemStr{
 																{
 																	Node: "*", Childs: []*TreeItemStr{},
-																	Terminated: "{a?cd*,b*,cd[a-z]}bc*c*e",
-																	TermIndex:  0, Term: true,
+																	Terminated: items.Terminated{
+																		Terminate: true, Index: 0,
+																		Query: "{a?cd*,b*,cd[a-z]}bc*c*e",
+																	},
 																},
 															},
 														},
@@ -35,8 +39,10 @@ func TestGlobTree_Group(t *testing.T) {
 															Node: "CD", Childs: []*TreeItemStr{
 																{
 																	Node: "*", Childs: []*TreeItemStr{},
-																	Terminated: "{a?cd*,b*,cd[a-z]}bc*CD*e",
-																	TermIndex:  1, Term: true,
+																	Terminated: items.Terminated{
+																		Terminate: true, Index: 1,
+																		Query: "{a?cd*,b*,cd[a-z]}bc*CD*e",
+																	},
 																},
 															},
 														},
@@ -88,8 +94,10 @@ func TestGlobTree_Group(t *testing.T) {
 																	Node: "c", Childs: []*TreeItemStr{
 																		{
 																			Node: "*", Childs: []*TreeItemStr{},
-																			Terminated: "*{a?cd*,b*,cd[a-z]}bc*c*e",
-																			TermIndex:  0, Term: true,
+																			Terminated: items.Terminated{
+																				Terminate: true, Index: 0,
+																				Query: "*{a?cd*,b*,cd[a-z]}bc*c*e",
+																			},
 																		},
 																	},
 																},
@@ -97,8 +105,10 @@ func TestGlobTree_Group(t *testing.T) {
 																	Node: "CD", Childs: []*TreeItemStr{
 																		{
 																			Node: "*", Childs: []*TreeItemStr{},
-																			Terminated: "*{a?cd*,b*,cd[a-z]}bc*CD*e",
-																			TermIndex:  1, Term: true,
+																			Terminated: items.Terminated{
+																				Terminate: true, Index: 1,
+																				Query: "*{a?cd*,b*,cd[a-z]}bc*CD*e",
+																			},
 																		},
 																	},
 																},
@@ -106,8 +116,10 @@ func TestGlobTree_Group(t *testing.T) {
 																	Node: "cd", Childs: []*TreeItemStr{
 																		{
 																			Node: "*", Childs: []*TreeItemStr{},
-																			Terminated: "*{a?cd*,b*,cd[a-z]}bc*cd*e",
-																			TermIndex:  2, Term: true,
+																			Terminated: items.Terminated{
+																				Terminate: true, Index: 2,
+																				Query: "*{a?cd*,b*,cd[a-z]}bc*cd*e",
+																			},
 																		},
 																	},
 																},

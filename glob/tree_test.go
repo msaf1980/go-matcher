@@ -11,13 +11,11 @@ import (
 )
 
 type TreeItemStr struct {
-	Node string `json:"node"`
+	Node string
 
-	Reverse bool `json:"reverse"` // for suffix
+	Reverse bool
 
-	Term       bool   `json:"term"`
-	Terminated string `json:"terminated"` // end of chain (resulting raw/normalized globs)
-	TermIndex  int    `json:"term_index"` // rule num of end of chain (resulting glob), can be used in specific cases
+	Terminated items.Terminated
 
 	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
 	Childs []*TreeItemStr `json:"childs"` // next possible parts slice
@@ -35,9 +33,7 @@ func StringTreeItem(treeItem *items.TreeItem) *TreeItemStr {
 		Node:       node,
 		Reverse:    treeItem.Reverse,
 		Childs:     make([]*TreeItemStr, 0, len(treeItem.Childs)),
-		Term:       treeItem.Terminate,
 		Terminated: treeItem.Terminated,
-		TermIndex:  treeItem.TermIndex,
 	}
 
 	for _, child := range treeItem.Childs {

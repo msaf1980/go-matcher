@@ -33,13 +33,26 @@ func TestGTagsTree_Regex_Match(t *testing.T) {
 			queries: []string{`seriesByTag('name=a', 'b=~c(a|z)\.a')`},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: `b=~c(a|z)\.a`, Terminate: true, TermIndex: 0,
-									Terminated: `seriesByTag('__name__=a','b=~c(a|z)\.a')`,
+									Term: "__name__=a",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											Matched: []*taggedItemStr{
+												{
+													Term: `b=~c(a|z)\.a`,
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     `seriesByTag('__name__=a','b=~c(a|z)\.a')`,
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},

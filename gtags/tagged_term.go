@@ -299,6 +299,8 @@ func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error
 
 		if terms[i].Key == "__name__" {
 			return true
+		} else if terms[j].Key == "__name__" {
+			return false
 		}
 		return terms[i].Key < terms[j].Key
 	})

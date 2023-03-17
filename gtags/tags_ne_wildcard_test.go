@@ -51,13 +51,26 @@ func TestTagsMatcherNe_Wildcard(t *testing.T) {
 			queries: []string{"seriesByTag('name=a', 'b!=c*')"},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: "b!=c*", Terminate: true, TermIndex: 0,
-									Terminated: "seriesByTag('__name__=a','b!=c*')",
+									Term: "__name__=a",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											NotMatched: []*taggedItemStr{
+												{
+													Term: "b!=c*",
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     "seriesByTag('__name__=a','b!=c*')",
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -83,13 +96,26 @@ func TestTagsMatcherNe_Wildcard(t *testing.T) {
 			queries: []string{"seriesByTag('name=a', 'b!=c[a]')"},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: "b!=ca", Terminate: true, TermIndex: 0,
-									Terminated: "seriesByTag('__name__=a','b!=ca')",
+									Term: "__name__=a",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											NotMatched: []*taggedItemStr{
+												{
+													Term: "b!=ca",
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     "seriesByTag('__name__=a','b!=ca')",
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},

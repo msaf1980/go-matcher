@@ -2,6 +2,8 @@ package gtags
 
 import (
 	"testing"
+
+	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
 func TestTaggedTermListNe(t *testing.T) {
@@ -31,16 +33,33 @@ func TestGTagsTree_Equal_Ne(t *testing.T) {
 			queries: []string{"seriesByTag('name=a', 'b=c', 'c!=vc')"},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: "b=c", Childs: []*taggedItemStr{
+									Term: "__name__=a",
+									Items: []taggedItemsStr{
 										{
-											Term:      "c!=vc",
-											Terminate: true, TermIndex: 0,
-											Terminated: "seriesByTag('__name__=a','b=c','c!=vc')",
+											Key: "b",
+											Matched: []*taggedItemStr{
+												{
+													Term: "b=c", Items: []taggedItemsStr{
+														{
+															Key: "c",
+															NotMatched: []*taggedItemStr{
+																{
+																	Term: "c!=vc",
+																	Terminated: items.Terminated{
+																		Terminate: true,
+																		Query:     "seriesByTag('__name__=a','b=c','c!=vc')",
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
 										},
 									},
 								},
