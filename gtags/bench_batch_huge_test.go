@@ -89,7 +89,99 @@ func BenchmarkBatchHuge_Tree_Precompiled(b *testing.B) {
 	b.ReportMetric(float64(b.N*len(pathsBatchHugeMoira))/d.Seconds(), "match/s")
 }
 
+func BenchmarkBatchHuge_Tree_ByMap_Precompiled(b *testing.B) {
+	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, len(termsBatchHugeMoira))
+
+	w := NewTree()
+	for j := 0; j < len(queriesBatchHugeMoira); j++ {
+		_, _, err := w.Add(queriesBatchHugeMoira[j], j)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	start := time.Now()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		queries := make([]string, 0, 1)
+		index := make([]int, 0, 1)
+		first := items.MinStore{-1}
+		for j := 0; j < len(pathsBatchHugeMoira); j++ {
+			queries = queries[:0]
+			index = index[:0]
+			first.Init()
+			tags, _ := PathTagsMap(pathsBatchHugeMoira[j])
+			_ = w.MatchByTagsMap(tags, &queries, &index, &first)
+		}
+	}
+	b.StopTimer()
+	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
+	b.ReportMetric(float64(b.N*len(pathsBatchHugeMoira))/d.Seconds(), "match/s")
+}
+
+func BenchmarkBatchHuge_Tree_ByMap_PrecompiledB(b *testing.B) {
+	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, len(termsBatchHugeMoira))
+
+	w := NewTree()
+	for j := 0; j < len(queriesBatchHugeMoira); j++ {
+		_, _, err := w.Add(queriesBatchHugeMoira[j], j)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	start := time.Now()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		queries := make([]string, 0, 1)
+		index := make([]int, 0, 1)
+		tags := make(map[string]string)
+		first := items.MinStore{-1}
+		for j := 0; j < len(pathsBatchHugeMoira); j++ {
+			queries = queries[:0]
+			index = index[:0]
+			first.Init()
+			_ = PathTagsMapB(pathsBatchHugeMoira[j], tags)
+			_ = w.MatchByTagsMap(tags, &queries, &index, &first)
+		}
+	}
+	b.StopTimer()
+	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
+	b.ReportMetric(float64(b.N*len(pathsBatchHugeMoira))/d.Seconds(), "match/s")
+}
+
 func BenchmarkBatchHuge_Tree_Prealloc(b *testing.B) {
+	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, len(termsBatchHugeMoira))
+
+	w := NewTree()
+	for j := 0; j < len(queriesBatchHugeMoira); j++ {
+		_, _, err := w.Add(queriesBatchHugeMoira[j], j)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	tagsList := tagsList(pathsBatchHugeMoira)
+
+	start := time.Now()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		queries := make([]string, 0, 1)
+		index := make([]int, 0, 1)
+		first := items.MinStore{-1}
+		for j := 0; j < len(tagsList); j++ {
+			queries = queries[:0]
+			index = index[:0]
+			first.Init()
+			_ = w.MatchByTags(tagsList[j], &queries, &index, &first)
+		}
+	}
+	b.StopTimer()
+	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
+	b.ReportMetric(float64(b.N*len(pathsBatchHugeMoira))/d.Seconds(), "match/s")
+}
+
+func BenchmarkBatchHuge_Tree_ByMap_Prealloc(b *testing.B) {
 	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, len(termsBatchHugeMoira))
 
 	w := NewTree()

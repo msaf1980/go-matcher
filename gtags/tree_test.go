@@ -169,37 +169,36 @@ func verifyGTagsTree(t *testing.T, inGlobs []string, match map[string][]string, 
 				}
 			}
 
-			// tagsMap, err := PathTagsMap(path)
-			// if err != nil {
-			// 	panic(err)
-			// }
-			// first.Init()
-			// queries = queries[:0]
-			// index = index[:0]
-			// matched = gtree.MatchByTagsMap(tagsMap, &queries, &index, &first)
+			tagsMap, err := PathTagsMap(path)
+			if err != nil {
+				panic(err)
+			}
+			first.Init()
+			queries = queries[:0]
+			index = index[:0]
+			matched = gtree.MatchByTagsMap(tagsMap, &queries, &index, &first)
 
-			// if !reflect.DeepEqual(wantGlobs, queries) {
-			// 	t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) globs = %s", inGlobs, path, cmp.Diff(wantGlobs, queries))
-			// }
+			if !reflect.DeepEqual(wantQueries, queries) {
+				t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) globs = %s", inGlobs, path, cmp.Diff(wantQueries, queries))
+			}
 
-			// if matched != len(queries) || len(queries) != len(index) {
-			// 	t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(queries), len(index))
-			// }
+			if matched != len(queries) || len(queries) != len(index) {
+				t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(queries), len(index))
+			}
 
-			// for _, v := range verify {
-			// 	if v.glob != gtree.QueryIndex[v.index] {
-			// 		t.Errorf("GTagsTree(%#v).MatchByTagsMap(%q) index = %d glob = %s, want %s",
-			// 			inGlobs, path, v.index, gtree.QueryIndex[v.index], v.glob)
-			// 	}
-			// }
+			for _, v := range verify {
+				if v.glob != gtree.QueryIndex[v.index] {
+					t.Errorf("GTagsTree(%#v).MatchByTagsMap(%q) index = %d glob = %s, want %s",
+						inGlobs, path, v.index, gtree.QueryIndex[v.index], v.glob)
+				}
+			}
 
-			// if len(index) > 0 {
-			// 	if first.N != index[0] {
-			// 		t.Errorf("GTagsTree(%#v).MatchByTagsMap(%q) first index = %d, want %d",
-			// 			inGlobs, path, first, index[0])
-			// 	}
-			// }
-
+			if len(index) > 0 {
+				if first.N != index[0] {
+					t.Errorf("GTagsTree(%#v).MatchByTagsMap(%q) first index = %d, want %d",
+						inGlobs, path, first, index[0])
+				}
+			}
 		})
 	}
 }

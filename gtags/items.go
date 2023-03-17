@@ -252,30 +252,55 @@ func (item *TaggedItem) Parse(terms TaggedTermList, query string, index int) (la
 	return
 }
 
-// func (item *TaggedItem) MatchByTagsMap(tags map[string]string, queries *[]string, index *[]int, first items.Store) (matched int) {
-// 	for _, child := range item.Childs {
-// 		if v, ok := tags[child.Term.Key]; !ok {
-// 			if child.Term.Op == TaggedTermEq || child.Term.Op == TaggedTermMatch {
-// 				// != and ~=! can be skiped and key can not exist, but other not
-// 				continue
-// 			}
-// 		} else {
-// 			if !child.Term.Match(v) {
-// 				continue
-// 			}
-// 		}
-// 		if child.Terminate {
-// 			child.append(queries, index, first)
-// 			matched++
-// 		}
-// 		if len(tags) > 0 {
-// 			if n := child.MatchByTagsMap(tags, queries, index, first); n > 0 {
-// 				matched += n
-// 			}
-// 		}
-// 	}
-// 	return
-// }
+func (item *TaggedItem) MatchByTagsMap(tags map[string]string, queries *[]string, index *[]int, first items.Store) (matched int) {
+	if len(tags) == 0 {
+		return
+	}
+
+	for i := 0; i < len(item.Items); i++ {
+		v, ok := tags[item.Items[i].Key]
+		if ok {
+			for _, child := range item.Items[i].Matched {
+				if !child.Term.Match(v) {
+					continue
+				}
+				if child.Terminate {
+					child.Append(queries, index, first)
+					matched++
+				}
+				if n := child.MatchByTagsMap(tags, queries, index, first); n > 0 {
+					matched += n
+				}
+			}
+			for _, child := range item.Items[i].NotMatched {
+				if !child.Term.Match(v) {
+					continue
+				}
+				if child.Terminate {
+					child.Append(queries, index, first)
+					matched++
+				}
+				if n := child.MatchByTagsMap(tags, queries, index, first); n > 0 {
+					matched += n
+				}
+			}
+		} else {
+			// tags not exist, check not matched
+			for _, child := range item.Items[i].NotMatched {
+				if child.Terminate {
+					child.Append(queries, index, first)
+					matched++
+				}
+				if n := child.MatchByTagsMap(tags, queries, index, first); n > 0 {
+					matched += n
+				}
+			}
+		}
+
+	}
+
+	return
+}
 
 func (item *TaggedItem) MatchByTags(tags []Tag, queries *[]string, index *[]int, first items.Store) (matched int) {
 	if len(tags) == 0 {
