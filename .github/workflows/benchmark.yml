@@ -38,7 +38,7 @@ jobs:
 
     - name: Benchmark (PR)
       run: |
-        set -euo pipefail; for i in {1..5}; do
+        set -euo pipefail; for i in {1..6}; do
           echo STEP ${i}
           go test ./... -benchmem -run=^$ -bench '^Benchmark' | tee -a ${{ env.TMP_DIR }}/bench-pr.txt
         done
@@ -50,7 +50,7 @@ jobs:
 
     - name: Benchmark (Base)
       run: |
-        set -euo pipefail; for i in {1..5}; do
+        set -euo pipefail; for i in {1..6}; do
           echo STEP ${i}
           go test ./... -benchmem -run=^$ -bench '^Benchmark' | tee -a ${{ env.TMP_DIR }}/bench-base.txt
         done
