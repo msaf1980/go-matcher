@@ -2,6 +2,7 @@ package gtags
 
 import (
 	"github.com/msaf1980/go-matcher/pkg/items"
+	"github.com/msaf1980/go-matcher/pkg/utils"
 )
 
 type TaggedItems struct {
@@ -57,11 +58,11 @@ func (t *TaggedItem) findOrAppend(key string) int {
 	high := len(t.Items) - 1
 	for low <= high {
 		mid := (low + high) / 2
-		// TODO: use strings.Compare or faster analog ?
-		if key == t.Items[mid].Key {
+		cmp := utils.CompareString(t.Items[mid].Key, key)
+		if cmp == 0 {
 			return mid
 		}
-		if key < t.Items[mid].Key {
+		if cmp > 0 {
 			if low == mid {
 				// break, we are not find
 				high = low
@@ -115,10 +116,11 @@ func (t *TaggedItem) find(key string, start int) int {
 	}
 	high := len(t.Items) - 1
 	if start > low {
-		if t.Items[start].Key == key {
+		cmp := utils.CompareString(t.Items[start].Key, key)
+		if cmp == 0 {
 			return start
 		}
-		if t.Items[start].Key > key {
+		if cmp > 0 {
 			high = start - 1
 		} else {
 			low = start
@@ -131,11 +133,11 @@ func (t *TaggedItem) find(key string, start int) int {
 		search = low + 4
 	}
 	for {
-		// TODO: use strings.Compare or faster analog ?
-		if key == t.Items[search].Key {
+		cmp := utils.CompareString(t.Items[search].Key, key)
+		if cmp == 0 {
 			return search
 		}
-		if key < t.Items[search].Key {
+		if cmp > 0 {
 			high = search - 1
 		} else {
 			low = search + 1
@@ -173,10 +175,11 @@ func find(tags []Tag, key string, start int) int {
 	}
 	high := len(tags) - 1
 	if start > low {
-		if tags[start].Key == key {
+		cmp := utils.CompareString(tags[start].Key, key)
+		if cmp == 0 {
 			return start
 		}
-		if tags[start].Key > key {
+		if cmp > 0 {
 			high = start - 1
 		} else {
 			low = start
@@ -190,10 +193,12 @@ func find(tags []Tag, key string, start int) int {
 	}
 	for {
 		// TODO: use strings.Compare or faster analog ?
-		if key == tags[search].Key {
+		cmp := utils.CompareString(tags[search].Key, key)
+		// key == tags[search].Key
+		if cmp == 0 {
 			return search
 		}
-		if key < tags[search].Key {
+		if cmp > 0 {
 			high = search - 1
 		} else {
 			low = search + 1
