@@ -14,14 +14,8 @@ def parse_cmdline():
     parser.add_argument('-b', '--base', dest='base', action='store', type=str,
                         help='base commit')
 
-    parser.add_argument('-u', '--head', dest='head', action='store', type=str,
+    parser.add_argument('-u', '--head', dest='head', action='store', type=str, default='HEAD',
                         help='head commit')
-
-    parser.add_argument('-f', '--files', dest='files', action='store', type=str,
-                        help='file with changes (relative paths) list')
-
-    parser.add_argument('-c', '--count', dest='count', action='store', type=int, default=6,
-                        help='run count')
 
     return parser.parse_args()
 
@@ -58,18 +52,19 @@ def main():
     isBase = False
 
     if args.files is None:
-        if args.base is None:
+        if args.base is None and args.dirs is None:
             sys.exit("base commit not set")
-        if args.head is None:
+        if args.head is None and args.dirs is None:
             sys.exit("head commit not set")
 
-        p = subprocess.run(
-            ['git', 'diff', '--name-only', args.base, args.head],
-            stdout=subprocess.PIPE,
-        )
-        for file in p.stdout.decode().split("\n"):
-            if addDir(file, dirs, base, sources):
-                isBase = True
+        if not args.head is None and not args.base is None:
+            p = subprocess.run(
+                ['git', 'diff', '--name-only', args.base, args.head],
+                stdout=subprocess.PIPE,
+            )
+            for file in p.stdout.decode().split("\n"):
+                if addDir(file, dirs, base, sources):
+                    isBase = True
     else:
         with open(args.files) as f:
             for file in f:
@@ -80,9 +75,12 @@ def main():
     tests = []
     if isBase:
         tests = baseTests
-    elif len(dirs) > 0:
+    else:
         for d in dirs:
             tests.append(d)
+        if not args.dirs is None:
+            for d in args.dirs:
+                tests.append(d)
         tests.sort()
 
     if len(tests) > 0:

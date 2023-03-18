@@ -36,21 +36,35 @@ jobs:
     - name: Checkout (PR)
       uses: actions/checkout@v1
 
-    - name: Benchmark (PR)
+    - name: Get changes list
+      id: changed
       run: |
-        git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > ${{ env.TMP_DIR }}/changes.txt
-        ./ci/bechmark.py -f ${{ env.TMP_DIR }}/changes.txt | tee ${{ env.TMP_DIR }}/bench-pr.txt
+        ./ci/changes.py -b ${{ github.event.pull_request.base.sha }} -u ${{ github.event.pull_request.head.sha }} > ${{ env.TMP_DIR }}/changes.txt
+        if [ -s ${{ env.TMP_DIR }}/changes.txt ]; then
+          echo "changed=${{ env.TMP_DIR }}/changes.txt" >> $GITHUB_OUTPUT
+          cat ${{ env.TMP_DIR }}/changes.txt
+        else
+          echo "changed=" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Benchmark (PR)
+      if: ${{ steps.changed.outputs.changed != '' }}
+      run: |
+        ./ci/bechmark.py -f ${{ steps.changed.outputs.changed }} | tee ${{ env.TMP_DIR }}/bench-pr.txt
 
     - name: Checkout Base
+      if: ${{ steps.changed.outputs.changed != '' }}
       uses: actions/checkout@v1
       with:
         ref: ${{ github.event.pull_request.base.sha }}
 
     - name: Benchmark (Base)
+      if: ${{ steps.changed.outputs.changed != '' }}
       run: |
-        ./ci/bechmark.py -f changes.txt | tee ${{ env.TMP_DIR }}/bench-base.txt
+        ./ci/bechmark.py -f ${{ steps.changed.outputs.changed }} | tee ${{ env.TMP_DIR }}/bench-base.txt
 
     - name: Benchstat
+      if: ${{ steps.changed.outputs.changed != '' }}
       run: |
         set -euo pipefail
         cp ${{ env.TMP_DIR }}/bench-base.txt ${{ env.TMP_DIR }}/bench-pr.txt .
@@ -58,12 +72,14 @@ jobs:
         qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt > benchstat-${{ matrix.go-version }}.html
 
     - name: Upload Benchstat
+      if: ${{ steps.changed.outputs.changed != '' }}
       uses: actions/upload-artifact@v2
       with: 
         name: benchstat
         path: benchstat-${{ matrix.go-version }}.html
 
     - name: Create comment PR
+      if: ${{ steps.changed.outputs.changed != '' }}
       run: |
         echo 'Benchmark comparison for golang ${{ matrix.go-version }} on [${{ github.event.pull_request.head.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.head.sha }}) (${{ github.event.pull_request.head.ref }}) vs [${{ github.event.pull_request.base.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.base.sha }}) (${{ github.event.pull_request.base.ref }})' > ${{ env.TMP_DIR }}/pr_comment
         
@@ -78,6 +94,7 @@ jobs:
         # echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
 
     - name: 'Comment PR'
+      if: ${{ steps.changed.outputs.changed != '' }}
       uses: actions/github-script@v4.0.2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
