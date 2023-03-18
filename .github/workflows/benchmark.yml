@@ -90,14 +90,14 @@ jobs:
         path: benchstat_${{ matrix.go-version }}.html
 
     - name: Create comment PR
-      if: ${{ steps.regression.outputs.regression != '' }}
+      if: ${{ steps.regression.outputs.regression == true }}
       run: |
         echo "<details><summary>Benchmark comparison (id ${{ github.run_id }}) for golang ${{ matrix.go-version }} on ${{ github.event.pull_request.base.ref }} [${{ env.BASE_SHA }}] vs (${{ github.event.pull_request.head.ref }}) [${{ env.HEAD_SHA }}]</summary>" > ${{ env.TMP_DIR }}/pr_comment
         cat ${{ env.TMP_DIR }}/benchstat.html >> ${{ env.TMP_DIR }}/pr_comment
         echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
 
-    - name: 'Comment PR'
-      if: ${{ steps.regression.outputs.regression != '' }}
+    - name: Comment PR
+      if: ${{ steps.regression.outputs.regression == true }}
       uses: actions/github-script@v4.0.2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
