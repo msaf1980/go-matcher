@@ -25,7 +25,9 @@ def main():
 
     # regexp for detect files, which will trigger run benchmark
     sources = [
-        re.compile('^.*\.go$')
+        re.compile('^.*\.go$'),
+        re.compile('^go.mod$'),
+        re.compile('^go.sum$')
     ]
 
     p = subprocess.run(

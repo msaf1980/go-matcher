@@ -17,13 +17,22 @@ def parse_cmdline():
     parser.add_argument('-u', '--head', dest='head', action='store', type=str, default='HEAD',
                         help='head commit')
 
+    parser.add_argument('-f', '--files', dest='files', action='store', type=str,
+                        help='file with changes (relative paths) list')
+
+    parser.add_argument('-d', '--dir', dest='dirs', action='append', type=str,
+                        help='dirs for force add to tests')
+
+    parser.add_argument('-c', '--count', dest='count', action='store', type=int, default=6,
+                        help='run count')
+
     return parser.parse_args()
 
 
 def addDir(file, dirs, baseDirs, sourcesRegexp):
     if file != '':
         dir = os.path.dirname(file)
-        if os.path.isdir(dir):        
+        if os.path.isdir(dir):
             for s in sourcesRegexp:
                 if s.match(file):
                     dirs.add('./' + dir)
@@ -40,7 +49,9 @@ def main():
 
     # regexp for detect files, which will trigger run benchmark
     sources = [
-        re.compile('^.*\.go$')
+        re.compile('^.*\.go$'),
+        re.compile('^go.mod$'),
+        re.compile('^go.sum$')
     ]
     # dirs, which will be trigger all benchmark (not changed dir)
     base = ['pkg/items1/']
@@ -80,14 +91,19 @@ def main():
             tests.append(d)
         if not args.dirs is None:
             for d in args.dirs:
-                tests.append(d)
+                tests.append('./' + d)
         tests.sort()
 
+    ranges = []
+    for i in range(1, args.count+1):
+        ranges.append(str(i))
+
+
     if len(tests) > 0:
-        command = "set -euo pipefail; " \
-            "for i in {1..%d}; do"\
-            "  echo STEP ${i} ; go test -benchmem -run=^$ -bench '^Benchmark' %s ; "\
-            "done" % (args.count, ' '.join(tests))
+        command = \
+            "for i in %s; do"\
+            "  echo STEP ${i} ; go test -benchmem -run=^$ -bench '^Benchmark' %s || exit 1; "\
+            "done" % (' '.join(ranges), ' '.join(tests))
 
         sys.stderr.write(command+"\n")
         p = subprocess.Popen([command], shell=True)
