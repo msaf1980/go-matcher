@@ -86,7 +86,7 @@ jobs:
     - name: Create comment PR
       if: ${{ steps.changed.outputs.changed != '' }}
       run: |
-        echo "<details><summary>Benchmark comparison (id ${{ github.run_id }}) for golang ${{ matrix.go-version }} on [${{ env.BASE_SHA }}] (${{ github.event.pull_request.base.ref }}) vs [${{ env.HEAD_SHA }}] (${{ github.event.pull_request.head.ref }})</summary>" > ${{ env.TMP_DIR }}/pr_comment
+        echo "<details><summary>Benchmark comparison (id ${{ github.run_id }}) for golang ${{ matrix.go-version }} on ${{ github.event.pull_request.base.ref }} [${{ env.BASE_SHA }}] vs (${{ github.event.pull_request.head.ref }}) [${{ env.HEAD_SHA }}]</summary>" > ${{ env.TMP_DIR }}/pr_comment
         cat ${{ env.TMP_DIR }}/benchstat.html >> ${{ env.TMP_DIR }}/pr_comment
         echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
 
