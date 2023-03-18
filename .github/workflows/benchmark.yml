@@ -38,7 +38,7 @@ jobs:
 
     - name: Benchmark (PR)
       run: |
-        set -euo pipefail; for i in {1..5}; do
+        set -euo pipefail; for i in {1..6}; do
           echo STEP ${i}
           go test ./... -benchmem -run=^$ -bench '^Benchmark' | tee -a ${{ env.TMP_DIR }}/bench-pr.txt
         done
@@ -50,7 +50,7 @@ jobs:
 
     - name: Benchmark (Base)
       run: |
-        set -euo pipefail; for i in {1..5}; do
+        set -euo pipefail; for i in {1..6}; do
           echo STEP ${i}
           go test ./... -benchmem -run=^$ -bench '^Benchmark' | tee -a ${{ env.TMP_DIR }}/bench-base.txt
         done
@@ -59,15 +59,21 @@ jobs:
       run: |
         cp ${{ env.TMP_DIR }}/bench-base.txt ${{ env.TMP_DIR }}/bench-pr.txt .
         set -euo pipefail
-        qbenchstat -increasing 'match/s' -threshold 2 -format html bench-base.txt bench-pr.txt > ${{ env.TMP_DIR }}/benchcmp.html
-        #qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt | tee benchcmp-${{ matrix.go-version }}.html
+        qbenchstat -increasing 'match/s' -threshold 2 -format html bench-base.txt bench-pr.txt > ${{ env.TMP_DIR }}/benchstat.html
+        qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt > benchstat-${{ matrix.go-version }}.html
+
+    - name: Upload Benchstat
+      uses: actions/upload-artifact@v2
+      with: 
+        name: benchstat
+        path: benchstat-${{ matrix.go-version }}.html
 
     - name: Create comment PR
       run: |
         echo 'Benchmark comparison for golang ${{ matrix.go-version }} on [${{ github.event.pull_request.head.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.head.sha }}) (${{ github.event.pull_request.head.ref }}) vs [${{ github.event.pull_request.base.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.base.sha }}) (${{ github.event.pull_request.base.ref }})' > ${{ env.TMP_DIR }}/pr_comment
         
         echo "<details><summary>Benchmark diff</summary>" >> ${{ env.TMP_DIR }}/pr_comment
-        cat ${{ env.TMP_DIR }}/benchcmp.html >> ${{ env.TMP_DIR }}/pr_comment
+        cat ${{ env.TMP_DIR }}/benchstat.html >> ${{ env.TMP_DIR }}/pr_comment
         echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
 
         # echo "<details><summary>Benchmark result</summary>" >> ${{ env.TMP_DIR }}/pr_comment

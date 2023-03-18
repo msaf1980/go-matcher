@@ -7,6 +7,9 @@ import (
 
 // GTagsTree is batch seriesByTag matcher, writted for graphite project (use on large seriesByTag set)
 type GTagsTree struct {
+	// seriesByTag()
+	items.Terminated
+
 	Root       *TaggedItem
 	Queries    map[string]int
 	QueryIndex map[int]string
@@ -53,7 +56,17 @@ func (gtree *GTagsTree) Add(queryString string, index int) (normalized string, n
 		return
 	}
 
-	gtree.Root.Parse(terms, normalized, index)
+	if len(terms) == 0 {
+		gtree.Terminate = true
+		gtree.Query = normalized
+		gtree.Index = index
+
+	} else {
+		lastItem := gtree.Root.Parse(terms, normalized, index)
+		lastItem.Terminate = true
+		lastItem.Query = normalized
+		lastItem.Index = index
+	}
 
 	gtree.Queries[queryString] = index
 	if normalized != queryString {
@@ -87,7 +100,14 @@ func (gtree *GTagsTree) AddTerms(terms TaggedTermList, index int) (normalized st
 		return
 	}
 
-	gtree.Root.Parse(terms, normalized, index)
+	if len(terms) == 0 {
+		gtree.Terminated = items.Terminated{
+			Terminate: true, Index: index, Query: normalized,
+		}
+	} else {
+		gtree.Root.Parse(terms, normalized, index)
+	}
+
 	gtree.Queries[normalized] = index
 	gtree.QueryIndex[index] = normalized
 
@@ -101,5 +121,8 @@ func (gtree *GTagsTree) MatchByTagsMap(tags map[string]string, queries *[]string
 }
 
 func (gtree *GTagsTree) MatchByTags(tags []Tag, queries *[]string, index *[]int, first items.Store) (matched int) {
+	if gtree.Terminate {
+		gtree.Terminated.Append(queries, index, first)
+	}
 	return gtree.Root.MatchByTags(tags, queries, index, first)
 }

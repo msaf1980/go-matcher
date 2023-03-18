@@ -54,8 +54,8 @@ func addGlob(rootTree *items.TreeItem, gg *Glob, index int) *items.TreeItem {
 	}
 
 	treeItem.Terminate = true
-	treeItem.Terminated = gg.Node
-	treeItem.TermIndex = index
+	treeItem.Query = gg.Node
+	treeItem.Index = index
 
 	return treeItem
 }

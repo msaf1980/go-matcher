@@ -118,13 +118,26 @@ func TestGTagsTree_Equal_Wildcard(t *testing.T) {
 			queries: []string{"seriesByTag('name=a', 'b=c*')"},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: "b=c*", Terminate: true, TermIndex: 0,
-									Terminated: "seriesByTag('__name__=a','b=c*')",
+									Term: "__name__=a",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											Matched: []*taggedItemStr{
+												{
+													Term: "b=c*",
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     "seriesByTag('__name__=a','b=c*')",
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -147,13 +160,26 @@ func TestGTagsTree_Equal_Wildcard(t *testing.T) {
 			queries: []string{"seriesByTag('name=a.b', 'b=c*.a')"},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a.b",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: "b=c*.a", Terminate: true, TermIndex: 0,
-									Terminated: "seriesByTag('__name__=a.b','b=c*.a')",
+									Term: "__name__=a.b",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											Matched: []*taggedItemStr{
+												{
+													Term: "b=c*.a",
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     "seriesByTag('__name__=a.b','b=c*.a')",
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -181,14 +207,26 @@ func TestGTagsTree_Equal_Wildcard(t *testing.T) {
 			queries: []string{"seriesByTag('name=a.b', 'b=a{a,bc}Z{qa,q}c.a')"},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a.b",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term:      "b=a{a,bc}Z{q,qa}c.a",
-									Terminate: true, TermIndex: 0,
-									Terminated: "seriesByTag('__name__=a.b','b=a{a,bc}Z{q,qa}c.a')",
+									Term: "__name__=a.b",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											Matched: []*taggedItemStr{
+												{
+													Term: "b=a{a,bc}Z{q,qa}c.a",
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     "seriesByTag('__name__=a.b','b=a{a,bc}Z{q,qa}c.a')",
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -213,13 +251,26 @@ func TestGTagsTree_Equal_Wildcard(t *testing.T) {
 			queries: []string{"seriesByTag('name=a', 'b=c[a]')"},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: "b=ca", Terminate: true, TermIndex: 0,
-									Terminated: "seriesByTag('__name__=a','b=ca')",
+									Term: "__name__=a",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											Matched: []*taggedItemStr{
+												{
+													Term: "b=ca",
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     "seriesByTag('__name__=a','b=ca')",
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},
@@ -246,13 +297,26 @@ func TestGTagsTree_Equal_Wildcard(t *testing.T) {
 			},
 			want: &gTagsTreeStr{
 				Root: &taggedItemStr{
-					Childs: []*taggedItemStr{
+					Items: []taggedItemsStr{
 						{
-							Term: "__name__=a",
-							Childs: []*taggedItemStr{
+							Key: "__name__",
+							Matched: []*taggedItemStr{
 								{
-									Term: "b=a*???c", Terminate: true, TermIndex: 0,
-									Terminated: "seriesByTag('__name__=a','b=a*???c')",
+									Term: "__name__=a",
+									Items: []taggedItemsStr{
+										{
+											Key: "b",
+											Matched: []*taggedItemStr{
+												{
+													Term: "b=a*???c",
+													Terminated: items.Terminated{
+														Terminate: true,
+														Query:     "seriesByTag('__name__=a','b=a*???c')",
+													},
+												},
+											},
+										},
+									},
 								},
 							},
 						},

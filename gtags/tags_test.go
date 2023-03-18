@@ -39,6 +39,17 @@ func tagsList(paths []string) (list [][]Tag) {
 	return
 }
 
+func tagMapList(paths []string) (list []map[string]string) {
+	var err error
+	list = make([]map[string]string, len(paths))
+	for i, path := range paths {
+		if list[i], err = GraphitePathTagsMap(path); err != nil {
+			panic(err)
+		}
+	}
+	return
+}
+
 func taggedTermListList(queries []string) (list []TaggedTermList) {
 	var err error
 	list = make([]TaggedTermList, len(queries))

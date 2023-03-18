@@ -77,43 +77,9 @@ func verifyTaggedTermList(t *testing.T, matchPaths, missPaths []string, terms Ta
 	}
 }
 
-func TestPathTagsMap(t *testing.T) {
-	tests := []struct {
-		path     string
-		wantTags map[string]string
-		wantErr  bool
-	}{
-		{
-			path: "kube_pod_status_phase?app_kubernetes_io_component=metrics&app_kubernetes_io_name=kube-state-metrics&app_kubernetes_io_part_of=kube-state-metrics&app_kubernetes_io_version=2.7.0&helm_sh_chart=kube-state-metrics-4.24.0&instance=192.168.0.85%3A8080&job=kubernetes-service-endpoints",
-			wantTags: map[string]string{
-				"__name__":                    "kube_pod_status_phase",
-				"app_kubernetes_io_component": "metrics",
-				"app_kubernetes_io_name":      "kube-state-metrics",
-				"app_kubernetes_io_part_of":   "kube-state-metrics",
-				"app_kubernetes_io_version":   "2.7.0",
-				"helm_sh_chart":               "kube-state-metrics-4.24.0",
-				"instance":                    "192.168.0.85:8080",
-				"job":                         "kubernetes-service-endpoints",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.path, func(t *testing.T) {
-			gotTags, err := PathTagsMap(tt.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PathTagsMap() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotTags, tt.wantTags) {
-				t.Errorf("PathTagsMap() = %s", cmp.Diff(tt.wantTags, gotTags))
-			}
-		})
-	}
-}
-
 func TestPathTags(t *testing.T) {
 	tests := []struct {
-		path     string
+		path     string // Graphite MergeTree path
 		wantTags []Tag
 		wantErr  bool
 	}{
@@ -138,8 +104,60 @@ func TestPathTags(t *testing.T) {
 				t.Errorf("PathTags() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotTags, tt.wantTags) {
-				t.Errorf("PathTags() = %s", cmp.Diff(tt.wantTags, gotTags))
+			if err == nil {
+				if !reflect.DeepEqual(gotTags, tt.wantTags) {
+					t.Errorf("PathTags() = %s", cmp.Diff(tt.wantTags, gotTags))
+				}
+			}
+
+			wantTagsMap := TagsMap(tt.wantTags)
+
+			gotTagsMap, err := PathTagsMap(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PathTagsMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				if !reflect.DeepEqual(gotTagsMap, wantTagsMap) {
+					t.Errorf("PathTagsMap() = %s", cmp.Diff(wantTagsMap, gotTagsMap))
+				}
+			}
+
+			gotTagsMap = make(map[string]string)
+			err = PathTagsMapB(tt.path, gotTagsMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PathTagsMapB() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				if !reflect.DeepEqual(gotTagsMap, wantTagsMap) {
+					t.Errorf("PathTagsMapB() = %s", cmp.Diff(wantTagsMap, gotTagsMap))
+				}
+			}
+
+			path := strings.ReplaceAll(tt.path, "?", ";")
+			path = strings.ReplaceAll(path, "&", ";")
+			gotTags, err = GraphitePathTags(path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GraphitePathTags() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				if !reflect.DeepEqual(gotTags, tt.wantTags) {
+					t.Errorf("GraphitePathTags() = %s", cmp.Diff(tt.wantTags, gotTags))
+				}
+			}
+
+			gotTagsMap = make(map[string]string)
+			err = GraphitePathTagsMapB(path, gotTagsMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GraphitePathTagsMapB() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				if !reflect.DeepEqual(gotTagsMap, wantTagsMap) {
+					t.Errorf("GraphitePathTagsMapB() = %s", cmp.Diff(wantTagsMap, gotTagsMap))
+				}
 			}
 		})
 	}

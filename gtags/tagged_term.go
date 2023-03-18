@@ -299,6 +299,8 @@ func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error
 
 		if terms[i].Key == "__name__" {
 			return true
+		} else if terms[j].Key == "__name__" {
+			return false
 		}
 		return terms[i].Key < terms[j].Key
 	})
@@ -306,9 +308,9 @@ func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error
 	return terms, nil
 }
 
-// PathTagsMap split GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3) into Tag's map
-func PathTagsMap(path string) (tags map[string]string, err error) {
-	name, args, ok := strings.Cut(path, "?")
+// GraphitePathTagsMap split Graphite path format (like name;a=v1;b=v2;c=v3) into Tag's map
+func GraphitePathTagsMap(path string) (tags map[string]string, err error) {
+	name, args, ok := strings.Cut(path, ";")
 	if !ok || strings.Contains(name, "=") {
 		err = ErrPathInvalid{"name", "not found"}
 	}
@@ -318,10 +320,57 @@ func PathTagsMap(path string) (tags map[string]string, err error) {
 		kv, k, v string
 	)
 	for args != "" {
-		if k, args, ok = strings.Cut(args, "="); ok {
-			v, args, _ = strings.Cut(args, "&")
+		if k, v, args, ok = GraphiteNextTag(args); ok {
 			key := escape.Unescape(k)
 			tags[key] = escape.Unescape(v)
+		} else {
+			err = ErrPathInvalid{kv, "not delimited with ="}
+			break
+		}
+	}
+	return
+}
+
+// GraphitePathTagsMapB split Graphite path format (like name;a=v1;b=v2;c=v3) into prealloc Tag's map
+func GraphitePathTagsMapB(path string, tags map[string]string) (err error) {
+	name, args, ok := strings.Cut(path, ";")
+	if !ok || strings.Contains(name, "=") {
+		err = ErrPathInvalid{"name", "not found"}
+	}
+	for key := range tags {
+		delete(tags, key)
+	}
+	tags["__name__"] = escape.Unescape(name)
+	var (
+		kv, k, v string
+	)
+	for args != "" {
+		if k, v, args, ok = GraphiteNextTag(args); ok {
+			key := escape.Unescape(k)
+			tags[key] = escape.Unescape(v)
+		} else {
+			err = ErrPathInvalid{kv, "not delimited with ="}
+			break
+		}
+	}
+	return
+}
+
+// GraphitePathTags split Graphite tagged path format (like name;a=v1;b=v2;c=v3) into Tag's slice
+func GraphitePathTags(path string) (tags []Tag, err error) {
+	name, args, ok := strings.Cut(path, ";")
+	if !ok || strings.Contains(name, "=") {
+		err = ErrPathInvalid{"name", "not found"}
+	}
+	tagsCount := strings.Count(args, ";") + 2
+	tags = make([]Tag, 0, tagsCount)
+	var (
+		kv, k, v string
+	)
+	tags = append(tags, Tag{Key: "__name__", Value: escape.Unescape(name)})
+	for args != "" {
+		if k, v, args, ok = GraphiteNextTag(args); ok {
+			tags = append(tags, Tag{Key: escape.Unescape(k), Value: escape.Unescape(v)})
 		} else {
 			err = ErrPathInvalid{kv, "not delimited with ="}
 			break
@@ -334,6 +383,14 @@ func NextTag(tags string) (tag, value, next string, found bool) {
 	tag, next, found = strings.Cut(tags, "=")
 	if found {
 		value, next, _ = strings.Cut(next, "&")
+	}
+	return
+}
+
+func GraphiteNextTag(tags string) (tag, value, next string, found bool) {
+	tag, next, found = strings.Cut(tags, "=")
+	if found {
+		value, next, _ = strings.Cut(next, ";")
 	}
 	return
 }
@@ -366,25 +423,59 @@ func PathTags(path string) (tags []Tag, err error) {
 	return
 }
 
-// GraphitePathTags split Graphite tagged path format (like name?a=v1&b=v2&c=v3) into Tag's slice
-func GraphitePathTags(path string) (tags []Tag, err error) {
-	name, args, ok := strings.Cut(path, ";")
+// PathTagsMap split GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3) into Tag's map
+func PathTagsMap(path string) (tags map[string]string, err error) {
+	name, args, ok := strings.Cut(path, "?")
 	if !ok || strings.Contains(name, "=") {
 		err = ErrPathInvalid{"name", "not found"}
 	}
-	tagsCount := strings.Count(args, ";") + 2
-	tags = make([]Tag, 0, tagsCount)
+	tags = make(map[string]string)
+	tags["__name__"] = escape.Unescape(name)
 	var (
 		kv, k, v string
 	)
-	tags = append(tags, Tag{Key: "__name__", Value: escape.Unescape(name)})
 	for args != "" {
 		if k, v, args, ok = NextTag(args); ok {
-			tags = append(tags, Tag{Key: escape.Unescape(k), Value: escape.Unescape(v)})
+			key := escape.Unescape(k)
+			tags[key] = escape.Unescape(v)
 		} else {
 			err = ErrPathInvalid{kv, "not delimited with ="}
 			break
 		}
 	}
 	return
+}
+
+// PathTagsMapB split GraphiteMergeTree path format (like name?a=v1&b=v2&c=v3) into prealloc Tag's map
+func PathTagsMapB(path string, tags map[string]string) (err error) {
+	name, args, ok := strings.Cut(path, "?")
+	if !ok || strings.Contains(name, "=") {
+		err = ErrPathInvalid{"name", "not found"}
+	}
+	for key := range tags {
+		delete(tags, key)
+	}
+	tags["__name__"] = escape.Unescape(name)
+	var (
+		kv, k, v string
+	)
+	for args != "" {
+		if k, v, args, ok = NextTag(args); ok {
+			key := escape.Unescape(k)
+			tags[key] = escape.Unescape(v)
+		} else {
+			err = ErrPathInvalid{kv, "not delimited with ="}
+			break
+		}
+	}
+	return
+}
+
+// TagsMap convert tags slice to map
+func TagsMap(tags []Tag) map[string]string {
+	tagsMap := make(map[string]string)
+	for i := 0; i < len(tags); i++ {
+		tagsMap[tags[i].Key] = tags[i].Value
+	}
+	return tagsMap
 }
