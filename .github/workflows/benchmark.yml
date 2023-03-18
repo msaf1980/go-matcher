@@ -69,15 +69,21 @@ jobs:
         ./ci/bechmark.py -f ${{ steps.changed.outputs.changed }} | tee ${{ env.TMP_DIR }}/bench-base.txt
 
     - name: Benchstat
+      id: regression
       if: ${{ steps.changed.outputs.changed != '' }}
       run: |
         set -euo pipefail
         cp ${{ env.TMP_DIR }}/bench-base.txt ${{ env.TMP_DIR }}/bench-pr.txt .
         qbenchstat -increasing 'match/s' -threshold 2 -format html bench-base.txt bench-pr.txt > ${{ env.TMP_DIR }}/benchstat.html
+        if [ -s ${{ env.TMP_DIR }}/benchstat.html ]; then
+          echo "regression=true" >> $GITHUB_OUTPUT
+        else
+          echo "regression=false" >> $GITHUB_OUTPUT
+        fi
         qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt > benchstat_${{ matrix.go-version }}.html
 
     - name: Upload Benchstat
-      if: ${{ steps.changed.outputs.changed != '' }}
+      if: ${{ steps.regression.outputs.regression }}
       uses: actions/upload-artifact@v2
       with: 
         name: benchstat_${{ env.HEAD_SHA }}
