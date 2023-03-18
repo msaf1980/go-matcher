@@ -33,6 +33,11 @@ jobs:
         echo "PR_COMMENT=$(mktemp)" >> $GITHUB_ENV
         echo "TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
 
+    - name: Get commit short sha
+      run: |
+        echo "BASE_SHA=`echo ${{ github.event.pull_request.base.sha }} | cut -c1-8`" >> $GITHUB_ENV
+        echo "HEAD_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-8`" >> $GITHUB_ENV
+
     - name: Checkout (PR)
       uses: actions/checkout@v1
 
@@ -69,29 +74,21 @@ jobs:
         set -euo pipefail
         cp ${{ env.TMP_DIR }}/bench-base.txt ${{ env.TMP_DIR }}/bench-pr.txt .
         qbenchstat -increasing 'match/s' -threshold 2 -format html bench-base.txt bench-pr.txt > ${{ env.TMP_DIR }}/benchstat.html
-        qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt > benchstat-${{ matrix.go-version }}.html
+        qbenchstat -increasing 'match/s' -format html bench-base.txt bench-pr.txt > benchstat_${{ matrix.go-version }}.html
 
     - name: Upload Benchstat
       if: ${{ steps.changed.outputs.changed != '' }}
       uses: actions/upload-artifact@v2
       with: 
-        name: benchstat
-        path: benchstat-${{ matrix.go-version }}.html
+        name: benchstat_${{ env.HEAD_SHA }}
+        path: benchstat_${{ matrix.go-version }}.html
 
     - name: Create comment PR
       if: ${{ steps.changed.outputs.changed != '' }}
       run: |
-        echo 'Benchmark comparison for golang ${{ matrix.go-version }} on [${{ github.event.pull_request.head.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.head.sha }}) (${{ github.event.pull_request.head.ref }}) vs [${{ github.event.pull_request.base.sha }}](${{ github.event.repository.html_url }}/commit/${{ github.event.pull_request.base.sha }}) (${{ github.event.pull_request.base.ref }})' > ${{ env.TMP_DIR }}/pr_comment
-        
-        echo "<details><summary>Benchmark diff</summary>" >> ${{ env.TMP_DIR }}/pr_comment
+        echo "<details><summary>Benchmark comparison (id ${{ github.run_id }}) for golang ${{ matrix.go-version }} on [${{ env.BASE_SHA }}] (${{ github.event.pull_request.base.ref }}) vs [${{ env.HEAD_SHA }}] (${{ github.event.pull_request.head.ref }})</summary>" > ${{ env.TMP_DIR }}/pr_comment
         cat ${{ env.TMP_DIR }}/benchstat.html >> ${{ env.TMP_DIR }}/pr_comment
         echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
-
-        # echo "<details><summary>Benchmark result</summary>" >> ${{ env.TMP_DIR }}/pr_comment
-        # echo '```' >> ${{ env.TMP_DIR }}/pr_comment
-        # cat ${{ env.TMP_DIR }}/bench-pr.txt >> ${{ env.TMP_DIR }}/pr_comment
-        # echo '```' >> ${{ env.TMP_DIR }}/pr_comment
-        # echo "</details>" >> ${{ env.TMP_DIR }}/pr_comment
 
     - name: 'Comment PR'
       if: ${{ steps.changed.outputs.changed != '' }}
