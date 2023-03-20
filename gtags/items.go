@@ -227,7 +227,8 @@ func (item *TaggedItem) Parse(terms TaggedTermList, query string, index int) (la
 		childs = item.Items[pos].NotMatched
 	}
 	for _, child := range childs {
-		if terms[0].Key == child.Term.Key && terms[0].Op == child.Term.Op && terms[0].Value == child.Term.Value {
+		key := string([]byte(child.Term.Key))
+		if terms[0].Key == key && terms[0].Op == child.Term.Op && terms[0].Value == child.Term.Value {
 			lastItem = child
 			break
 		}

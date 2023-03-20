@@ -25,13 +25,10 @@ func BenchmarkBatchHuge_Tree_ByTags(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
-		queries := make([]string, 0, 1)
-		index := make([]int, 0, 1)
-		first := items.MinStore{-1}
 		for j := 0; j < len(pathsBatchHugeMoira); j++ {
-			queries = queries[:0]
-			index = index[:0]
-			first.Init()
+			queries := make([]string, 0, 1000)
+			index := make([]int, 0, 1000)
+			first := items.MinStore{-1}
 			tags, _ := PathTags(pathsBatchHugeMoira[j])
 			_ = w.MatchByTags(tags, &queries, &index, &first)
 		}
