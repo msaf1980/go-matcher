@@ -29,14 +29,17 @@ def parse_cmdline():
     return parser.parse_args()
 
 
-def addDir(file, dirs, baseDirs, sourcesRegexp):
+def addDir(file, dirs, forceDirs, forceFiles, sourcesRegexp):
     if file != '':
+        if file in forceFiles:
+            return True
+
         dir = os.path.dirname(file)
         if os.path.isdir(dir):
             for s in sourcesRegexp:
                 if s.match(file):
                     dirs.add('./' + dir)
-                    for b in baseDirs:
+                    for b in forceDirs:
                         if file.startswith(b):
                             # this will trigger all tests
                             return True
@@ -54,7 +57,9 @@ def main():
         re.compile('^go.sum$')
     ]
     # dirs, which will be trigger all benchmark (not changed dir)
-    base = ['pkg/items1/']
+    forceDirs = ['pkg/items1/']
+    # files, which will be trigger all benchmark
+    forceFiles = {'go.mod', 'go.sum'}
     # dirs for all benchmark
     baseTests = ['./...']
 
@@ -74,12 +79,12 @@ def main():
                 stdout=subprocess.PIPE,
             )
             for file in p.stdout.decode().split("\n"):
-                if addDir(file, dirs, base, sources):
+                if addDir(file, dirs, forceDirs, sources):
                     isBase = True
     else:
         with open(args.files) as f:
             for file in f:
-                if addDir(file, dirs, base, sources):
+                if addDir(file, dirs, forceDirs, forceFiles, sources):
                     isBase = True
 
     # prerare test dirs list
