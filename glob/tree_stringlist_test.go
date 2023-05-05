@@ -51,8 +51,8 @@ func TestGlobTree_StringList(t *testing.T) {
 				"a.b.bce.e":  {"a.*.{b,cd}*.e"},
 				"a.b.cd.e":   {"a.*.{b,cd}*.e"},
 				"a.D.bce.e":  {"a.*.{b,cd}*.e"},
-				"a.D.dbce.e": nil,
-				"a.D.dcd.e":  nil,
+				"a.D.dbce.e": {},
+				"a.D.dcd.e":  {},
 			},
 		},
 		{
@@ -147,7 +147,7 @@ func TestGlobTree_StringList(t *testing.T) {
 			},
 			match: map[string][]string{
 				"a.b.b.bed.bc": {"a.b.b*.{bc,c}"},
-				"a.b.b.bed.cd": nil, "a.b.b.bed.bcd": nil, "a.b.d.bc": nil,
+				"a.b.b.bed.cd": {}, "a.b.b.bed.bcd": {}, "a.b.d.bc": {},
 			},
 		},
 	}

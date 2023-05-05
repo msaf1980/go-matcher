@@ -17,7 +17,7 @@ type GTreeItem struct {
 	Childs    []*GTreeItem          // next possible parts slice
 }
 
-func (item *GTreeItem) MatchItems(path string, globs *[]string, index *[]int, first items.Store) (matched int) {
+func (item *GTreeItem) MatchItems(path string, store items.Store) (matched int) {
 	var part string
 	part, path, _ = strings.Cut(path, ".")
 	if part == "" {
@@ -27,11 +27,11 @@ func (item *GTreeItem) MatchItems(path string, globs *[]string, index *[]int, fi
 		if child, ok := item.ChildsMap[part]; ok {
 			if path == "" {
 				if child.Terminate {
-					child.Append(globs, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
 			} else {
-				if n := child.MatchItems(path, globs, index, first); n > 0 {
+				if n := child.MatchItems(path, store); n > 0 {
 					matched += n
 				}
 			}
@@ -41,11 +41,11 @@ func (item *GTreeItem) MatchItems(path string, globs *[]string, index *[]int, fi
 		if item.Childs[i].Item.Match(part) {
 			if path == "" {
 				if item.Childs[i].Terminate {
-					item.Childs[i].Append(globs, index, first)
+					store.Store(item.Childs[i].Query, item.Childs[i].Index)
 					matched++
 				}
 			} else {
-				if n := item.Childs[i].MatchItems(path, globs, index, first); n > 0 {
+				if n := item.Childs[i].MatchItems(path, store); n > 0 {
 					matched += n
 				}
 			}
@@ -55,16 +55,16 @@ func (item *GTreeItem) MatchItems(path string, globs *[]string, index *[]int, fi
 	return
 }
 
-func (item *GTreeItem) MatchItemsByParts(parts []string, globs *[]string, index *[]int, first items.Store) (matched int) {
+func (item *GTreeItem) MatchItemsByParts(parts []string, store items.Store) (matched int) {
 	if len(item.ChildsMap) > 0 {
 		if child, ok := item.ChildsMap[parts[0]]; ok {
 			if len(parts) == 1 {
 				if child.Terminate {
-					child.Append(globs, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
 			} else {
-				if n := child.MatchItemsByParts(parts[1:], globs, index, first); n > 0 {
+				if n := child.MatchItemsByParts(parts[1:], store); n > 0 {
 					matched += n
 				}
 			}
@@ -74,11 +74,11 @@ func (item *GTreeItem) MatchItemsByParts(parts []string, globs *[]string, index 
 		if item.Childs[i].Item.Match(parts[0]) {
 			if len(parts) == 1 {
 				if item.Childs[i].Terminate {
-					item.Childs[i].Append(globs, index, first)
+					store.Store(item.Childs[i].Query, item.Childs[i].Index)
 					matched++
 				}
 			} else {
-				if n := item.Childs[i].MatchItemsByParts(parts[1:], globs, index, first); n > 0 {
+				if n := item.Childs[i].MatchItemsByParts(parts[1:], store); n > 0 {
 					matched += n
 				}
 			}
@@ -240,13 +240,13 @@ func (gtree *GGlobTree) AddGlob(g *GGlob, index int) (normalized string, n int, 
 	return
 }
 
-func (gtree *GGlobTree) Match(path string, globs *[]string, index *[]int, first items.Store) (matched int) {
+func (gtree *GGlobTree) Match(path string, store items.Store) (matched int) {
 	if path == "" {
 		return
 	}
 	path, partsCount := PathLevel(path)
 	if rootItem, ok := gtree.Root[partsCount]; ok {
-		if n := rootItem.MatchItems(path, globs, index, first); n > 0 {
+		if n := rootItem.MatchItems(path, store); n > 0 {
 			matched += n
 		}
 	}
@@ -254,12 +254,12 @@ func (gtree *GGlobTree) Match(path string, globs *[]string, index *[]int, first 
 	return
 }
 
-func (gtree *GGlobTree) MatchByParts(parts []string, globs *[]string, index *[]int, first items.Store) (matched int) {
+func (gtree *GGlobTree) MatchByParts(parts []string, store items.Store) (matched int) {
 	if len(parts) == 0 {
 		return
 	}
 	if rootItem, ok := gtree.Root[len(parts)]; ok {
-		if n := rootItem.MatchItemsByParts(parts, globs, index, first); n > 0 {
+		if n := rootItem.MatchItemsByParts(parts, store); n > 0 {
 			matched += n
 		}
 	}

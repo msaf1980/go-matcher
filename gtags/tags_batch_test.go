@@ -88,10 +88,10 @@ func BenchmarkBatch_Tree_ByTags_Precompiled(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
-			queries := make([]string, 0, 1)
-			index := make([]int, 0, 1)
-			first := items.MinStore{-1}
-			_ = w.MatchByTags(tags, &queries, &index, &first)
+			var store items.AllStore
+			store.Init()
+			store.Grow(1)
+			_ = w.MatchByTags(tags, &store)
 		}
 	}
 }
@@ -104,17 +104,15 @@ func BenchmarkBatch_Tree_ByTags_Prealloc(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-	queries := make([]string, 0, 1)
-	index := make([]int, 0, 1)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(1)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, tags := range tagsBatchList {
-			queries = queries[:0]
-			index = index[:0]
-			first.Init()
-			_ = w.MatchByTags(tags, &queries, &index, &first)
+			store.Init()
+			_ = w.MatchByTags(tags, &store)
 		}
 	}
 }

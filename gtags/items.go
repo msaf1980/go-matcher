@@ -252,7 +252,7 @@ func (item *TaggedItem) Parse(terms TaggedTermList, query string, index int) (la
 	return
 }
 
-func (item *TaggedItem) MatchByTagsMap(tags map[string]string, queries *[]string, index *[]int, first items.Store) (matched int) {
+func (item *TaggedItem) MatchByTagsMap(tags map[string]string, store items.Store) (matched int) {
 	if len(tags) == 0 {
 		return
 	}
@@ -265,10 +265,10 @@ func (item *TaggedItem) MatchByTagsMap(tags map[string]string, queries *[]string
 					continue
 				}
 				if child.Terminate {
-					child.Append(queries, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
-				if n := child.MatchByTagsMap(tags, queries, index, first); n > 0 {
+				if n := child.MatchByTagsMap(tags, store); n > 0 {
 					matched += n
 				}
 			}
@@ -277,10 +277,10 @@ func (item *TaggedItem) MatchByTagsMap(tags map[string]string, queries *[]string
 					continue
 				}
 				if child.Terminate {
-					child.Append(queries, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
-				if n := child.MatchByTagsMap(tags, queries, index, first); n > 0 {
+				if n := child.MatchByTagsMap(tags, store); n > 0 {
 					matched += n
 				}
 			}
@@ -288,10 +288,10 @@ func (item *TaggedItem) MatchByTagsMap(tags map[string]string, queries *[]string
 			// tags not exist, check not matched
 			for _, child := range item.Items[i].NotMatched {
 				if child.Terminate {
-					child.Append(queries, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
-				if n := child.MatchByTagsMap(tags, queries, index, first); n > 0 {
+				if n := child.MatchByTagsMap(tags, store); n > 0 {
 					matched += n
 				}
 			}
@@ -302,7 +302,7 @@ func (item *TaggedItem) MatchByTagsMap(tags map[string]string, queries *[]string
 	return
 }
 
-func (item *TaggedItem) MatchByTags(tags []Tag, queries *[]string, index *[]int, first items.Store) (matched int) {
+func (item *TaggedItem) MatchByTags(tags []Tag, store items.Store) (matched int) {
 	if len(tags) == 0 {
 		return
 	}
@@ -315,10 +315,10 @@ func (item *TaggedItem) MatchByTags(tags []Tag, queries *[]string, index *[]int,
 			// tags not exist, check not matched
 			for _, child := range item.Items[i].NotMatched {
 				if child.Terminate {
-					child.Append(queries, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
-				if n := child.MatchByTags(tags, queries, index, first); n > 0 {
+				if n := child.MatchByTags(tags, store); n > 0 {
 					matched += n
 				}
 			}
@@ -329,10 +329,10 @@ func (item *TaggedItem) MatchByTags(tags []Tag, queries *[]string, index *[]int,
 					continue
 				}
 				if child.Terminate {
-					child.Append(queries, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
-				if n := child.MatchByTags(tags, queries, index, first); n > 0 {
+				if n := child.MatchByTags(tags, store); n > 0 {
 					matched += n
 				}
 			}
@@ -341,10 +341,10 @@ func (item *TaggedItem) MatchByTags(tags []Tag, queries *[]string, index *[]int,
 					continue
 				}
 				if child.Terminate {
-					child.Append(queries, index, first)
+					store.Store(child.Query, child.Index)
 					matched++
 				}
-				if n := child.MatchByTags(tags, queries, index, first); n > 0 {
+				if n := child.MatchByTags(tags, store); n > 0 {
 					matched += n
 				}
 			}

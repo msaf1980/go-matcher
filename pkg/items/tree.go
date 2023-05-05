@@ -11,72 +11,12 @@ var (
 	ErrGlobExist = errors.New("glob already exist")
 )
 
-type Store interface {
-	Store(index int)
-}
-
-type MinStore struct {
-	N int
-}
-
-func NewMinStore() *MinStore {
-	return &MinStore{-1}
-}
-
-func (s *MinStore) Init() {
-	s.N = -1
-}
-
-func (s *MinStore) Store(index int) {
-	if s.N < 0 || s.N > index {
-		s.N = index
-	}
-}
-
-type Terminated struct {
-	Terminate bool
-	Query     string // end of chain (resulting seriesByTag)
-	Index     int    // resulting seriesByTag index
-}
-
-func (t Terminated) Append(globs *[]string, index *[]int, first Store) {
-	if globs != nil {
-		*globs = append(*globs, t.Query)
-	}
-	if index != nil {
-		*index = append(*index, t.Index)
-	}
-	if first != nil {
-		first.Store(t.Index)
-	}
-}
-
-type TreeItem struct {
-	Item
-
-	Reverse bool // for suffix or may be other, only last item can be reversed
-
-	Terminated
-
-	// TODO: may be some ordered tree for complete string nodes search speedup (on large set) ?
-	Childs []*TreeItem // next possible parts slice
-}
-
-func LocateChildTreeItem(childs []*TreeItem, node Item, reverse bool) *TreeItem {
-	for _, child := range childs {
-		if child.Reverse == reverse && child.Equal(node) {
-			return child
-		}
-	}
-	return nil
-}
-
 // Match check string against []NodeItems (parsed wildcards or simple regular expression)
 //
 // return
 //
 // @matched counter for matched globs
-func (item *TreeItem) Match(s string, globs *[]string, index *[]int, first Store) (matched int) {
+func (item *TreeItem) Match(s string, store Store) (matched int) {
 	for _, child := range item.Childs {
 		if child.Reverse {
 			if len(s) < child.Item.MinLen() {
@@ -91,16 +31,16 @@ func (item *TreeItem) Match(s string, globs *[]string, index *[]int, first Store
 			}
 			s := s[:offset]
 			if s == "" && child.Terminate {
-				child.Append(globs, index, first)
+				store.Store(child.Query, child.Index)
 				matched++
 			}
 			for _, subChild := range child.Childs {
-				if n, _ := subChild.match(s, globs, index, first); n > 0 {
+				if n, _ := subChild.match(s, store); n > 0 {
 					matched += n
 				}
 			}
 		} else {
-			if n, _ := child.match(s, globs, index, first); n > 0 {
+			if n, _ := child.match(s, store); n > 0 {
 				matched += n
 			}
 		}
@@ -127,7 +67,7 @@ func (item *TreeItem) Match(s string, globs *[]string, index *[]int, first Store
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store) (matched int, abort bool) {
+func (item *TreeItem) match(s string, store Store) (matched int, abort bool) {
 	if len(s) < item.Item.MinLen() {
 		return
 	}
@@ -139,11 +79,11 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store
 	switch flag {
 	case FindDone:
 		if s == "" && item.Terminate {
-			item.Append(globs, index, first)
+			store.Store(item.Query, item.Index)
 			matched++
 		}
 		for i := 0; i < len(item.Childs); i++ {
-			if n, _ := item.Childs[i].match(s, globs, index, first); n > 0 {
+			if n, _ := item.Childs[i].match(s, store); n > 0 {
 				matched += n
 			}
 		}
@@ -157,11 +97,11 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store
 
 		if list.IsOptional() {
 			if s == "" && item.Terminate {
-				item.Append(globs, index, first)
+				store.Store(item.Query, item.Index)
 				matched++
 			}
 			for i := 0; i < len(item.Childs); i++ {
-				if n, _ := item.Childs[i].match(s, globs, index, first); n > 0 {
+				if n, _ := item.Childs[i].match(s, store); n > 0 {
 					matched += n
 				}
 			}
@@ -174,11 +114,11 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store
 			s := s[offset:]
 
 			if s == "" && item.Terminate {
-				item.Append(globs, index, first)
+				store.Store(item.Query, item.Index)
 				matched++
 			}
 			for i := 0; i < len(item.Childs); i++ {
-				if n, _ := item.Childs[i].match(s, globs, index, first); n > 0 {
+				if n, _ := item.Childs[i].match(s, store); n > 0 {
 					matched += n
 				}
 			}
@@ -189,11 +129,11 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store
 		if group.IsOptional() {
 
 			if s == "" && item.Terminate {
-				item.Append(globs, index, first)
+				store.Store(item.Query, item.Index)
 				matched++
 			}
 			for i := 0; i < len(item.Childs); i++ {
-				if n, _ := item.Childs[i].match(s, globs, index, first); n > 0 {
+				if n, _ := item.Childs[i].match(s, store); n > 0 {
 					matched += n
 				}
 			}
@@ -201,11 +141,11 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store
 
 		for i := 0; i < len(group.Vals); i++ {
 			if v, ok := group.Vals[i].(*Chain); ok {
-				if n, _ := item.matchItemsInTree(s, v.Items, globs, index, first); n > 0 {
+				if n, _ := item.matchItemsInTree(s, v.Items, store); n > 0 {
 					matched += n
 				}
 			} else {
-				if n, _ := item.matchItemsInTree(s, []Item{group.Vals[i]}, globs, index, first); n > 0 {
+				if n, _ := item.matchItemsInTree(s, []Item{group.Vals[i]}, store); n > 0 {
 					matched += n
 				}
 			}
@@ -217,13 +157,13 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store
 	case FindStar:
 		if len(item.Childs) == 0 {
 			if item.Terminate {
-				item.Append(globs, index, first)
+				store.Store(item.Query, item.Index)
 				matched++
 			}
 			return
 		} else {
 			for i := 0; i < len(item.Childs); i++ {
-				if n, _ := item.Childs[i].matchStar(s, globs, index, first); n > 0 {
+				if n, _ := item.Childs[i].matchStar(s, store); n > 0 {
 					matched += n
 				}
 			}
@@ -241,7 +181,7 @@ func (item *TreeItem) match(s string, globs *[]string, index *[]int, first Store
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first Store) (matched int, abortGready bool) {
+func (item *TreeItem) matchStar(s string, store Store) (matched int, abortGready bool) {
 	var (
 		offset, length int
 		flag           FindFlag
@@ -265,11 +205,11 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first S
 			s := s[length:]
 
 			if s == "" && len(item.Childs) == 0 && item.Terminate {
-				item.Append(globs, index, first)
+				store.Store(item.Query, item.Index)
 				matched++
 			} else {
 				for i := 0; i < len(item.Childs); i++ {
-					if n, _ := item.Childs[i].match(s, globs, index, first); n > 0 {
+					if n, _ := item.Childs[i].match(s, store); n > 0 {
 						matched += n
 					}
 				}
@@ -280,12 +220,12 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first S
 			if list.IsOptional() && optional {
 				optional = false
 				if item.Terminate {
-					item.Append(globs, index, first)
+					store.Store(item.Query, item.Index)
 					matched++
 				}
 				// refactor with two path for exclude
 				for i := 0; i < len(item.Childs); i++ {
-					if n, _ := item.Childs[i].matchStar(s, globs, index, first); n > 0 {
+					if n, _ := item.Childs[i].matchStar(s, store); n > 0 {
 						matched += n
 					}
 				}
@@ -305,12 +245,12 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first S
 
 					if s == "" {
 						if item.Terminate {
-							item.Append(globs, index, first)
+							store.Store(item.Query, item.Index)
 							matched++
 						}
 					}
 					for i := 0; i < len(item.Childs); i++ {
-						if n, _ := item.Childs[i].match(s, globs, index, first); n > 0 {
+						if n, _ := item.Childs[i].match(s, store); n > 0 {
 							matched += n
 						}
 					}
@@ -339,12 +279,12 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first S
 			if group.IsOptional() {
 				optional = false
 				if item.Terminate {
-					item.Append(globs, index, first)
+					store.Store(item.Query, item.Index)
 					matched++
 				}
 				// refactor with two path for exclude
 				for i := 0; i < len(item.Childs); i++ {
-					if n, _ := item.Childs[i].matchStar(s, globs, index, first); n > 0 {
+					if n, _ := item.Childs[i].matchStar(s, store); n > 0 {
 						matched += n
 					}
 				}
@@ -352,11 +292,11 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first S
 
 			for i := 0; i < len(group.Vals); i++ {
 				if v, ok := group.Vals[i].(*Chain); ok {
-					if n, _ := item.matchStarItemsInTree(s, v.Items, globs, index, first); n > 0 {
+					if n, _ := item.matchStarItemsInTree(s, v.Items, store); n > 0 {
 						matched += n
 					}
 				} else {
-					if n, _ := item.matchStarItemsInTree(s, []Item{group.Vals[i]}, globs, index, first); n > 0 {
+					if n, _ := item.matchStarItemsInTree(s, []Item{group.Vals[i]}, store); n > 0 {
 						matched += n
 					}
 				}
@@ -369,12 +309,12 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first S
 			panic("forwarded match")
 		case FindStar:
 			if len(item.Childs) == 0 && item.Terminate {
-				item.Append(globs, index, first)
+				store.Store(item.Query, item.Index)
 				matched++
 				return
 			}
 			for i := 0; i < len(item.Childs); i++ {
-				if n, _ := item.Childs[i].matchStar(s, globs, index, first); n > 0 {
+				if n, _ := item.Childs[i].matchStar(s, store); n > 0 {
 					matched += n
 				}
 			}
@@ -392,13 +332,13 @@ func (item *TreeItem) matchStar(s string, globs *[]string, index *[]int, first S
 	return
 }
 
-func (item *TreeItem) matchNextTreeItem(s string, globs *[]string, index *[]int, first Store) (matched int) {
+func (item *TreeItem) matchNextTreeItem(s string, store Store) (matched int) {
 	if s == "" && item.Terminate {
-		item.Append(globs, index, first)
+		store.Store(item.Query, item.Index)
 		matched++
 	}
 	for _, child := range item.Childs {
-		if n, _ := child.match(s, globs, index, first); n > 0 {
+		if n, _ := child.match(s, store); n > 0 {
 			matched += n
 		}
 	}
@@ -412,8 +352,7 @@ func (item *TreeItem) matchNextTreeItem(s string, globs *[]string, index *[]int,
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func (item *TreeItem) matchItemsInTree(s string, items []Item,
-	globs *[]string, index *[]int, first Store) (matched int, abortGready bool) {
+func (item *TreeItem) matchItemsInTree(s string, items []Item, store Store) (matched int, abortGready bool) {
 
 	var (
 		pos, offset int
@@ -421,7 +360,7 @@ func (item *TreeItem) matchItemsInTree(s string, items []Item,
 	)
 	for {
 		if pos == len(items) {
-			if n := item.matchNextTreeItem(s, globs, index, first); n > 0 {
+			if n := item.matchNextTreeItem(s, store); n > 0 {
 				matched += n
 			}
 			return
@@ -443,11 +382,11 @@ func (item *TreeItem) matchItemsInTree(s string, items []Item,
 			if list.IsOptional() {
 				s := s
 				if len(items) == pos {
-					if n := item.matchNextTreeItem(s, globs, index, first); n > 0 {
+					if n := item.matchNextTreeItem(s, store); n > 0 {
 						matched += n
 					}
 					return
-				} else if n, _ := item.matchItemsInTree(s, items[pos:], globs, index, first); n > 0 {
+				} else if n, _ := item.matchItemsInTree(s, items[pos:], store); n > 0 {
 					matched += n
 				}
 			}
@@ -458,11 +397,11 @@ func (item *TreeItem) matchItemsInTree(s string, items []Item,
 				}
 				s := s[offset:]
 				if len(items) == pos {
-					if n := item.matchNextTreeItem(s, globs, index, first); n > 0 {
+					if n := item.matchNextTreeItem(s, store); n > 0 {
 						matched += n
 					}
 					return
-				} else if n, _ := item.matchItemsInTree(s, items[pos:], globs, index, first); n > 0 {
+				} else if n, _ := item.matchItemsInTree(s, items[pos:], store); n > 0 {
 					matched += n
 				}
 			}
@@ -474,22 +413,22 @@ func (item *TreeItem) matchItemsInTree(s string, items []Item,
 
 			if group.IsOptional() {
 				if len(items) == pos {
-					if n := item.matchNextTreeItem(s, globs, index, first); n > 0 {
+					if n := item.matchNextTreeItem(s, store); n > 0 {
 						matched += n
 					}
 					return
-				} else if n, _ := item.matchItemsInTree(s, items[pos:], globs, index, first); n > 0 {
+				} else if n, _ := item.matchItemsInTree(s, items[pos:], store); n > 0 {
 					matched += n
 				}
 			}
 
 			for i := 0; i < len(group.Vals); i++ {
 				if v, ok := group.Vals[i].(*Chain); ok {
-					if n, _ := item.matchItemsInTree(s, v.Items, globs, index, first); n > 0 {
+					if n, _ := item.matchItemsInTree(s, v.Items, store); n > 0 {
 						matched += n
 					}
 				} else {
-					if n, _ := item.matchItemsInTree(s, []Item{group.Vals[i]}, globs, index, first); n > 0 {
+					if n, _ := item.matchItemsInTree(s, []Item{group.Vals[i]}, store); n > 0 {
 						matched += n
 					}
 				}
@@ -502,11 +441,11 @@ func (item *TreeItem) matchItemsInTree(s string, items []Item,
 		case FindStar:
 			pos := pos + 1
 			if len(items) == pos {
-				if n := item.matchStarNextTreeItem(s, globs, index, first); n > 0 {
+				if n := item.matchStarNextTreeItem(s, store); n > 0 {
 					matched += n
 				}
 				return
-			} else if n, _ := item.matchStarItemsInTree(s, items[pos:], globs, index, first); n > 0 {
+			} else if n, _ := item.matchStarItemsInTree(s, items[pos:], store); n > 0 {
 				matched += n
 			}
 		default:
@@ -515,13 +454,13 @@ func (item *TreeItem) matchItemsInTree(s string, items []Item,
 	}
 }
 
-func (item *TreeItem) matchStarNextTreeItem(s string, globs *[]string, index *[]int, first Store) (matched int) {
+func (item *TreeItem) matchStarNextTreeItem(s string, store Store) (matched int) {
 	if item.Terminate {
-		item.Append(globs, index, first)
+		store.Store(item.Query, item.Index)
 		matched++
 	}
 	for _, child := range item.Childs {
-		if n, _ := child.matchStar(s, globs, index, first); n > 0 {
+		if n, _ := child.matchStar(s, store); n > 0 {
 			matched += n
 		}
 	}
@@ -535,15 +474,14 @@ func (item *TreeItem) matchStarNextTreeItem(s string, globs *[]string, index *[]
 // @matched flag for string is matched
 //
 // @abortGready flag for not matched, but scan is aborted (for example by gready skip scan results)
-func (item *TreeItem) matchStarItemsInTree(s string, items []Item,
-	globs *[]string, index *[]int, first Store) (matched int, abortGready bool) {
+func (item *TreeItem) matchStarItemsInTree(s string, items []Item, store Store) (matched int, abortGready bool) {
 
 	var (
 		offset, length int
 		flag           FindFlag
 	)
 	if len(items) == 0 {
-		if n := item.matchStarNextTreeItem(s, globs, index, first); n > 0 {
+		if n := item.matchStarNextTreeItem(s, store); n > 0 {
 			matched += n
 		}
 		return
@@ -564,7 +502,7 @@ func (item *TreeItem) matchStarItemsInTree(s string, items []Item,
 		switch flag {
 		case FindDone:
 			sub := s[length:]
-			if n, _ := item.matchItemsInTree(sub, items[1:], globs, index, first); n > 0 {
+			if n, _ := item.matchItemsInTree(sub, items[1:], store); n > 0 {
 				matched += n
 			}
 		case FindList:
@@ -573,10 +511,10 @@ func (item *TreeItem) matchStarItemsInTree(s string, items []Item,
 			if list.IsOptional() {
 				s := s
 				if len(items) == 1 {
-					if n := item.matchStarNextTreeItem(s, globs, index, first); n > 0 {
+					if n := item.matchStarNextTreeItem(s, store); n > 0 {
 						matched += n
 					}
-				} else if n, _ := item.matchStarItemsInTree(s, items[1:], globs, index, first); n > 0 {
+				} else if n, _ := item.matchStarItemsInTree(s, items[1:], store); n > 0 {
 					matched += n
 				}
 			}
@@ -594,10 +532,10 @@ func (item *TreeItem) matchStarItemsInTree(s string, items []Item,
 					}
 					s := s[offsetN+length:]
 					if len(items) == 1 {
-						if n := item.matchNextTreeItem(s, globs, index, first); n > 0 {
+						if n := item.matchNextTreeItem(s, store); n > 0 {
 							matched += n
 						}
-					} else if n, _ := item.matchItemsInTree(s, items[1:], globs, index, first); n > 0 {
+					} else if n, _ := item.matchItemsInTree(s, items[1:], store); n > 0 {
 						matched += n
 					}
 				}
@@ -619,21 +557,21 @@ func (item *TreeItem) matchStarItemsInTree(s string, items []Item,
 			if group.IsOptional() {
 				s := s
 				if len(items) == 1 {
-					if n := item.matchNextTreeItem(s, globs, index, first); n > 0 {
+					if n := item.matchNextTreeItem(s, store); n > 0 {
 						matched += n
 					}
-				} else if n, _ := item.matchStarItemsInTree(s, items[1:], globs, index, first); n > 0 {
+				} else if n, _ := item.matchStarItemsInTree(s, items[1:], store); n > 0 {
 					matched += n
 				}
 			}
 
 			for i := 0; i < len(group.Vals); i++ {
 				if v, ok := group.Vals[i].(*Chain); ok {
-					if n, _ := item.matchStarItemsInTree(s, v.Items, globs, index, first); n > 0 {
+					if n, _ := item.matchStarItemsInTree(s, v.Items, store); n > 0 {
 						matched += n
 					}
 				} else {
-					if n, _ := item.matchStarItemsInTree(s, []Item{group.Vals[i]}, globs, index, first); n > 0 {
+					if n, _ := item.matchStarItemsInTree(s, []Item{group.Vals[i]}, store); n > 0 {
 						matched += n
 					}
 				}
@@ -646,10 +584,10 @@ func (item *TreeItem) matchStarItemsInTree(s string, items []Item,
 			panic("forwarded match")
 		case FindStar:
 			if len(items) == 1 {
-				if n := item.matchStarNextTreeItem(s, globs, index, first); n > 0 {
+				if n := item.matchStarNextTreeItem(s, store); n > 0 {
 					matched += n
 				}
-			} else if n, _ := item.matchStarItemsInTree(s, items[1:], globs, index, first); n > 0 {
+			} else if n, _ := item.matchStarItemsInTree(s, items[1:], store); n > 0 {
 				matched += n
 			}
 			return

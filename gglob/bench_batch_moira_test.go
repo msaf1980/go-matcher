@@ -22,11 +22,11 @@ func BenchmarkBatchHuge_Moira_Tree_Precompiled2(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		// _ = w.Match(pathsBatchHugeMoira[i], &globs, nil, &first)
+		var store items.AllStore
+		store.Init()
+		// _ = w.Match(pathsBatchHugeMoira[i], &store)
 		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
-		_ = w.Match(path, &globs, nil, &first)
+		_ = w.Match(path, &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -81,17 +81,17 @@ func BenchmarkBatchHuge_Moira_Tree_Prealloc(b *testing.B) {
 		}
 	}
 	pathsBatchHugeMoira := generatePaths(gGlobsBatchHugeMoira, b.N)
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
+		store.Init()
 		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
-		_ = w.Match(path, &globs, nil, &first)
-		// _ = w.Match(pathsBatchHugeMoira[i], &globs, nil, &first)
+		_ = w.Match(path, &store)
+		// _ = w.Match(pathsBatchHugeMoira[i], &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -108,20 +108,21 @@ func BenchmarkBatchHuge_Moira_Tree_Prealloc_ByParts(b *testing.B) {
 		}
 	}
 	pathsBatchHugeMoira := generatePaths(gGlobsBatchHugeMoira, b.N)
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	parts := make([]string, 10)
 
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
+		store.Init()
+
 		// _ = PathSplitB(pathsBatchHugeMoira[i], &parts)
 		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
 		_ = PathSplitB(path, &parts)
-		_ = w.MatchByParts(parts, &globs, nil, &first)
+		_ = w.MatchByParts(parts, &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method

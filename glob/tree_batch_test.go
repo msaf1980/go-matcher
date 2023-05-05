@@ -72,7 +72,7 @@ func TestGlobTree_Batch(t *testing.T) {
 					"bc.*{,b,cd}", "bc.*{,b,cd}*", "bc.*{,b,cd}*",
 				},
 				"bc.": {"bc.{,b,cd}", "bc.*{,b,cd}", "bc.*{,b,cd}*"},
-				"bcd": nil,
+				"bcd": {},
 			},
 		},
 	}
@@ -165,12 +165,9 @@ func BenchmarkBatch_GlobTree(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, s := range stringsBatch {
-			var (
-				globs []string
-				index []int
-			)
-			first := items.MinStore{-1}
-			_ = gtree.Match(s, &globs, &index, &first)
+			var store items.AllStore
+			store.Init()
+			_ = gtree.Match(s, &store)
 		}
 	}
 }
@@ -185,19 +182,15 @@ func BenchmarkBatch_GlobTree_Prealloc(b *testing.B) {
 		}
 	}
 
-	var (
-		globs []string
-		index []int
-	)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, s := range stringsBatch {
-			first.Init()
-			globs = globs[:0]
-			index = index[:0]
-			_ = gtree.Match(s, &globs, &index, &first)
+			store.Init()
+			_ = gtree.Match(s, &store)
 		}
 	}
 }

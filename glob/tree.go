@@ -162,6 +162,6 @@ func (gtree *GlobTree) AddGlob(g *Glob, index int) (normalized string, n int, er
 	return
 }
 
-func (gtree *GlobTree) Match(s string, globs *[]string, index *[]int, first items.Store) (matched int) {
-	return gtree.Root.Match(s, globs, index, first)
+func (gtree *GlobTree) Match(s string, store items.Store) (matched int) {
+	return gtree.Root.Match(s, store)
 }
