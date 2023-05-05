@@ -35,19 +35,17 @@ func BenchmarkBatchHuge_Moira_Tree_ByTags_Precompiled(b *testing.B) {
 		}
 	}
 	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, b.N)
-	queries := make([]string, 0, 1)
-	index := make([]int, 0, 1)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(1)
 
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries = queries[:0]
-		index = index[:0]
-		first.Init()
+		store.Init()
 		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
 		tags, _ := PathTags(path)
-		_ = w.MatchByTags(tags, &queries, &index, &first)
+		_ = w.MatchByTags(tags, &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -63,19 +61,17 @@ func BenchmarkBatchHuge_Moira_Tree_ByTagsMap_Precompiled(b *testing.B) {
 		}
 	}
 	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, b.N)
-	queries := make([]string, 0, 1)
-	index := make([]int, 0, 1)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(1)
 
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries = queries[:0]
-		index = index[:0]
-		first.Init()
+		store.Init()
 		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
 		tags, _ := PathTagsMap(path)
-		_ = w.MatchByTagsMap(tags, &queries, &index, &first)
+		_ = w.MatchByTagsMap(tags, &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -91,20 +87,18 @@ func BenchmarkBatchHuge_Moira_Tree_ByTagsMap_PrecompiledB(b *testing.B) {
 		}
 	}
 	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, b.N)
-	queries := make([]string, 0, 1)
-	index := make([]int, 0, 1)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(1)
 
 	start := time.Now()
 	b.ResetTimer()
 	tags := make(map[string]string)
 	for i := 0; i < b.N; i++ {
-		queries = queries[:0]
-		index = index[:0]
-		first.Init()
+		store.Init()
 		path := pathsBatchHugeMoira[rand.Intn(len(pathsBatchHugeMoira))]
 		_ = PathTagsMapB(path, tags)
-		_ = w.MatchByTagsMap(tags, &queries, &index, &first)
+		_ = w.MatchByTagsMap(tags, &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -121,18 +115,16 @@ func BenchmarkBatchHuge_Moira_Tree_ByTags_Prealloc(b *testing.B) {
 	}
 	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, b.N)
 	tagsList := tagsList(pathsBatchHugeMoira)
-	queries := make([]string, 0, 1)
-	index := make([]int, 0, 1)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(1)
 
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries = queries[:0]
-		index = index[:0]
-		first.Init()
+		store.Init()
 		tags := tagsList[rand.Intn(len(tagsList))]
-		_ = w.MatchByTags(tags, &queries, &index, &first)
+		_ = w.MatchByTags(tags, &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method
@@ -149,18 +141,16 @@ func BenchmarkBatchHuge_Moira_Tree_ByTagsMap_Prealloc(b *testing.B) {
 	}
 	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, b.N)
 	tagMapList := tagMapList(pathsBatchHugeMoira)
-	queries := make([]string, 0, 1)
-	index := make([]int, 0, 1)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(1)
 
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries = queries[:0]
-		index = index[:0]
-		first.Init()
+		store.Init()
 		tags := tagMapList[rand.Intn(len(tagMapList))]
-		_ = w.MatchByTagsMap(tags, &queries, &index, &first)
+		_ = w.MatchByTagsMap(tags, &store)
 	}
 	b.StopTimer()
 	d := time.Since(start) // TODO: Golang 1.20 has b.Elapsed() method

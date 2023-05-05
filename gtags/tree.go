@@ -116,13 +116,13 @@ func (gtree *GTagsTree) AddTerms(terms TaggedTermList, index int) (normalized st
 	return
 }
 
-func (gtree *GTagsTree) MatchByTagsMap(tags map[string]string, queries *[]string, index *[]int, first items.Store) (matched int) {
-	return gtree.Root.MatchByTagsMap(tags, queries, index, first)
+func (gtree *GTagsTree) MatchByTagsMap(tags map[string]string, store items.Store) (matched int) {
+	return gtree.Root.MatchByTagsMap(tags, store)
 }
 
-func (gtree *GTagsTree) MatchByTags(tags []Tag, queries *[]string, index *[]int, first items.Store) (matched int) {
+func (gtree *GTagsTree) MatchByTags(tags []Tag, store items.Store) (matched int) {
 	if gtree.Terminate {
-		gtree.Terminated.Append(queries, index, first)
+		store.Store(gtree.Terminated.Query, gtree.Terminated.Index)
 	}
-	return gtree.Root.MatchByTags(tags, queries, index, first)
+	return gtree.Root.MatchByTags(tags, store)
 }

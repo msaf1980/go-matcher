@@ -120,25 +120,23 @@ func runTestGGlobTree(t *testing.T, n int, tt testGGlobTree) {
 func verifyGGlobTree(t *testing.T, inGlobs []string, match map[string][]string, gtree *GGlobTree) {
 	for path, wantGlobs := range match {
 		t.Run("#path="+path, func(t *testing.T) {
-			var (
-				globs []string
-				index []int
-			)
-			first := items.MinStore{-1}
-			matched := gtree.Match(path, &globs, &index, &first)
+			var store items.AllStore
+			store.Init()
+			store.Grow(1)
+			matched := gtree.Match(path, &store)
 
-			verify := mergeVerify(globs, index)
+			verify := mergeVerify(store.S.S, store.Index.N)
 
-			sort.Strings(globs)
+			sort.Strings(store.S.S)
 			sort.Strings(wantGlobs)
-			sort.Ints(index)
+			sort.Ints(store.Index.N)
 
-			if !reflect.DeepEqual(wantGlobs, globs) {
-				t.Fatalf("GlobTree(%#v).Match(%q) globs = %s", inGlobs, path, cmp.Diff(wantGlobs, globs))
+			if !reflect.DeepEqual(wantGlobs, store.S.S) {
+				t.Fatalf("GlobTree(%#v).Match(%q) globs = %s", inGlobs, path, cmp.Diff(wantGlobs, store.S.S))
 			}
 
-			if matched != len(globs) || len(globs) != len(index) {
-				t.Fatalf("GlobTree(%#v).Match(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(globs), len(index))
+			if matched != len(store.S.S) || len(store.S.S) != len(store.Index.N) {
+				t.Fatalf("GlobTree(%#v).Match(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(store.S.S), len(store.Index.N))
 			}
 
 			for _, v := range verify {
@@ -148,24 +146,22 @@ func verifyGGlobTree(t *testing.T, inGlobs []string, match map[string][]string, 
 				}
 			}
 
-			if len(index) > 0 {
-				if first.N != index[0] {
+			if len(store.Index.N) > 0 {
+				if store.Min.Min != store.Index.N[0] {
 					t.Errorf("GlobTree(%#v).Match(%q) first index = %d, want %d",
-						inGlobs, path, first, index[0])
+						inGlobs, path, store.Min.Min, store.Index.N[0])
 				}
 			}
 
-			first.Init()
+			store.Init()
 			parts := PathSplit(path)
-			globs = globs[:0]
-			index = index[:0]
-			matched = gtree.MatchByParts(parts, &globs, &index, &first)
-			if !reflect.DeepEqual(wantGlobs, globs) {
-				t.Fatalf("GlobTree(%#v).MatchByParts(%q) globs = %s", inGlobs, path, cmp.Diff(wantGlobs, globs))
+			matched = gtree.MatchByParts(parts, &store)
+			if !reflect.DeepEqual(wantGlobs, store.S.S) {
+				t.Fatalf("GlobTree(%#v).MatchByParts(%q) globs = %s", inGlobs, path, cmp.Diff(wantGlobs, store.S.S))
 			}
 
-			if matched != len(globs) || len(globs) != len(index) {
-				t.Fatalf("GlobTree(%#v).MatchByParts(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(globs), len(index))
+			if matched != len(store.S.S) || len(store.S.S) != len(store.Index.N) {
+				t.Fatalf("GlobTree(%#v).MatchByParts(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(store.S.S), len(store.Index.N))
 			}
 
 		})
@@ -270,12 +266,12 @@ func TestGGlobTree(t *testing.T) {
 				"DB.Sales.BalanceCluster.UpStatus": {
 					"DB.*.{BalanceCluster,BalanceStaging,CoreCluster,EventsCluster,SalesCluster,UpProduction,UpTesting,WebCluster}.UpStatus",
 				},
-				"DB.Sales.BalanceCluster..UpStatus":                 nil,
-				"DB.Back.WebCluster.node2.UpEndpointCount":          nil,
-				"DB.Back.DBCluster.node2.DownEndpointCount":         nil,
-				"DB.Sales.BalanceCluster.node1.DownEndpointCount.2": nil,
-				"DBA.Back.WebCluster.node2.DownEndpointCount":       nil,
-				"DB.Sales.BalanceCluster.node9.DownEndpointCount":   nil,
+				"DB.Sales.BalanceCluster..UpStatus":                 {},
+				"DB.Back.WebCluster.node2.UpEndpointCount":          {},
+				"DB.Back.DBCluster.node2.DownEndpointCount":         {},
+				"DB.Sales.BalanceCluster.node1.DownEndpointCount.2": {},
+				"DBA.Back.WebCluster.node2.DownEndpointCount":       {},
+				"DB.Sales.BalanceCluster.node9.DownEndpointCount":   {},
 			},
 		},
 	}

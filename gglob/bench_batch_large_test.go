@@ -73,10 +73,10 @@ func BenchmarkBatchLarge_List_Tree(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
-		var globs []string
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
 		for j := 0; j < len(pathsBatchLargeList); j++ {
-			_ = w.Match(pathsBatchLargeList[j], &globs, nil, &first)
+			_ = w.Match(pathsBatchLargeList[j], &store)
 		}
 	}
 	b.StopTimer()
@@ -95,11 +95,11 @@ func BenchmarkBatchLarge_List_Tree_ByParts(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
-		var globs []string
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
 		for j := 0; j < len(pathsBatchLargeList); j++ {
 			parts := PathSplit(pathsBatchLargeList[j])
-			_ = w.MatchByParts(parts, &globs, nil, &first)
+			_ = w.MatchByParts(parts, &store)
 		}
 	}
 	b.StopTimer()
@@ -136,10 +136,10 @@ func BenchmarkBatchLarge_List_Tree_Precompiled(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
-		var globs []string
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
 		for j := 0; j < len(pathsBatchLargeList); j++ {
-			_ = w.Match(pathsBatchLargeList[j], &globs, nil, &first)
+			_ = w.Match(pathsBatchLargeList[j], &store)
 		}
 	}
 	b.StopTimer()
@@ -160,10 +160,10 @@ func BenchmarkBatchLarge_List_Tree_Precompiled2(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
 		for j := 0; j < len(globsBatchLargeList); j++ {
-			_ = w.Match(pathsBatchLargeList[j], &globs, nil, &first)
+			_ = w.Match(pathsBatchLargeList[j], &store)
 		}
 	}
 	b.StopTimer()
@@ -217,16 +217,17 @@ func BenchmarkBatchLarge_List_Tree_Prealloc(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for j := 0; j < len(pathsBatchLargeList); j++ {
-			globs = globs[:0]
-			first.Init()
-			_ = w.Match(pathsBatchLargeList[j], &globs, nil, &first)
+			var store items.AllStore
+			store.Init()
+			_ = w.Match(pathsBatchLargeList[j], &store)
 		}
 	}
 	b.StopTimer()
@@ -243,8 +244,9 @@ func BenchmarkBatchLarge_List_Tree_Prealloc_ByParts(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	parts := make([]string, 10)
 
@@ -252,10 +254,9 @@ func BenchmarkBatchLarge_List_Tree_Prealloc_ByParts(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for j := 0; j < len(pathsBatchLargeList); j++ {
-			globs = globs[:0]
-			first.Init()
+					store.Init()
 			_ = PathSplitB(pathsBatchLargeList[j], &parts)
-			_ = w.MatchByParts(parts, &globs, nil, &first)
+			_ = w.MatchByParts(parts, &store)
 		}
 	}
 	b.StopTimer()

@@ -67,8 +67,8 @@ func TestGlobTree_Group(t *testing.T) {
 				"aЯcdbcce":      {"{a?cd*,b*,cd[a-z]}bc*c*e"},
 				"aЮcdQAbcZWcIe": {"{a?cd*,b*,cd[a-z]}bc*c*e"},
 				"aZcdQAbcZWcIe": {"{a?cd*,b*,cd[a-z]}bc*c*e"},
-				"":              nil, "acdqbcZcIe": nil, "abCDbcZIce": nil,
-				"ЙabCDbcZIce": nil, "aZcdbcc": nil, "aZcdcce": nil, "aZcdQAbcZWIe": nil,
+				"":              {}, "acdqbcZcIe": {}, "abCDbcZIce": {},
+				"ЙabCDbcZIce": {}, "aZcdbcc": {}, "aZcdcce": {}, "aZcdQAbcZWIe": {},
 			},
 		},
 		{
@@ -155,8 +155,8 @@ func TestGlobTree_Group(t *testing.T) {
 				"acdqbcZcIe":    {"*{a?cd*,b*,cd[a-z]}bc*c*e"},
 				"acdqbcZCDIe":   {"*{a?cd*,b*,cd[a-z]}bc*CD*e"},
 				"acdqbcZcdIe":   {"*{a?cd*,b*,cd[a-z]}bc*c*e", "*{a?cd*,b*,cd[a-z]}bc*cd*e"},
-				"":              nil,
-				"aZcdbcc":       nil, "aZcdcce": nil, "aZcdQAbcZWIe": nil,
+				"":              {},
+				"aZcdbcc":       {}, "aZcdcce": {}, "aZcdQAbcZWIe": {},
 			},
 		},
 	}

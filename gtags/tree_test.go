@@ -132,27 +132,27 @@ func runTestGTagsTree(t *testing.T, n int, tt testGTagsTree) {
 func verifyGTagsTree(t *testing.T, inGlobs []string, match map[string][]string, gtree *GTagsTree) {
 	for path, wantQueries := range match {
 		t.Run("#path="+path, func(t *testing.T) {
-			queries := make([]string, 0, 4)
-			index := make([]int, 0, 4)
-			first := items.MinStore{-1}
+			var store items.AllStore
+			store.Init()
+			store.Grow(1)
 			tags, err := PathTags(path)
 			if err != nil {
 				panic(err)
 			}
-			matched := gtree.MatchByTags(tags, &queries, &index, &first)
+			matched := gtree.MatchByTags(tags, &store)
 
-			verify := mergeVerify(queries, index)
+			verify := mergeVerify(store.S.S, store.Index.N)
 
-			sort.Strings(queries)
+			sort.Strings(store.S.S)
 			sort.Strings(wantQueries)
-			sort.Ints(index)
+			sort.Ints(store.Index.N)
 
-			if !reflect.DeepEqual(wantQueries, queries) {
-				t.Fatalf("GTagsTree(%#v).MatchByTags(%q) globs = %s", inGlobs, path, cmp.Diff(wantQueries, queries))
+			if !reflect.DeepEqual(wantQueries, store.S.S) {
+				t.Fatalf("GTagsTree(%#v).MatchByTags(%q) globs = %s", inGlobs, path, cmp.Diff(wantQueries, store.S.S))
 			}
 
-			if matched != len(queries) || len(queries) != len(index) {
-				t.Fatalf("GTagsTree(%#v).MatchByTags(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(queries), len(index))
+			if matched != len(store.S.S) || len(store.S.S) != len(store.Index.N) {
+				t.Fatalf("GTagsTree(%#v).MatchByTags(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(store.S.S), len(store.Index.N))
 			}
 
 			for _, v := range verify {
@@ -162,10 +162,10 @@ func verifyGTagsTree(t *testing.T, inGlobs []string, match map[string][]string, 
 				}
 			}
 
-			if len(index) > 0 {
-				if first.N != index[0] {
+			if len(store.Index.N) > 0 {
+				if store.Min.Min != store.Index.N[0] {
 					t.Errorf("GTagsTree(%#v).MatchByTags(%q) first index = %d, want %d",
-						inGlobs, path, first, index[0])
+						inGlobs, path, store.Min.Min, store.Index.N[0])
 				}
 			}
 
@@ -173,17 +173,15 @@ func verifyGTagsTree(t *testing.T, inGlobs []string, match map[string][]string, 
 			if err != nil {
 				panic(err)
 			}
-			first.Init()
-			queries = queries[:0]
-			index = index[:0]
-			matched = gtree.MatchByTagsMap(tagsMap, &queries, &index, &first)
+			store.Init()
+			matched = gtree.MatchByTagsMap(tagsMap, &store)
 
-			if !reflect.DeepEqual(wantQueries, queries) {
-				t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) globs = %s", inGlobs, path, cmp.Diff(wantQueries, queries))
+			if !reflect.DeepEqual(wantQueries, store.S.S) {
+				t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) globs = %s", inGlobs, path, cmp.Diff(wantQueries, store.S.S))
 			}
 
-			if matched != len(queries) || len(queries) != len(index) {
-				t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(queries), len(index))
+			if matched != len(store.S.S) || len(store.S.S) != len(store.Index.N) {
+				t.Fatalf("GTagsTree(%#v).MatchByTagsMap(%q) = %d, want %d, index = %d", inGlobs, path, matched, len(store.S.S), len(store.Index.N))
 			}
 
 			for _, v := range verify {
@@ -193,10 +191,10 @@ func verifyGTagsTree(t *testing.T, inGlobs []string, match map[string][]string, 
 				}
 			}
 
-			if len(index) > 0 {
-				if first.N != index[0] {
+			if len(store.Index.N) > 0 {
+				if store.Min.Min != store.Index.N[0] {
 					t.Errorf("GTagsTree(%#v).MatchByTagsMap(%q) first index = %d, want %d",
-						inGlobs, path, first, index[0])
+						inGlobs, path, store.Min.Min, store.Index.N[0])
 				}
 			}
 		})

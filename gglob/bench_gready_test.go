@@ -34,11 +34,11 @@ func BenchmarkGready_StringMiss_Tree(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_StringMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_StringMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -62,11 +62,11 @@ func BenchmarkGready_StringMiss_Tree_Precompiled(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w.AddGlob(g, 1)
 
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_StringMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_StringMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -82,11 +82,11 @@ func BenchmarkGready_StringMiss_Tree_Precompiled2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_StringMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_StringMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -110,16 +110,17 @@ func BenchmarkGready_StringMiss_Tree_Prealloc(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
-		_ = w.Match(pathGready_StringMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_StringMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -147,11 +148,11 @@ func BenchmarkGready_ByteMiss_Tree(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ByteMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ByteMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -173,11 +174,11 @@ func _BenchmarkGready_ByteMiss_Tree_Precompiled(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w.AddGlob(g, 1)
 
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ByteMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ByteMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -191,11 +192,11 @@ func BenchmarkGready_ByteMiss_Tree_Precompiled2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ByteMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ByteMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -206,16 +207,17 @@ func BenchmarkGready_ByteMiss_Tree_Prealloc(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
-		_ = w.Match(pathGready_ByteMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ByteMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -243,11 +245,11 @@ func BenchmarkGready_RuneRangesMiss_ASCII_Tree(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -269,11 +271,11 @@ func BenchmarkGready_RuneRangesMiss_ASCII_Tree_Precompiled(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w.AddGlob(g, 1)
 
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -287,11 +289,11 @@ func BenchmarkGready_RuneRangesMiss_ASCII_Tree_Precompiled2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -302,16 +304,16 @@ func BenchmarkGready_RuneRangesMiss_ASCII_Tree_Prealloc(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
-		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		store.Init()
+		_ = w.Match(pathGready_RuneRangesMiss_ASCII, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -338,11 +340,11 @@ func BenchmarkGready_ListMiss_Tree(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ListMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ListMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -364,11 +366,11 @@ func BenchmarkGready_ListMiss_Tree_Precompiled(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w.AddGlob(g, 1)
 
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ListMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ListMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -382,11 +384,11 @@ func BenchmarkGready_ListMiss_Tree_Precompiled2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ListMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ListMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -397,16 +399,16 @@ func BenchmarkGready_ListMiss_Tree_Prealloc(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
-		_ = w.Match(pathGready_ListMiss, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		store.Init()
+		_ = w.Match(pathGready_ListMiss, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -433,11 +435,11 @@ func BenchmarkGready_ListSkip_Tree(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ListSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ListSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -459,11 +461,11 @@ func BenchmarkGready_ListSkip_Tree_Precompiled(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w.AddGlob(g, 1)
 
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ListSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ListSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -477,11 +479,11 @@ func BenchmarkGready_ListSkip_Tree_Precompiled2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_ListSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_ListSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -492,16 +494,16 @@ func BenchmarkGready_ListSkip_Tree_Prealloc(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
-		_ = w.Match(pathGready_ListSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		store.Init()
+		_ = w.Match(pathGready_ListSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -528,11 +530,11 @@ func BenchmarkGready_OneSkip_Tree(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_OneSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_OneSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -554,11 +556,11 @@ func BenchmarkGready_OneSkip_Tree_Precompiled(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w.AddGlob(g, 1)
 
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_OneSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_OneSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -572,11 +574,11 @@ func BenchmarkGready_OneSkip_Tree_Precompiled2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathGready_OneSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathGready_OneSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -587,16 +589,15 @@ func BenchmarkGready_OneSkip_Tree_Prealloc(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
-		_ = w.Match(pathGready_OneSkip, &globs, nil, &first)
-		if len(globs) > 0 {
-			b.Fatal(globs)
+		store.Init()
+		_ = w.Match(pathGready_OneSkip, &store)
+		if len(store.S.S) > 0 {
+			b.Fatal(store.S.S)
 		}
 	}
 }

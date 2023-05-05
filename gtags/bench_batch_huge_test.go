@@ -25,15 +25,11 @@ func BenchmarkBatchHuge_Tree_ByTags(b *testing.B) {
 				b.Fatal(err)
 			}
 		}
-		queries := make([]string, 0, 1)
-		index := make([]int, 0, 1)
 		first := items.MinStore{-1}
 		for j := 0; j < len(pathsBatchHugeMoira); j++ {
-			queries = queries[:0]
-			index = index[:0]
 			first.Init()
 			tags, _ := PathTags(pathsBatchHugeMoira[j])
-			_ = w.MatchByTags(tags, &queries, &index, &first)
+			_ = w.MatchByTags(tags, &first)
 		}
 	}
 	b.StopTimer()
@@ -73,15 +69,12 @@ func BenchmarkBatchHuge_Tree_Precompiled(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries := make([]string, 0, 1)
-		index := make([]int, 0, 1)
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
 		for j := 0; j < len(pathsBatchHugeMoira); j++ {
-			queries = queries[:0]
-			index = index[:0]
-			first.Init()
+			store.Init()
 			tags, _ := PathTags(pathsBatchHugeMoira[j])
-			_ = w.MatchByTags(tags, &queries, &index, &first)
+			_ = w.MatchByTags(tags, &store)
 		}
 	}
 	b.StopTimer()
@@ -103,15 +96,12 @@ func BenchmarkBatchHuge_Tree_ByMap_Precompiled(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries := make([]string, 0, 1)
-		index := make([]int, 0, 1)
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
 		for j := 0; j < len(pathsBatchHugeMoira); j++ {
-			queries = queries[:0]
-			index = index[:0]
-			first.Init()
+			store.Init()
 			tags, _ := PathTagsMap(pathsBatchHugeMoira[j])
-			_ = w.MatchByTagsMap(tags, &queries, &index, &first)
+			_ = w.MatchByTagsMap(tags, &store)
 		}
 	}
 	b.StopTimer()
@@ -133,16 +123,12 @@ func BenchmarkBatchHuge_Tree_ByMap_PrecompiledB(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries := make([]string, 0, 1)
-		index := make([]int, 0, 1)
 		tags := make(map[string]string)
-		first := items.MinStore{-1}
+		store := items.MinStore{-1}
 		for j := 0; j < len(pathsBatchHugeMoira); j++ {
-			queries = queries[:0]
-			index = index[:0]
-			first.Init()
+			store.Init()
 			_ = PathTagsMapB(pathsBatchHugeMoira[j], tags)
-			_ = w.MatchByTagsMap(tags, &queries, &index, &first)
+			_ = w.MatchByTagsMap(tags, &store)
 		}
 	}
 	b.StopTimer()
@@ -166,14 +152,12 @@ func BenchmarkBatchHuge_Tree_Prealloc(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries := make([]string, 0, 1)
-		index := make([]int, 0, 1)
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
+		store.Grow(1)
 		for j := 0; j < len(tagsList); j++ {
-			queries = queries[:0]
-			index = index[:0]
-			first.Init()
-			_ = w.MatchByTags(tagsList[j], &queries, &index, &first)
+			store.Init()
+			_ = w.MatchByTags(tagsList[j], &store)
 		}
 	}
 	b.StopTimer()
@@ -197,14 +181,12 @@ func BenchmarkBatchHuge_Tree_ByMap_Prealloc(b *testing.B) {
 	start := time.Now()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		queries := make([]string, 0, 1)
-		index := make([]int, 0, 1)
-		first := items.MinStore{-1}
+		var store items.AllStore
+		store.Init()
+		store.Grow(1)
 		for j := 0; j < len(tagsList); j++ {
-			queries = queries[:0]
-			index = index[:0]
-			first.Init()
-			_ = w.MatchByTags(tagsList[j], &queries, &index, &first)
+			store.Init()
+			_ = w.MatchByTags(tagsList[j], &store)
 		}
 	}
 	b.StopTimer()

@@ -14,11 +14,11 @@ func BenchmarkGready_List_Tree(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathsBatchList[0], &globs, nil, &first)
-		if len(globs) != 1 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathsBatchList[0], &store)
+		if len(store.S.S) != 1 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -40,11 +40,12 @@ func BenchmarkGready_List_Tree_Precompiled(b *testing.B) {
 		w := NewTree()
 		w.AddGlob(g, 1)
 
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathsBatchList[0], &globs, nil, &first)
-		if len(globs) != 1 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		store.Grow(4)
+		_ = w.Match(pathsBatchList[0], &store)
+		if len(store.S.S) != 1 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -58,11 +59,11 @@ func BenchmarkGready_List_Tree_Precompiled2(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var globs []string
-		first := items.MinStore{-1}
-		_ = w.Match(pathsBatchList[0], &globs, nil, &first)
-		if len(globs) != 1 {
-			b.Fatal(globs)
+		var store items.AllStore
+		store.Init()
+		_ = w.Match(pathsBatchList[0], &store)
+		if len(store.S.S) != 1 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
@@ -73,16 +74,16 @@ func BenchmarkGready_List_Tree_Prealloc(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	globs := make([]string, 0, 4)
-	first := items.MinStore{-1}
+	var store items.AllStore
+	store.Init()
+	store.Grow(4)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		globs = globs[:0]
-		first.Init()
-		_ = w.Match(pathsBatchList[0], &globs, nil, &first)
-		if len(globs) != 1 {
-			b.Fatal(globs)
+		store.Init()
+		_ = w.Match(pathsBatchList[0], &store)
+		if len(store.S.S) != 1 {
+			b.Fatal(store.S.S)
 		}
 	}
 }
