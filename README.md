@@ -163,3 +163,6 @@ Get macthed globs index
   first := -1
   w.MatchFirstByTags(path, &first)
 ```
+
+### expand
+See [documentation](./expand/README.md).
