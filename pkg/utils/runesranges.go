@@ -81,6 +81,8 @@ func RunesRangeExpand(s string) (rs RunesRanges, ok bool) {
 								rs.ASCII.Add(i)
 							}
 							rs.setSizes(1)
+						} else {
+							return rs, false
 						}
 					} else if start <= c {
 						// TODO: detect overlapped ranges like Я-你 beetween codepages
@@ -91,6 +93,8 @@ func RunesRangeExpand(s string) (rs RunesRanges, ok bool) {
 						}
 						rs.setSizes(n)
 						rs.UnicodeRanges = append(rs.UnicodeRanges, RuneRange{First: start, Last: c})
+					} else {
+						return rs, false
 					}
 					start = utf8.RuneError
 					isRange = false
