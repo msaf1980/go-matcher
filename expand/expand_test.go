@@ -18,7 +18,9 @@ func TestExpand(t *testing.T) {
 	tests := []data{
 		{in: "{b,c}", max: -1, out: []string{"b", "c"}},
 		{in: "a{b,c}d", max: -1, out: []string{"abd", "acd"}},
-		{in: "a{b,c}d", max: -1, out: []string{"abd", "acd"}},
+		{in: "a{,b,c}d", max: -1, out: []string{"ad", "abd", "acd"}},
+		{in: "a{b,,c}d", max: -1, out: []string{"abd", "ad", "acd"}},
+		{in: "a{b,c,}d", max: -1, out: []string{"abd", "acd", "ad"}},
 		{in: "a{b,}d", max: -1, out: []string{"abd", "ad"}},
 		{in: "a{b,c,}d", max: -1, out: []string{"abd", "acd", "ad"}},
 		{in: "[2-4]", max: -1, out: []string{"2", "3", "4"}},
@@ -31,7 +33,11 @@ func TestExpand(t *testing.T) {
 		{in: "as{12,32}[a-c]{2}", max: 5, out: []string{"as12[a-c]2", "as32[a-c]2"}},
 		{in: "as{12,32}[a-c]{2}", max: 6, out: []string{"as12a2", "as12b2", "as12c2", "as32a2", "as32b2", "as32c2"}},
 		{in: "as{12,32}[a-c]{2}", max: -2, out: []string{"as12[a-c]2", "as32[a-c]2"}},                                 // expand only first founded node
+		{in: "as{12,32}{2}[a-c]", max: -2, out: []string{"as122[a-c]", "as322[a-c]"}},                                 // expand only first founded node
+		{in: "as{12,32}2[a-c]", max: -2, out: []string{"as122[a-c]", "as322[a-c]"}},                                   // expand only first founded node
 		{in: "as{12,32}[a-c]{2}", max: -3, out: []string{"as12a2", "as12b2", "as12c2", "as32a2", "as32b2", "as32c2"}}, // expand only two founded nodes
+		{in: "as{12,32}2[a-c]", max: -3, out: []string{"as122a", "as122b", "as122c", "as322a", "as322b", "as322c"}},   // expand only two founded nodes
+		{in: "as{12,32}{2}[a-c]", max: -3, out: []string{"as122a", "as122b", "as122c", "as322a", "as322b", "as322c"}}, // expand only two founded nodes
 		{in: "as{12,32}[a-c]{2,a}", max: -3, out: []string{ // expand only two founded nodes
 			"as12a{2,a}", "as12b{2,a}", "as12c{2,a}", "as32a{2,a}", "as32b{2,a}", "as32c{2,a}",
 		}},

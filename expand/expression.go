@@ -132,24 +132,4 @@ func getExpression(in string) expression {
 	default:
 		return expression{body: orig}
 	}
-
-	// args := strings.Split(in, dots)
-	// if len(args) != 2 && len(args) != 3 {
-	// 	return none{orig}
-	// }
-
-	// if len(args) != 2 {
-	// 	return none{orig}
-	// }
-	// // rSeq := make([]rune, len(args))
-	// // for i, a := range args {
-	// // 	r := []rune(a)
-	// // 	if len(r) != 1 {
-	// // 		return none{orig}
-	// // 	}
-	// // 	rSeq[i] = r[0]
-	// // }
-
-	// // return runes{rSeq}
-	// return none{orig}
 }

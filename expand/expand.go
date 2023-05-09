@@ -40,7 +40,7 @@ func Expand(in string, max int) ([]string, error) {
 		if start == -1 {
 			exps = append(exps, expression{body: in})
 			break
-		} else {
+		} else if start > 0 {
 			exps = append(exps, expression{body: in[:start]})
 		}
 	}
@@ -87,10 +87,12 @@ func expand(exps []expression, result []string, count, max int, buf []byte) ([]s
 			return nil, buf, err
 		}
 	} else {
-		if max == -2 {
-			max = 0
-		} else if max < -2 {
-			max++
+		if exps[0].typ != expString {
+			if max == -2 {
+				max = 0
+			} else if max < -2 {
+				max++
+			}
 		}
 		for {
 			buf, err = exps[0].appendNext(buf)
