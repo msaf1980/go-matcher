@@ -4,8 +4,10 @@ It doesn't have constant time guarantees like the built-in `regexp` package, but
 
 ## Basis of the engine
 Contains 2 parts:
-* gglob - graphite glob expressions match engine
+* glob  - graphite glob expressions match engine (no dot-separation)
+* gglob - graphite glob expressions match engine (dot-separated)
 * gtags - graphite tags (with seriesByTag) expressions match engine
+* expand - expand graphite glob expressions
 
 ## Installing
 This is a go-gettable library, so install is easy:
