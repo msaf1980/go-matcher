@@ -11,7 +11,8 @@ var (
 )
 
 // Expand takes the string contains the shell expansion expression and returns list of strings after they are expanded.
-// Argument max for restict max expanded results, 0 - disables expand, -1 - unlimited, -2 - expand only first node
+//
+// Argument max for restict max expanded results, > 0 - restuct  max expamnded results, 0 - disables expand, -1 - unlimited, -2 - expand only first node, -3 - expand only two nodes, etc.
 func Expand(in string, max int) ([]string, error) {
 	if max == 0 {
 		return []string{in}, nil
@@ -88,6 +89,8 @@ func expand(exps []expression, result []string, count, max int, buf []byte) ([]s
 	} else {
 		if max == -2 {
 			max = 0
+		} else if max < -2 {
+			max++
 		}
 		for {
 			buf, err = exps[0].appendNext(buf)
