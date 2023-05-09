@@ -124,7 +124,7 @@ func TestRunesRanges_Expand(t *testing.T) {
 		{s: "[a", wantFailed: true},
 		{s: "a]", wantFailed: true},
 		// overlapped
-		{s: "[z-a]", want: RunesRanges{}, wantStr: "[]", notIn: []rune{'E', 'e', 'i', 'n', 'Ы'}},
+		{s: "[z-a]", wantFailed: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
