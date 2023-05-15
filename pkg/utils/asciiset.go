@@ -133,7 +133,6 @@ func (as *ASCIISet) Contains(c byte) bool {
 // IndexByte return index in byte slice whether symbol is first inside.
 func (as *ASCIISet) IndexByte(b []byte) int {
 	for i := 0; i < len(b); i++ {
-
 		if as.Contains(b[i]) {
 			return i
 		}
@@ -144,6 +143,26 @@ func (as *ASCIISet) IndexByte(b []byte) int {
 // Index return index in string whether symbol is first inside.
 func (as *ASCIISet) Index(s string) int {
 	for i := 0; i < len(s); i++ {
+		if as.Contains(s[i]) {
+			return i
+		}
+	}
+	return -1
+}
+
+// LastIndexByte return index in byte slice whether symbol is first inside.
+func (as *ASCIISet) LastIndexByte(b []byte) int {
+	for i := len(b) - 1; i >= 0; i-- {
+		if as.Contains(b[i]) {
+			return i
+		}
+	}
+	return -1
+}
+
+// LastIndex return index in string whether symbol is first inside.
+func (as *ASCIISet) LastIndex(s string) int {
+	for i := len(s) - 1; i >= 0; i-- {
 		if as.Contains(s[i]) {
 			return i
 		}

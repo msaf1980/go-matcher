@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -104,6 +105,46 @@ func TestASCIISet_Index(t *testing.T) {
 
 			index = as.IndexByte([]byte(tt.s))
 			assert.Equal(t, tt.want, index, "ASCIISet.IndexByte(%s)", tt.s)
+		})
+	}
+}
+
+func TestASCIISet_LastIndex(t *testing.T) {
+	tests := []struct {
+		set  string
+		s    string
+		want int
+	}{
+		{
+			set:  "aBz",
+			s:    "ABz",
+			want: 2,
+		},
+		{
+			set:  "aBz",
+			s:    "aBZ",
+			want: 1,
+		},
+		{
+			set:  "aBz",
+			s:    "abZ",
+			want: 0,
+		},
+		{
+			set:  "aBz",
+			s:    "AbZ",
+			want: -1,
+		},
+	}
+	for n, tt := range tests {
+		t.Run(fmt.Sprintf("[%d] %s#%s", n, tt.set, tt.s), func(t *testing.T) {
+			as, _ := MakeASCIISet(tt.set)
+
+			index := as.LastIndex(tt.s)
+			assert.Equal(t, tt.want, index, "ASCIISet.LastIndex(%s)", tt.s)
+
+			index = as.LastIndexByte([]byte(tt.s))
+			assert.Equal(t, tt.want, index, "ASCIISet.LastIndexByte(%s)", tt.s)
 		})
 	}
 }
