@@ -12,6 +12,7 @@ type expTyp int8
 
 const (
 	expString expTyp = iota
+	expWildcard
 	expList
 	expRunes
 )
@@ -47,7 +48,7 @@ type expression struct {
 func (e *expression) count() int {
 	n := 0
 	switch e.typ {
-	case expString:
+	case expString, expWildcard:
 		n = 1
 	case expList:
 		n = len(e.list)
@@ -55,6 +56,23 @@ func (e *expression) count() int {
 		for i := 0; i < len(e.runes); i++ {
 			n += e.runes[i].count()
 		}
+	default:
+		panic(fmt.Errorf("BUG: not implemented for %d", e.typ))
+	}
+	return n
+}
+
+func (e *expression) minLen() int {
+	n := 0
+	switch e.typ {
+	case expString:
+		return len(e.body)
+	case expWildcard:
+		return -1
+	case expList:
+		n = len(e.list[0])
+	case expRunes:
+		return utf8.RuneLen(e.runes[0].start)
 	default:
 		panic(fmt.Errorf("BUG: not implemented for %d", e.typ))
 	}
@@ -73,7 +91,7 @@ func (e *expression) appendNext(out []byte) ([]byte, error) {
 		return out, io.EOF
 	}
 	switch e.typ {
-	case expString:
+	case expString, expWildcard:
 		out = append(out, e.body...)
 		e.pos = -1
 	case expList:
@@ -125,11 +143,17 @@ func getExpression(in string) expression {
 			// return rune{in}
 			rs, ok := runesRangeExpand(in)
 			if !ok {
-				return expression{body: in}
+				return expression{typ: expWildcard, body: in}
+			}
+			if len(rs) == 0 {
+				return expression{body: ""}
 			}
 			return expression{typ: expRunes, body: orig, runes: rs}
 		}
 	default:
+		if asciiSet.Index(orig) != -1 {
+			return expression{typ: expWildcard, body: orig}
+		}
 		return expression{body: orig}
 	}
 }

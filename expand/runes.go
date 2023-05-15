@@ -1,6 +1,7 @@
 package expand
 
 import (
+	"fmt"
 	"sort"
 	"unicode/utf8"
 )
@@ -53,7 +54,15 @@ func runesRangeMerge(rs []runes) []runes {
 	return rs[:j]
 }
 
-// RunesExpand expand runes like [a-z0]
+func runesRangeExpandMust(s string) (rs []runes) {
+	rs, ok := runesRangeExpand(s)
+	if !ok {
+		panic(fmt.Errorf("expand %q failed", s))
+	}
+	return rs
+}
+
+// RunesExpand expand runes like a-z0 ([] stiped)
 func runesRangeExpand(s string) (rs []runes, ok bool) {
 	if len(s) > 0 {
 		rs = make([]runes, 0, len(s)+4)
