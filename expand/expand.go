@@ -18,34 +18,18 @@ var (
 //
 // Argument max for restict max expanded results, > 0 - restuct  max expamnded results, 0 - disables expand, -1 - unlimited, etc.
 func Expand(in string, max, depth int) ([]string, error) {
-	if max == 0 {
-		return []string{in}, nil
-	}
-	exps := parseExpr(in)
-	if len(exps) == 1 && exps[0].typ == expString {
-		return []string{exps[0].body}, nil
-	}
+	exps := ParseExpr(in)
 
-	count := 1
-	for i := 0; i < len(exps); i++ {
-		count *= exps[i].count()
-		if exps[i].typ == expWildcard {
-			break
-		}
-	}
+	return exps.Expand(max, depth, false)
+}
 
-	result := make([]string, 0, count)
+// ExpandTry like Expand, but restrict only one element (in list or runes range).
+//
+// Argument max for restict max expanded results, > 0 - restuct  max expamnded results, 0 - disables expand, -1 - unlimited, etc.
+func ExpandTry(in string, max, depth int) ([]string, error) {
+	exps := ParseExpr(in)
 
-	var err error
-	buf := make([]byte, 0, len(in))
-	if depth > 0 {
-		depth++
-	}
-	if result, _, err = expand(exps, result, 0, max, depth, buf); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return exps.Expand(max, depth, true)
 }
 
 // getPair returns the top level expression.
@@ -90,86 +74,39 @@ func getPair(in string) (start, stop int) {
 	return
 }
 
-func parseExpr(in string) []expression {
-	// var starBreak int
-	start, stop := getPair(in)
-	if stop == -1 {
-		if start == -1 {
-			return []expression{{body: in}}
-		} else if start == 0 {
-			pos := asciiSet.LastIndex(in) + 1
-			if pos < len(in) {
-				return []expression{
-					{typ: expWildcard, body: in[:pos]},
-					{body: in[pos:]},
-				}
-			}
-			return []expression{{typ: expWildcard, body: in}}
-		} else {
-			pos := asciiSet.LastIndex(in) + 1
-			if pos < len(in) {
-				return []expression{
-					{body: in[:start]},
-					{typ: expWildcard, body: in[start:pos]},
-					{body: in[pos:]},
-				}
-			}
-			return []expression{
-				{body: in[:start]},
-				{typ: expWildcard, body: in[start:]},
-			}
-		}
-	}
-
-	count := strings.Count(in, "[") + strings.Count(in, "{") + 2
-	exps := make([]expression, 0, count)
-	for {
-		if start == -1 {
-			exps = append(exps, expression{body: in})
-			break
-		} else if stop == -1 {
-			if start > 0 {
-				exps = append(exps, expression{body: in[:start]})
-			}
-			exps = append(exps, expression{typ: expWildcard, body: in[start:]})
-			break
-		} else if start > 0 {
-			exps = append(exps, expression{body: in[:start]})
-		}
-
-		stop++
-		e := getExpression(in[start:stop])
-		if e.typ == expString {
-			if len(exps) > 0 && exps[len(exps)-1].typ == expString {
-				exps[len(exps)-1].body += e.body
-			} else if e.body != "" {
-				exps = append(exps, e)
-			}
-		} else {
-			exps = append(exps, e)
-		}
-
-		in = in[stop:]
-		if in == "" {
-			break
-		}
-		start, stop = getPair(in)
-	}
-
-	last := len(exps) - 1
-	if exps[last].typ == expWildcard {
-		s := exps[last].body
-		pos := asciiSet.LastIndex(s) + 1
-		if pos < len(s) {
-			exps[last].body = s[:pos]
-			exps = append(exps, expression{body: s[pos:]})
-		}
-	}
-
-	return exps
+type Expressions struct {
+	exps []Expression
+	buf  []byte
 }
 
-func expand(exps []expression, result []string, count, max, depth int, buf []byte) ([]string, []byte, error) {
+// Expand expand expresions
+func (e *Expressions) Expand(max, depth int, try bool) ([]string, error) {
+	if len(e.exps) == 1 && e.exps[0].typ == expString {
+		return []string{e.exps[0].body}, nil
+	}
+
+	count := 1
+	for i := 0; i < len(e.exps); i++ {
+		count *= e.exps[i].count()
+		if e.exps[i].typ == expWildcard {
+			break
+		}
+	}
+
+	result := make([]string, 0, count)
+
+	var err error
+	if depth > 0 {
+		depth++
+	}
+	if result, _, err = expand(e.exps, result, 0, max, depth, try, e.buf[:0]); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func expand(exps []Expression, result []string, count, max, depth int, try bool, buf []byte) ([]string, []byte, error) {
 	if len(exps) == 0 {
 		// end of expressions, write result string
 		result = append(result, string(buf))
@@ -189,9 +126,10 @@ func expand(exps []expression, result []string, count, max, depth int, buf []byt
 		}
 	}
 	if depth > 0 {
-		if exps[0].count() > 1 {
-			depth--
-			if depth == 0 {
+		switch exps[0].typ {
+		case expString, expWildcard:
+			depth -= strings.Count(exps[0].body, ".")
+			if depth <= 1 {
 				max = 0
 			}
 		}
@@ -199,7 +137,7 @@ func expand(exps []expression, result []string, count, max, depth int, buf []byt
 
 	if max == 0 {
 		buf = append(buf, exps[0].body...)
-		result, buf, err = expand(exps[1:], result, count, max, depth, buf)
+		result, buf, err = expand(exps[1:], result, count, max, depth, try, buf)
 		if err != nil {
 			return nil, buf, err
 		}
@@ -213,13 +151,104 @@ func expand(exps []expression, result []string, count, max, depth int, buf []byt
 				return nil, buf, err
 			}
 
-			result, buf, err = expand(exps[1:], result, count, max, depth, buf)
+			result, buf, err = expand(exps[1:], result, count, max, depth, try, buf)
 			buf = buf[:cur]
 			if err != nil {
 				return nil, buf, err
+			}
+
+			if try {
+				break
 			}
 		}
 	}
 
 	return result, buf, nil
+}
+
+func ParseExpr(in string) (e *Expressions) {
+	// var starBreak int
+	e = &Expressions{buf: make([]byte, 0, len(in))}
+	start, stop := getPair(in)
+	if stop == -1 {
+		if start == -1 {
+			e.exps = []Expression{{body: in}}
+			return
+		} else if start == 0 {
+			pos := asciiSet.LastIndex(in) + 1
+			if pos < len(in) {
+				e.exps = []Expression{
+					{typ: expWildcard, body: in[:pos]},
+					{body: in[pos:]},
+				}
+				return
+			}
+			e.exps = []Expression{
+				{typ: expWildcard, body: in},
+			}
+			return
+		} else {
+			pos := asciiSet.LastIndex(in) + 1
+			if pos < len(in) {
+				e.exps = []Expression{
+					{body: in[:start]},
+					{typ: expWildcard, body: in[start:pos]},
+					{body: in[pos:]},
+				}
+				return
+			}
+			e.exps = []Expression{
+				{body: in[:start]},
+				{typ: expWildcard, body: in[start:]},
+			}
+			return
+		}
+	}
+
+	count := strings.Count(in, "[") + strings.Count(in, "{") + 2
+	e.exps = make([]Expression, 0, count)
+	for {
+		if start == -1 {
+			e.exps = append(e.exps, Expression{body: in})
+			break
+		} else if stop == -1 {
+			if start > 0 {
+				e.exps = append(e.exps, Expression{body: in[:start]})
+			}
+			e.exps = append(e.exps, Expression{typ: expWildcard, body: in[start:]})
+			break
+		} else if start > 0 {
+			e.exps = append(e.exps, Expression{body: in[:start]})
+		}
+
+		stop++
+		exp := getExpression(in[start:stop])
+		if exp.typ == expString {
+			if len(e.exps) > 0 && e.exps[len(e.exps)-1].typ == expString {
+				e.exps[len(e.exps)-1].body += exp.body
+			} else if exp.body != "" {
+				e.exps = append(e.exps, exp)
+			}
+		} else {
+			e.exps = append(e.exps, exp)
+		}
+
+		in = in[stop:]
+		if in == "" {
+			break
+		}
+		start, stop = getPair(in)
+	}
+
+	last := len(e.exps) - 1
+	if e.exps[last].typ == expWildcard {
+		s := e.exps[last].body
+		pos := asciiSet.LastIndex(s) + 1
+		if pos < len(s) {
+			e.exps[last].body = s[:pos]
+			e.exps = append(e.exps, Expression{body: s[pos:]})
+		}
+	}
+
+	return e
 }

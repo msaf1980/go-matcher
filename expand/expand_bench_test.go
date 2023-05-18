@@ -27,6 +27,11 @@ func BenchmarkExpand(b *testing.B) {
 				_, _ = Expand(bench.in, bench.max, bench.depth)
 			}
 		})
+		b.Run(fmt.Sprintf("%s [%d] try", bench.in, bench.max), func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				_, _ = ExpandTry(bench.in, bench.max, bench.depth)
+			}
+		})
 	}
 	b.Log("\n")
 }

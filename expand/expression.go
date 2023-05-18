@@ -36,8 +36,8 @@ func (e ErrUnsupportedExp) Error() string {
 	return "unsupported expression expand: " + n
 }
 
-// expression represents all possible expandable types
-type expression struct {
+// Expression represents all possible expandable types
+type Expression struct {
 	typ   expTyp
 	body  string
 	list  []string
@@ -45,7 +45,7 @@ type expression struct {
 	pos   int // -1 for EOF
 }
 
-func (e *expression) count() int {
+func (e *Expression) count() int {
 	n := 0
 	switch e.typ {
 	case expString, expWildcard:
@@ -62,7 +62,7 @@ func (e *expression) count() int {
 	return n
 }
 
-func (e *expression) minLen() int {
+func (e *Expression) minLen() int {
 	n := 0
 	switch e.typ {
 	case expString:
@@ -79,14 +79,14 @@ func (e *expression) minLen() int {
 	return n
 }
 
-func (e *expression) reset() {
+func (e *Expression) reset() {
 	e.pos = 0
 	for i := 0; i < len(e.runes); i++ {
 		e.runes[i].reset()
 	}
 }
 
-func (e *expression) appendNext(out []byte) ([]byte, error) {
+func (e *Expression) appendNext(out []byte) ([]byte, error) {
 	if e.pos == -1 {
 		return out, io.EOF
 	}
@@ -122,38 +122,38 @@ func (e *expression) appendNext(out []byte) ([]byte, error) {
 }
 
 // getExpression returns expression depends on the input
-func getExpression(in string) expression {
+func getExpression(in string) Expression {
 	orig := in
 	in = in[1 : len(in)-1]
 	if len(in) == 0 {
-		return expression{body: in}
+		return Expression{body: in}
 	}
 	switch orig[0] {
 	case '{':
 		if strings.ContainsRune(in, ',') {
-			return expression{typ: expList, body: orig, list: strings.Split(in, ",")}
+			return Expression{typ: expList, body: orig, list: strings.Split(in, ",")}
 		} else {
-			return expression{body: in}
+			return Expression{body: in}
 		}
 	case '[':
 		if len(in) == 1 {
-			return expression{body: in}
+			return Expression{body: in}
 		} else {
 			// TODO
 			// return rune{in}
 			rs, ok := runesRangeExpand(in)
 			if !ok {
-				return expression{typ: expWildcard, body: in}
+				return Expression{typ: expWildcard, body: in}
 			}
 			if len(rs) == 0 {
-				return expression{body: ""}
+				return Expression{body: ""}
 			}
-			return expression{typ: expRunes, body: orig, runes: rs}
+			return Expression{typ: expRunes, body: orig, runes: rs}
 		}
 	default:
 		if asciiSet.Index(orig) != -1 {
-			return expression{typ: expWildcard, body: orig}
+			return Expression{typ: expWildcard, body: orig}
 		}
-		return expression{body: orig}
+		return Expression{body: orig}
 	}
 }
