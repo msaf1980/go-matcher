@@ -20,6 +20,10 @@ const (
 	TaggedTermMatch    TaggedTermOp = 2 // =~
 	TaggedTermNe       TaggedTermOp = 3 // !=
 	TaggedTermNotMatch TaggedTermOp = 4 // !=~
+
+	// special case when using useCarbonBehaviour = true
+	// which matches everything that does not have that tag
+	TaggedTagNotExist TaggedTermOp = 5 // = ""
 )
 
 var (
@@ -230,7 +234,13 @@ func seriesByTagArgs(query string, args []string) (n int, err error) {
 	return
 }
 
-func ParseSeriesByTag(query string) (terms TaggedTermList, err error) {
+// FeatureFlags contains feature flags that significantly change seriesByTags results (like carbon or graphite-clickhouse)
+type FeatureFlags struct {
+	UseCarbonBehavior    bool // if true, prefers carbon's behaviour on how tags are treated
+	DontMatchMissingTags bool // if true, seriesByTag terms containing '!=' or '!=~' operators will not match metrics that don't have the tag at all
+}
+
+func ParseSeriesByTag(query string, flags *FeatureFlags) (terms TaggedTermList, err error) {
 	var (
 		n          int
 		conditions [128]string
@@ -240,10 +250,10 @@ func ParseSeriesByTag(query string) (terms TaggedTermList, err error) {
 		return
 	}
 
-	return ParseTaggedConditions(conditions[:n])
+	return ParseTaggedConditions(conditions[:n], flags)
 }
 
-func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error) {
+func ParseTaggedConditions(conditions []string, flags *FeatureFlags) (terms TaggedTermList, err error) {
 	if len(conditions) == 0 {
 		return
 	}
@@ -262,6 +272,8 @@ func ParseTaggedConditions(conditions []string) (terms TaggedTermList, err error
 			if strings.HasPrefix(s, "=~") {
 				terms[i].Op = TaggedTermMatch
 				terms[i].Value = strings.TrimSpace(s[2:])
+			} else if flags.UseCarbonBehavior {
+				terms[i].Op = TaggedTagNotExist
 			} else {
 				terms[i].Op = TaggedTermEq
 				terms[i].Value = strings.TrimSpace(s[1:])
