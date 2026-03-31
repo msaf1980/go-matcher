@@ -8,6 +8,8 @@ import (
 	"github.com/msaf1980/go-matcher/pkg/items"
 )
 
+// some benches from https://github.com/moira-alert/moira
+
 func BenchmarkBatchHuge_Moira_GTag_Precompiled(b *testing.B) {
 	g := taggedTermListList(queriesBatchHugeMoira)
 	pathsBatchHugeMoira := generateTaggedMetrics(termsBatchHugeMoira, b.N)
